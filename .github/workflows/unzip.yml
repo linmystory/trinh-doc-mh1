@@ -1,0 +1,33 @@
+name: Giai nen zip
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  unzip:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Giai nen va commit
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          zips=(*.zip)
+          if [ "${#zips[@]}" -ne 1 ]; then
+            echo "Loi: can dung 1 tep .zip o thu muc goc, hien co ${#zips[@]}"
+            exit 1
+          fi
+          unzip -o -q "${zips[0]}" -x ".github/*"
+          rm -- "${zips[0]}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git add --chmod=+x gradlew
+          git commit -m "Giai nen du an"
+          git push origin HEAD
