@@ -78,7 +78,7 @@ class ScriptParserTest {
 
     @Test
     fun utf8Bom_isTolerated() {
-        assertTrue(ScriptParser.parse("﻿" + valid).isSuccess)
+        assertTrue(ScriptParser.parse("\uFEFF" + valid).isSuccess)
     }
 
     @Test

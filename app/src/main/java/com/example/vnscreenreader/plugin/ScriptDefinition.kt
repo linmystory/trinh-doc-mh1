@@ -78,7 +78,7 @@ object ScriptParser {
 
     fun parse(json: String): Result<ScriptDefinition> {
         // Tệp Notepad (Windows) có thể mở đầu bằng BOM UTF-8.
-        val text = json.removePrefix("﻿")
+        val text = json.removePrefix("\uFEFF")
         // org.json phân tích đệ quy: một tệp 64 KB toàn dấu "[" gây StackOverflowError (là Error,
         // không bị catch RuntimeException bắt được) làm sập ứng dụng. Chặn trước bằng quét O(n).
         if (JsonNesting.exceeds(text, MAX_NESTING_DEPTH)) {
