@@ -33,6 +33,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
@@ -48,7 +49,6 @@ import com.example.vnscreenreader.R
 import com.example.vnscreenreader.core.AccessibilityStatus
 import com.example.vnscreenreader.core.SettingsRepository
 import com.example.vnscreenreader.core.SpeechEngine
-import java.util.Locale
 import kotlin.math.roundToInt
 
 private const val SLIDER_STEPS = 14 // 0.5 → 2.0, mỗi bước 0.1
@@ -189,7 +189,9 @@ private fun VoiceSlider(
     onValueChange: (Float) -> Unit,
     onValueChangeFinished: () -> Unit,
 ) {
-    val display = String.format(Locale.getDefault(), "%.1f", value)
+    // LocalLocale.current là state quan sát được: giao diện tự cập nhật khi người dùng đổi ngôn ngữ
+    // (Locale.getDefault() không làm được điều đó và bị lint NonObservableLocale chặn).
+    val display = String.format(LocalLocale.current.platformLocale, "%.1f", value)
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Text(text = "$title: $display", fontSize = 22.sp, color = Color.White)
         Slider(
