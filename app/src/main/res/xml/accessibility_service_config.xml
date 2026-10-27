@@ -4,7 +4,7 @@
     android:accessibilityFeedbackType="feedbackSpoken"
     android:accessibilityFlags="flagDefault|flagReportViewIds|flagRetrieveInteractiveWindows|flagRequestTouchExplorationMode|flagServiceHandlesDoubleTap"
     android:canRetrieveWindowContent="true"
-    android:canRequestTouchExploration="true"
+    android:canRequestTouchExplorationMode="true"
     android:description="@string/service_description"
     android:isAccessibilityTool="true"
     android:notificationTimeout="50"
