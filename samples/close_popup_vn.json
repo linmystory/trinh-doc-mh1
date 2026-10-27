@@ -1,0 +1,12 @@
+{
+  "id": "close_popup_vn",
+  "name": "Đóng cửa sổ quảng cáo (mẫu)",
+  "description": "Nhấn nút có chữ Đóng, hoặc nút có mô tả Close/Dismiss, hoặc nút có id close_button.",
+  "packages": [],
+  "rules": [
+    { "text": "Đóng", "match": "equals", "action": "click" },
+    { "contentDescription": "Close", "match": "contains", "action": "click" },
+    { "contentDescription": "Dismiss", "match": "contains", "action": "click" },
+    { "viewId": "close_button", "action": "click" }
+  ]
+}

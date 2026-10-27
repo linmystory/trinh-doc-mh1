@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Đọc Màn Hình Việt Pro</string>
+    <string name="service_label">Đọc Màn Hình Việt Pro</string>
+    <string name="service_description">Đọc to nội dung màn hình bằng tiếng Việt với cử chỉ tùy biến, xử lý sự kiện nền độ trễ thấp và hệ thống tiện ích (plugin) dạng script.</string>
+    <!-- %1$s = tên dịch vụ (service_label) để hướng dẫn luôn khớp với tên hiển thị trong Cài đặt. -->
+    <string name="service_toggle_hint">Chạm vào công tắc để mở Cài đặt Hỗ trợ tiếp cận, chọn \"%1$s\" rồi bật hoặc tắt dịch vụ.</string>
+    <string name="accessibility_settings_unavailable">Không mở được Cài đặt Hỗ trợ tiếp cận trên thiết bị này. Hãy mở thủ công: Cài đặt → Hỗ trợ tiếp cận.</string>
+</resources>
