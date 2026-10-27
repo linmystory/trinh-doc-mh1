@@ -23,11 +23,22 @@ jobs:
             echo "Loi: can dung 1 tep .zip o thu muc goc, hien co ${#zips[@]}"
             exit 1
           fi
-          unzip -o -q "${zips[0]}" -x ".github/*"
+          tmp="$(mktemp -d)"
+          unzip -o -q "${zips[0]}" -d "$tmp"
+          rm -rf "$tmp/__MACOSX"
+          shopt -s dotglob
+          entries=("$tmp"/*)
+          src="$tmp"
+          if [ "${#entries[@]}" -eq 1 ] && [ -d "${entries[0]}" ]; then
+            src="${entries[0]}"
+            echo "Zip co thu muc boc ngoai: $(basename "$src") -> lay noi dung ben trong"
+          fi
+          rm -rf "$src/.github"
+          cp -a "$src"/. .
           rm -- "${zips[0]}"
+          if [ -f gradlew ]; then chmod +x gradlew; fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
-          git add --chmod=+x gradlew
           git commit -m "Giai nen du an"
           git push origin HEAD
