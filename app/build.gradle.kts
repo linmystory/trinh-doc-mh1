@@ -14,8 +14,8 @@ android {
         applicationId = "com.example.vnscreenreader"
         minSdk = 30 // onGesture(AccessibilityGestureEvent) và các API hỗ trợ tiếp cận cần API 30
         targetSdk = 36
-        versionCode = 2
-        versionName = "1.1.0"
+        versionCode = 3
+        versionName = "1.2.0"
     }
 
     buildTypes {

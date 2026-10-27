@@ -5,8 +5,12 @@ Trình đọc màn hình (screen reader) cho Android dành cho người khiếm 
 ## Tính năng
 - Đọc nội dung bằng giọng tiếng Việt (Android TextToSpeech), ngắt lời tức thì, hàng đợi thông minh.
   Văn bản dài được tự chia nhỏ; nếu TTS chưa sẵn sàng lúc khởi động máy thì tự thử lại.
+- Ngắt câu theo ngữ pháp tiếng Việt: không cắt sau từ treo (của, và, là...), không tách số/giờ/viết tắt.
+- Đọc thêm trạng thái: vô hiệu hóa, đã chọn, tiêu đề, thanh trượt (%), lỗi nhập, vai trò do app khai báo.
 - Xử lý sự kiện trên luồng nền (coroutines), lọc sự kiện trùng để giảm độ trễ.
 - Khung viền xanh lá quanh phần tử đang chọn.
+- Khám phá bằng cảm ứng: đặt ngón tay lên phần tử nào thì đọc phần tử đó; chạm hai lần (ở bất kỳ đâu) để nhấn
+  phần tử vừa nghe.
 - 17 cử chỉ (vuốt 4 hướng, 12 cử chỉ hai bước, chạm hai lần), gán chức năng tùy ý.
 - Hệ thống tiện ích: plugin dựng sẵn và script JSON nạp từ tệp.
 - Giao diện độ tương phản cao (đen/vàng).
@@ -27,6 +31,8 @@ Trình đọc màn hình (screen reader) cho Android dành cho người khiếm 
 
 ## Cài đặt
 1. Tải APK từ tab **Actions** (mục Artifacts) hoặc build bằng Android Studio.
+   APK debug từ Actions được ký bằng khóa tạm của mỗi lần chạy, nên khi cài bản mới hãy **gỡ bản cũ trước**
+   (nếu không sẽ báo "xung đột gói").
 2. **Android 13 trở lên, APK cài ngoài Google Play:** hệ thống chặn bật dịch vụ hỗ trợ tiếp cận (công tắc bị mờ).
    Vào *Cài đặt → Ứng dụng → Đọc Màn Hình Việt Pro → ⋮ → Cho phép cài đặt bị hạn chế*, rồi làm bước 3.
 3. Mở ứng dụng, chạm công tắc để vào Cài đặt Hỗ trợ tiếp cận và bật dịch vụ.

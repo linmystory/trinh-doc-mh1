@@ -14,6 +14,16 @@ data class NodeSnapshot(
     val isCheckable: Boolean = false,
     val checkedState: CheckedState = CheckedState.UNCHECKED,
     val isClickable: Boolean = false,
+    val isEnabled: Boolean = true,
+    val isSelected: Boolean = false,
+    /** Mô tả trạng thái do ứng dụng tự khai báo (ví dụ "Đang bật", "Đã mở rộng"). */
+    val stateDescription: String? = null,
+    /** Vai trò do ứng dụng tự khai báo; ưu tiên hơn vai trò suy ra từ tên lớp (Custom View). */
+    val roleDescription: String? = null,
+    val isHeading: Boolean = false,
+    val error: String? = null,
+    /** Phần trăm của thanh trượt/tiến trình (0..100) nếu có thông tin khoảng giá trị. */
+    val rangePercent: Int? = null,
 )
 
 object SpeechTextBuilder {
@@ -27,8 +37,8 @@ object SpeechTextBuilder {
         val label = listOf(node.contentDescription, node.text, node.hintText)
             .firstOrNull { !it.isNullOrBlank() }
             ?.trim()
-        val role = roleOf(node)
-        val state = stateOf(node)
+        val role = node.roleDescription?.trim()?.takeIf { it.isNotEmpty() } ?: roleOf(node)
+        val state = stateParts(node).joinToString(", ").ifEmpty { null }
 
         return if (label == null) {
             val subject = (role ?: "Phần tử").replaceFirstChar { it.uppercaseChar() }
@@ -69,22 +79,38 @@ object SpeechTextBuilder {
         return if (removedCount > 0) "Đã xóa" else null
     }
 
-    private fun stateOf(node: NodeSnapshot): String? {
-        if (!node.isCheckable) return null
-        return when (node.checkedState) {
-            CheckedState.CHECKED -> "đã chọn"
-            CheckedState.PARTIAL -> "chọn một phần"
-            CheckedState.UNCHECKED -> "chưa chọn"
+    /** Các trạng thái theo thứ tự đọc: chọn/bật, mô tả trạng thái của app, giá trị, lỗi, vô hiệu hóa. */
+    private fun stateParts(node: NodeSnapshot): List<String> {
+        val parts = ArrayList<String>(4)
+        if (node.isCheckable) {
+            parts += when (node.checkedState) {
+                CheckedState.CHECKED -> "đã chọn"
+                CheckedState.PARTIAL -> "chọn một phần"
+                CheckedState.UNCHECKED -> "chưa chọn"
+            }
+        } else if (node.isSelected) {
+            parts += "đã chọn"
         }
+        node.stateDescription?.trim()?.takeIf { it.isNotEmpty() }?.let { parts += it }
+        node.rangePercent?.let { parts += "${it.coerceIn(0, 100)} phần trăm" }
+        node.error?.trim()?.takeIf { it.isNotEmpty() }?.let { parts += "lỗi: $it" }
+        if (!node.isEnabled) parts += "không khả dụng"
+        return parts
     }
 
     private fun roleOf(node: NodeSnapshot): String? {
         val cls = node.className.orEmpty()
         return when {
+            node.isHeading -> "tiêu đề"
             node.isEditable || cls.contains("EditText") -> "ô nhập"
             cls.contains("CheckBox") -> "hộp kiểm"
             cls.contains("RadioButton") -> "nút chọn"
             cls.contains("Switch") || cls.contains("ToggleButton") -> "công tắc"
+            cls.contains("SeekBar") || cls.contains("Slider") -> "thanh trượt"
+            cls.contains("ProgressBar") -> "tiến trình"
+            cls.contains("Spinner") -> "danh sách thả xuống"
+            cls.contains("TabWidget") || cls.endsWith("Tab") -> "thẻ"
+            cls.contains("WebView") -> "trang web"
             cls.contains("Button") -> "nút"
             cls.contains("ImageView") -> if (node.isClickable) "nút" else "hình ảnh"
             node.isClickable -> "có thể nhấn"

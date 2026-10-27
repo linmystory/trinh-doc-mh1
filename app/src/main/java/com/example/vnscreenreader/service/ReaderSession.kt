@@ -11,6 +11,7 @@ import com.example.vnscreenreader.core.SpeechTextBuilder
 import com.example.vnscreenreader.gesture.GestureAction
 import com.example.vnscreenreader.gesture.GestureAnalyzer
 import com.example.vnscreenreader.gesture.GestureMappingStore
+import com.example.vnscreenreader.node.NodeCollector
 import com.example.vnscreenreader.plugin.PluginRegistry
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.CancellationException
@@ -116,6 +117,13 @@ internal class ReaderSession(private val service: AccessibilityService) {
             AccessibilityEvent.TYPE_VIEW_FOCUSED ->
                 event.source?.let { navigator.focusOn(it) }
 
+            // Khám phá bằng cảm ứng: ngón tay chạm/lướt tới đâu thì chọn và đọc phần tử ở đó.
+            // Cũng đặt phần tử hiện tại, nên "chạm hai lần" (ACTIVATE) nhấn đúng phần tử vừa nghe.
+            AccessibilityEvent.TYPE_VIEW_HOVER_ENTER ->
+                event.source?.let { source ->
+                    NodeCollector.findHoverTarget(source)?.let { navigator.focusOn(it) }
+                }
+
             AccessibilityEvent.TYPE_VIEW_CLICKED ->
                 event.source?.let { node ->
                     navigator.invalidateCache()
@@ -161,6 +169,7 @@ internal class ReaderSession(private val service: AccessibilityService) {
             AccessibilityEvent.TYPE_VIEW_FOCUSED,
             AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED,
             AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED,
+            AccessibilityEvent.TYPE_VIEW_HOVER_ENTER,
         )
     }
 }

@@ -66,3 +66,24 @@ class SpeechQueuePolicyTest {
         assertEquals(SpeechQueuePolicy.Mode.FLUSH, SpeechQueuePolicy.modeFor(false, SpeechQueuePolicy.MAX_PENDING))
     }
 }
+
+class EventDeduplicatorLruTest {
+
+    @Test
+    fun alternatingKeys_areBothSuppressed() {
+        val dedup = EventDeduplicator(100)
+        assertTrue(dedup.shouldProcess("a", 0))
+        assertTrue(dedup.shouldProcess("b", 10))
+        assertFalse(dedup.shouldProcess("a", 20))
+        assertFalse(dedup.shouldProcess("b", 30))
+    }
+
+    @Test
+    fun capacityIsBounded_oldestKeyForgotten() {
+        val dedup = EventDeduplicator(1_000, capacity = 2)
+        assertTrue(dedup.shouldProcess("a", 0))
+        assertTrue(dedup.shouldProcess("b", 1))
+        assertTrue(dedup.shouldProcess("c", 2)) // đẩy "a" ra
+        assertTrue(dedup.shouldProcess("a", 3)) // "a" đã bị quên
+    }
+}
