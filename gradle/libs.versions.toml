@@ -8,6 +8,8 @@ activityCompose = "1.13.0"
 lifecycle = "2.11.0"
 coroutines = "1.11.0"
 junit = "4.13.2"
+mlkitTextRecognition = "16.0.1"  # bản gói sẵn mô hình Latin (ổn định, cập nhật gần nhất 08/2024)
+mlkitImageLabeling = "17.0.9"     # bản gói sẵn mô hình 400 nhãn
 orgJson = "20260814"          # org.json thật cho unit test (android.jar chỉ có stub)
 
 [libraries]
@@ -20,6 +22,8 @@ androidx-compose-foundation = { module = "androidx.compose.foundation:foundation
 androidx-compose-material3 = { module = "androidx.compose.material3:material3" }
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
 junit = { module = "junit:junit", version.ref = "junit" }
+mlkit-text-recognition = { module = "com.google.mlkit:text-recognition", version.ref = "mlkitTextRecognition" }
+mlkit-image-labeling = { module = "com.google.mlkit:image-labeling", version.ref = "mlkitImageLabeling" }
 org-json = { module = "org.json:json", version.ref = "orgJson" }
 
 [plugins]

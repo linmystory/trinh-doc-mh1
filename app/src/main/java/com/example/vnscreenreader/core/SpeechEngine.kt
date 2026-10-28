@@ -28,6 +28,7 @@ class SpeechEngine(
     context: Context,
     initialRate: Float,
     initialPitch: Float,
+    initialEnginePackage: String = "",
 ) {
     private val appContext = context.applicationContext
     private val mainHandler = Handler(Looper.getMainLooper())
@@ -42,6 +43,9 @@ class SpeechEngine(
     private var rate = initialRate
     private var pitch = initialPitch
     private var pendingText: String? = null
+    private var enginePackage = initialEnginePackage
+
+    @Volatile private var lastText: String? = null
 
     private val pendingIds: MutableSet<String> = ConcurrentHashMap.newKeySet()
 
@@ -80,7 +84,9 @@ class SpeechEngine(
             ++generation
         }
         // Callback của TextToSpeech có thể chạy đồng bộ khi lỗi → luôn chuyển qua handler để `tts` đã được gán.
-        val engine = TextToSpeech(appContext) { status -> mainHandler.post { onInitResult(gen, status) } }
+        val listener = TextToSpeech.OnInitListener { status -> mainHandler.post { onInitResult(gen, status) } }
+        val pkg = synchronized(lock) { enginePackage }
+        val engine = if (pkg.isEmpty()) TextToSpeech(appContext, listener) else TextToSpeech(appContext, listener, pkg)
         val stale = synchronized(lock) {
             if (closed || gen != generation) {
                 true
@@ -133,14 +139,26 @@ class SpeechEngine(
                 .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
                 .build(),
         )
-        val result = engine.setLanguage(VIETNAMESE)
-        if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
-            Log.w(TAG, "Thiết bị chưa có giọng tiếng Việt, dùng giọng mặc định.")
-        }
+        applyLanguage(engine)
         engine.setOnUtteranceProgressListener(progressListener)
         val (currentRate, currentPitch) = synchronized(lock) { rate to pitch }
         engine.setSpeechRate(currentRate)
         engine.setPitch(currentPitch)
+    }
+
+    /** Đọc theo ngôn ngữ hiện hành của ứng dụng (đổi trong Cài đặt hệ thống → Ngôn ngữ ứng dụng). */
+    private fun applyLanguage(engine: TextToSpeech) {
+        val locale = Locale.getDefault()
+        val result = engine.setLanguage(locale)
+        if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+            Log.w(TAG, "No TTS voice for $locale, using the engine default.")
+        }
+    }
+
+    /** Gọi khi người dùng đổi ngôn ngữ ứng dụng lúc dịch vụ đang chạy. */
+    fun updateLanguage() {
+        val engine = synchronized(lock) { if (closed || !ready) null else tts } ?: return
+        applyLanguage(engine)
     }
 
     /**
@@ -149,6 +167,7 @@ class SpeechEngine(
      */
     fun speak(text: String, interrupt: Boolean = true) {
         if (text.isBlank()) return
+        lastText = text
         val engine = synchronized(lock) {
             if (closed) return
             if (!ready) {
@@ -182,6 +201,33 @@ class SpeechEngine(
             pendingIds.remove(id)
             Log.w(TAG, "TextToSpeech.speak trả về ERROR")
         }
+    }
+
+    /**
+     * Đổi engine TTS (gói rỗng = mặc định hệ thống) và kết nối lại ngay, không cần khởi động lại dịch vụ.
+     * Chạy được từ luồng bất kỳ; việc tạo TextToSpeech luôn diễn ra trên luồng chính.
+     */
+    fun changeEngine(newPackage: String) {
+        val old = synchronized(lock) {
+            if (closed || newPackage == enginePackage) return
+            enginePackage = newPackage
+            ready = false
+            failures = 0
+            generation++ // vô hiệu callback của engine cũ
+            pendingText = null
+            tts.also { tts = null }
+        }
+        pendingIds.clear()
+        old?.stop()
+        old?.shutdown()
+        mainHandler.post { connect() }
+    }
+
+    /** Đọc lại câu gần nhất (để nghe lại điều vừa bỏ lỡ). @return false nếu chưa đọc gì. */
+    fun repeatLast(): Boolean {
+        val text = lastText ?: return false
+        speak(text, interrupt = true)
+        return true
     }
 
     fun updateVoice(newRate: Float, newPitch: Float) {
@@ -221,6 +267,5 @@ class SpeechEngine(
 
     private companion object {
         const val TAG = "SpeechEngine"
-        val VIETNAMESE: Locale = Locale.forLanguageTag("vi-VN")
     }
 }

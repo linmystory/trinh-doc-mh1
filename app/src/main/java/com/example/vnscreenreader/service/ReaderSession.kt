@@ -4,6 +4,13 @@ import android.accessibilityservice.AccessibilityService
 import android.content.SharedPreferences
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
+import android.content.pm.PackageManager
+import com.example.vnscreenreader.ai.NotificationInfo
+import com.example.vnscreenreader.ai.NotificationSummarizer
+import com.example.vnscreenreader.ai.ScreenCapture
+import com.example.vnscreenreader.ai.mlkit.MlKitImageLabeler
+import com.example.vnscreenreader.ai.mlkit.MlKitTextRecognizer
+import com.example.vnscreenreader.core.CustomLabelStore
 import com.example.vnscreenreader.core.EventDeduplicator
 import com.example.vnscreenreader.core.SettingsRepository
 import com.example.vnscreenreader.core.SpeechEngine
@@ -11,6 +18,10 @@ import com.example.vnscreenreader.core.SpeechTextBuilder
 import com.example.vnscreenreader.gesture.GestureAction
 import com.example.vnscreenreader.gesture.GestureAnalyzer
 import com.example.vnscreenreader.gesture.GestureMappingStore
+import com.example.vnscreenreader.menu.MenuItem
+import com.example.vnscreenreader.menu.MenuKind
+import com.example.vnscreenreader.menu.MenuState
+import com.example.vnscreenreader.menu.Menus
 import com.example.vnscreenreader.node.NodeCollector
 import com.example.vnscreenreader.plugin.PluginRegistry
 import java.util.concurrent.atomic.AtomicBoolean
@@ -19,9 +30,12 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
+import com.example.vnscreenreader.core.S
+import com.example.vnscreenreader.core.t
 
 /**
  * Toàn bộ tài nguyên gắn với MỘT lần kết nối dịch vụ: TTS, overlay, luồng nền, hàng đợi sự kiện.
@@ -36,14 +50,27 @@ internal class ReaderSession(private val service: AccessibilityService) {
 
     private val settings = SettingsRepository(service)
     private val gestureStore = GestureMappingStore(service)
-    private val speech = SpeechEngine(service, settings.speechRate, settings.pitch)
+    private val customLabels = CustomLabelStore(service)
+    private val feedback = DeviceFeedback(service, settings)
+    private val speech = SpeechEngine(service, settings.speechRate, settings.pitch, settings.ttsEngine)
     private val overlay = HighlightOverlay(service)
-    private val navigator = FocusNavigator(service, overlay) { text, interrupt -> speech.speak(text, interrupt) }
+    private val navigator = FocusNavigator(service, overlay, customLabels, feedback) { text, interrupt -> speech.speak(text, interrupt) }
+    private val ai = AiAssistant(
+        capture = ScreenCapture(service),
+        navigator = navigator,
+        speech = speech,
+        recognizerFactory = { MlKitTextRecognizer() },
+        labelerFactory = { MlKitImageLabeler() },
+    )
+    private val notificationSummarizer = NotificationSummarizer()
     private val dispatcher = ActionDispatcher(
         service = service,
         navigator = navigator,
         registryProvider = { PluginRegistry(service.applicationContext) },
         speech = speech,
+        ai = ai,
+        settings = settings,
+        openMenu = { kind -> openMenu(kind) },
     )
 
     private val events = Channel<ReaderEvent>(EVENT_BUFFER, BufferOverflow.DROP_OLDEST)
@@ -52,21 +79,37 @@ internal class ReaderSession(private val service: AccessibilityService) {
 
     @Volatile private var mapping = gestureStore.load()
 
+    /** Trình đơn đang mở (null = không có). Chỉ đọc/ghi trên luồng xử lý duy nhất của [scope]. */
+    private var menu: MenuState? = null
+
     // Giữ tham chiếu mạnh vì SharedPreferences chỉ giữ listener bằng weak reference.
     private val settingsListener = SharedPreferences.OnSharedPreferenceChangeListener { _, _ ->
         speech.updateVoice(settings.speechRate, settings.pitch)
+        speech.changeEngine(settings.ttsEngine) // không làm gì nếu engine không đổi
     }
     private val gestureListener = SharedPreferences.OnSharedPreferenceChangeListener { _, _ ->
         mapping = gestureStore.load()
+    }
+
+    /** Gọi trên luồng chính khi cấu hình (ngôn ngữ) đổi. */
+    fun onLocaleChanged() {
+        speech.updateLanguage()
     }
 
     /** Gọi trên luồng chính. */
     fun start() {
         overlay.attach()
         scope.launch { processEvents() }
+        ScreenSearchBridge.register { query ->
+            // Chờ cửa sổ ứng dụng quay lại (màn hình nhập từ khóa vừa đóng) rồi mới tìm.
+            scope.launch {
+                delay(SEARCH_RESUME_DELAY_MS)
+                runSafely("tìm chữ") { navigator.search(query) }
+            }
+        }
         settings.register(settingsListener)
         gestureStore.register(gestureListener)
-        speech.speak("Trình đọc màn hình đã bật")
+        speech.speak(t(S.MSG_SERVICE_ON))
     }
 
     /** Chạy trên luồng chính: chỉ lọc loại sự kiện và trích dữ liệu, không xử lý nặng. */
@@ -79,14 +122,18 @@ internal class ReaderSession(private val service: AccessibilityService) {
         }
     }
 
-    /** Trả về true để báo đã xử lý cử chỉ (kể cả khi được gán "Không làm gì"). */
+    /** Trả về true để báo đã xử lý cử chỉ (kể cả khi được gán t(S.GA_NONE)). */
     fun handleGesture(gestureId: Int): Boolean {
         val gesture = GestureAnalyzer.analyze(gestureId) ?: return false
         val action = mapping.actionFor(gesture)
         if (action == GestureAction.NONE) return true
 
         speech.stop() // ngắt lời ngay lập tức, không chờ luồng nền
-        scope.launch { runSafely("thực hiện $action") { dispatcher.dispatch(action) } }
+        scope.launch {
+            runSafely("thực hiện $action") {
+                if (menu != null) handleMenuAction(action) else dispatcher.dispatch(action)
+            }
+        }
         return true
     }
 
@@ -95,10 +142,14 @@ internal class ReaderSession(private val service: AccessibilityService) {
     /** Idempotent. Gọi trên luồng chính (overlay phải gỡ trên luồng chính). */
     fun close() {
         if (!closed.compareAndSet(false, true)) return
+        ScreenSearchBridge.clear()
         settings.unregister(settingsListener)
         gestureStore.unregister(gestureListener)
         events.close()
         scope.cancel()
+        ai.close()
+        feedback.close()
+        customLabels.close()
         overlay.detach()
         speech.shutdown()
     }
@@ -112,6 +163,61 @@ internal class ReaderSession(private val service: AccessibilityService) {
         }
     }
 
+    /** Mở trình đơn và đọc phần mở đầu. Gọi trên luồng xử lý. */
+    private fun openMenu(kind: MenuKind) {
+        val items = when (kind) {
+            MenuKind.GLOBAL -> Menus.global()
+            MenuKind.LOCAL -> {
+                if (navigator.current() == null) {
+                    speech.speak(t(S.MSG_NOTHING_SELECTED), true)
+                    return
+                }
+                Menus.local(navigator.customActions())
+            }
+        }
+        val opened = MenuState.open(kind, items)
+        menu = opened
+        speech.speak(opened.opening(), true)
+    }
+
+    /**
+     * Khi trình đơn đang mở, cử chỉ được hiểu theo CHỨC NĂNG đã gán: chuyển mục (phần tử kế/trước), thực hiện
+     * (nhấn), đóng (quay lại/dừng đọc/mở lại trình đơn). Giúp người dùng giữ nguyên thói quen cử chỉ của mình.
+     */
+    private fun handleMenuAction(action: GestureAction) {
+        val current = menu ?: return
+        when (action) {
+            GestureAction.NEXT_ELEMENT -> advance(current.next())
+            GestureAction.PREVIOUS_ELEMENT -> advance(current.previous())
+            GestureAction.ACTIVATE -> {
+                val item = current.current
+                if (item == null) {
+                    speech.speak(t(S.MSG_MENU_PICK_FIRST), true)
+                    return
+                }
+                menu = null
+                execute(item)
+            }
+            GestureAction.BACK, GestureAction.STOP_SPEECH, GestureAction.OPEN_GLOBAL_MENU, GestureAction.OPEN_LOCAL_MENU -> {
+                menu = null
+                speech.speak(t(S.MSG_MENU_CLOSED), true)
+            }
+            else -> speech.speak(t(S.MSG_MENU_HINT), true)
+        }
+    }
+
+    private fun advance(next: MenuState) {
+        menu = next
+        speech.speak(next.describeCurrent(), true)
+    }
+
+    private fun execute(item: MenuItem) {
+        item.action?.let { dispatcher.dispatch(it) }
+        item.customActionId?.let { id ->
+            if (!navigator.performCustomAction(id)) speech.speak(t(S.MSG_ACTION_FAILED), true)
+        }
+    }
+
     private fun handleEvent(event: ReaderEvent) {
         when (event.type) {
             AccessibilityEvent.TYPE_VIEW_FOCUSED ->
@@ -120,7 +226,7 @@ internal class ReaderSession(private val service: AccessibilityService) {
             // Khám phá bằng cảm ứng: ngón tay chạm/lướt tới đâu thì chọn và đọc phần tử ở đó.
             // Cũng đặt phần tử hiện tại, nên "chạm hai lần" (ACTIVATE) nhấn đúng phần tử vừa nghe.
             AccessibilityEvent.TYPE_VIEW_HOVER_ENTER ->
-                event.source?.let { source ->
+                if (menu == null) event.source?.let { source ->
                     NodeCollector.findHoverTarget(source)?.let { navigator.focusOn(it) }
                 }
 
@@ -128,14 +234,17 @@ internal class ReaderSession(private val service: AccessibilityService) {
                 event.source?.let { node ->
                     navigator.invalidateCache()
                     navigator.highlight(node)
-                    speech.speak("Đã nhấn, " + navigator.describe(node), false)
+                    speech.speak(t(S.MSG_TAPPED, navigator.describe(node)), false)
                 }
 
             AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> {
+                menu = null // cửa sổ đổi: trình đơn (nhất là của phần tử) đã lỗi thời
                 navigator.reset()
                 val title = event.text.trim()
                 if (title.isNotEmpty()) speech.speak(title, true)
             }
+
+            AccessibilityEvent.TYPE_NOTIFICATION_STATE_CHANGED -> handleNotification(event)
 
             AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED -> {
                 navigator.invalidateCache()
@@ -148,6 +257,24 @@ internal class ReaderSession(private val service: AccessibilityService) {
                 )?.let { speech.speak(it, true) }
             }
         }
+    }
+
+    /** Đọc thông báo mới đã được tóm tắt; bỏ qua thông báo của chính ứng dụng này và khi người dùng tắt. */
+    private fun handleNotification(event: ReaderEvent) {
+        if (!settings.readNotifications) return
+        val pkg = event.packageName ?: return
+        if (pkg == service.packageName) return
+        val summary = notificationSummarizer.summarize(NotificationInfo(pkg, appLabel(pkg), event.texts), event.timeMs)
+        if (summary != null) speech.speak(summary, false)
+    }
+
+    /** Tên hiển thị của ứng dụng; nếu hệ thống không cho tra (package visibility) thì dùng đoạn cuối tên gói. */
+    private fun appLabel(pkg: String): String = try {
+        val pm = service.packageManager
+        val info = pm.getApplicationInfo(pkg, PackageManager.ApplicationInfoFlags.of(0))
+        pm.getApplicationLabel(info).toString()
+    } catch (e: PackageManager.NameNotFoundException) {
+        pkg.substringAfterLast('.')
     }
 
     /** Một lỗi runtime trong một tác vụ không được làm sập luồng xử lý; việc hủy coroutine vẫn được tôn trọng. */
@@ -164,12 +291,14 @@ internal class ReaderSession(private val service: AccessibilityService) {
     private companion object {
         const val TAG = "ReaderSession"
         const val EVENT_BUFFER = 32
+        const val SEARCH_RESUME_DELAY_MS = 500L
         val HANDLED_EVENT_TYPES = setOf(
             AccessibilityEvent.TYPE_VIEW_CLICKED,
             AccessibilityEvent.TYPE_VIEW_FOCUSED,
             AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED,
             AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED,
             AccessibilityEvent.TYPE_VIEW_HOVER_ENTER,
+            AccessibilityEvent.TYPE_NOTIFICATION_STATE_CHANGED,
         )
     }
 }

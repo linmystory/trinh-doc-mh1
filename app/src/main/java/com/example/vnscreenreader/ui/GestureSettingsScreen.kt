@@ -25,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -32,6 +33,8 @@ import com.example.vnscreenreader.gesture.Gesture
 import com.example.vnscreenreader.gesture.GestureAction
 import com.example.vnscreenreader.gesture.GestureMapping
 import com.example.vnscreenreader.gesture.GestureMappingStore
+import androidx.compose.ui.res.stringResource
+import com.example.vnscreenreader.R
 
 @Composable
 fun GestureSettingsScreen() {
@@ -46,23 +49,42 @@ fun GestureSettingsScreen() {
     ) {
         item {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Gán chức năng cho cử chỉ", color = HighContrastYellow, fontSize = 28.sp)
+                Text(stringResource(R.string.gs_title), color = HighContrastYellow, fontSize = 28.sp)
                 Text(
-                    "Chọn một cử chỉ, rồi chọn chức năng trong danh sách. Thay đổi có hiệu lực ngay.",
+                    stringResource(R.string.gs_intro),
                     color = Color.White,
                     fontSize = 18.sp,
                 )
             }
         }
-        items(Gesture.entries.toList(), key = { it.name }) { gesture ->
-            GestureRow(
-                gesture = gesture,
-                action = mapping.actionFor(gesture),
-                onSelected = { selected ->
-                    mapping = mapping.with(gesture, selected)
-                    store.save(mapping)
-                },
-            )
+        Gesture.entries.groupBy { it.fingers }.forEach { (fingers, gestures) ->
+            item(key = "heading_$fingers") {
+                Text(
+                    text = if (fingers == 1) stringResource(R.string.gs_one_finger) else stringResource(R.string.gs_n_fingers, fingers),
+                    color = HighContrastGreen,
+                    fontSize = 22.sp,
+                    modifier = Modifier.semantics { heading() },
+                )
+            }
+            if (fingers > 1 && fingers == 2) {
+                item(key = "note_multi") {
+                    Text(
+                        stringResource(R.string.gs_multi_note),
+                        color = Color.White,
+                        fontSize = 16.sp,
+                    )
+                }
+            }
+            items(gestures, key = { it.name }) { gesture ->
+                GestureRow(
+                    gesture = gesture,
+                    action = mapping.actionFor(gesture),
+                    onSelected = { selected ->
+                        mapping = mapping.with(gesture, selected)
+                        store.save(mapping)
+                    },
+                )
+            }
         }
         item {
             Button(
@@ -76,7 +98,7 @@ fun GestureSettingsScreen() {
                     contentColor = Color.Black,
                 ),
             ) {
-                Text("Khôi phục cài đặt mặc định", fontSize = 20.sp)
+                Text(stringResource(R.string.gs_reset), fontSize = 20.sp)
             }
         }
     }
@@ -89,7 +111,8 @@ private fun GestureRow(
     onSelected: (GestureAction) -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
-    val suffix = if (gesture.isTwoStep) " (hai bước)" else ""
+    val suffix = if (gesture.isTwoStep) " " + stringResource(R.string.gs_two_step) else ""
+    val rowDescription = stringResource(R.string.gs_row_desc, gesture.label, action.label)
 
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(gesture.label + suffix, color = Color.White, fontSize = 20.sp)
@@ -100,8 +123,7 @@ private fun GestureRow(
                     .fillMaxWidth()
                     .heightIn(min = 64.dp)
                     .semantics {
-                        contentDescription =
-                            "${gesture.label}, hiện là ${action.label}. Chạm để đổi chức năng"
+                        contentDescription = rowDescription
                     },
                 border = BorderStroke(2.dp, HighContrastYellow),
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = HighContrastYellow),

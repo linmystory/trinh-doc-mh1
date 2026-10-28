@@ -13,5 +13,6 @@ object HoverPolicy {
         hasLabel(node) || node.isClickable || node.isEditable || node.isCheckable
 
     private fun hasLabel(node: NodeSnapshot): Boolean =
-        !node.text.isNullOrBlank() || !node.contentDescription.isNullOrBlank() || !node.hintText.isNullOrBlank()
+        !node.text.isNullOrBlank() || !node.contentDescription.isNullOrBlank() || !node.hintText.isNullOrBlank() ||
+            !node.labeledByText.isNullOrBlank() || !node.tooltip.isNullOrBlank()
 }

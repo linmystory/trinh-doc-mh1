@@ -2,13 +2,15 @@ package com.example.vnscreenreader.plugin
 
 import android.view.accessibility.AccessibilityNodeInfo
 import com.example.vnscreenreader.node.NodeCollector
+import com.example.vnscreenreader.core.S
+import com.example.vnscreenreader.core.t
 
-/** Tiện ích dựng sẵn: tìm và nhấn nút "Bỏ qua quảng cáo" trên màn hình hiện tại. */
+/** Tiện ích dựng sẵn: tìm và nhấn nút "Bỏ qua" / "Skip" của quảng cáo trên màn hình hiện tại. */
 class SkipAdPlugin : ScreenReaderPlugin {
 
     override val id = ID
-    override val displayName = "Bỏ qua quảng cáo"
-    override val description = "Tìm và nhấn nút Bỏ qua / Skip quảng cáo trên màn hình hiện tại."
+    override val displayName: String get() = t(S.PLUGIN_SKIPAD_NAME)
+    override val description: String get() = t(S.PLUGIN_SKIPAD_DESC)
 
     override fun execute(node: AccessibilityNodeInfo): PluginResult {
         for (keyword in KEYWORDS) {
@@ -16,11 +18,11 @@ class SkipAdPlugin : ScreenReaderPlugin {
                 if (!candidate.isVisibleToUser) continue
                 val target = NodeCollector.findClickableAncestorOrSelf(candidate) ?: continue
                 if (target.performAction(AccessibilityNodeInfo.ACTION_CLICK)) {
-                    return PluginResult(true, "Đã bỏ qua quảng cáo")
+                    return PluginResult(true, t(S.PLUGIN_SKIPAD_DONE))
                 }
             }
         }
-        return PluginResult(false, "Không thấy nút bỏ qua quảng cáo")
+        return PluginResult(false, t(S.PLUGIN_SKIPAD_NONE))
     }
 
     companion object {

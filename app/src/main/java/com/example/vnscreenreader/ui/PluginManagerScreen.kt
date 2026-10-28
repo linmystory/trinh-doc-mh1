@@ -48,6 +48,8 @@ import java.io.IOException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import androidx.compose.ui.res.stringResource
+import com.example.vnscreenreader.R
 
 @Composable
 fun PluginManagerScreen() {
@@ -80,10 +82,9 @@ fun PluginManagerScreen() {
     ) {
         item {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Quản lý tiện ích", color = HighContrastYellow, fontSize = 28.sp)
+                Text(stringResource(R.string.pl_title), color = HighContrastYellow, fontSize = 28.sp)
                 Text(
-                    "Các tiện ích đang bật sẽ chạy khi bạn dùng cử chỉ \"Chạy các tiện ích đã bật\" " +
-                        "(mặc định: vuốt xuống rồi lên).",
+                    stringResource(R.string.pl_intro),
                     color = Color.White,
                     fontSize = 18.sp,
                 )
@@ -108,7 +109,7 @@ fun PluginManagerScreen() {
                     contentColor = Color.Black,
                 ),
             ) {
-                Text("Nạp script từ tệp (.json)", fontSize = 20.sp)
+                Text(stringResource(R.string.pl_load), fontSize = 20.sp)
             }
         }
         item {
@@ -124,24 +125,25 @@ fun PluginManagerScreen() {
     }
 
     pendingDelete?.let { target ->
+        val deletedText = stringResource(R.string.pl_deleted, target.name)
         AlertDialog(
             onDismissRequest = { pendingDelete = null },
-            title = { Text("Xóa tiện ích?") },
-            text = { Text("Tiện ích \"${target.name}\" sẽ bị xóa khỏi thiết bị và không thể hoàn tác.") },
+            title = { Text(stringResource(R.string.pl_delete_q)) },
+            text = { Text(stringResource(R.string.pl_delete_msg, target.name)) },
             confirmButton = {
                 TextButton(
                     onClick = {
                         pendingDelete = null
                         scope.launch {
                             withContext(Dispatchers.IO) { registry.removeScript(target.id) }
-                            status = "Đã xóa tiện ích ${target.name}"
+                            status = deletedText
                             reload()
                         }
                     },
-                ) { Text("Xóa", fontSize = 18.sp) }
+                ) { Text(stringResource(R.string.ui_delete), fontSize = 18.sp) }
             },
             dismissButton = {
-                TextButton(onClick = { pendingDelete = null }) { Text("Hủy", fontSize = 18.sp) }
+                TextButton(onClick = { pendingDelete = null }) { Text(stringResource(R.string.ui_cancel), fontSize = 18.sp) }
             },
         )
     }
@@ -164,7 +166,7 @@ private fun PluginRow(info: PluginInfo, onToggle: (Boolean) -> Unit, onDelete: (
                     Text(info.description, color = Color.LightGray, fontSize = 16.sp)
                 }
                 Text(
-                    if (info.isBuiltIn) "Dựng sẵn" else "Script nạp ngoài",
+                    if (info.isBuiltIn) stringResource(R.string.pl_builtin) else stringResource(R.string.pl_external),
                     color = HighContrastGreen,
                     fontSize = 14.sp,
                 )
@@ -183,7 +185,7 @@ private fun PluginRow(info: PluginInfo, onToggle: (Boolean) -> Unit, onDelete: (
                 border = BorderStroke(2.dp, Color(0xFFFF8A80)),
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFFF8A80)),
             ) {
-                Text("Xóa tiện ích này", fontSize = 18.sp)
+                Text(stringResource(R.string.pl_delete_this), fontSize = 18.sp)
             }
         }
     }
@@ -199,9 +201,9 @@ private fun importScript(context: Context, registry: PluginRegistry, uri: Uri): 
     } catch (e: SecurityException) {
         null
     }
-    val json = raw ?: return "Không đọc được tệp hoặc tệp quá lớn (tối đa 64 KB)"
+    val json = raw ?: return context.getString(R.string.pl_read_failed)
     return registry.installScript(json).fold(
-        onSuccess = { "Đã cài tiện ích: ${it.name}" },
-        onFailure = { "Lỗi: ${it.message ?: "không xác định"}" },
+        onSuccess = { context.getString(R.string.pl_installed, it.name) },
+        onFailure = { context.getString(R.string.pl_error, it.message ?: context.getString(R.string.pl_unknown)) },
     )
 }

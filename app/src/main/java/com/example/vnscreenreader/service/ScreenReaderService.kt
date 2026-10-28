@@ -3,6 +3,7 @@ package com.example.vnscreenreader.service
 import android.accessibilityservice.AccessibilityGestureEvent
 import android.accessibilityservice.AccessibilityService
 import android.content.Intent
+import android.content.res.Configuration
 import android.view.accessibility.AccessibilityEvent
 
 /**
@@ -24,7 +25,7 @@ class ScreenReaderService : AccessibilityService() {
     }
 
     /**
-     * minSdk = 30 nên chỉ cần overload `AccessibilityGestureEvent`; overload `onGesture(Int)` cũ
+     * minSdk = 35 nên chỉ cần overload `AccessibilityGestureEvent`; overload `onGesture(Int)` cũ
      * không bao giờ được hệ thống gọi nữa (bản gốc ghi đè cả hai là mã chết).
      */
     override fun onGesture(gestureEvent: AccessibilityGestureEvent): Boolean =
@@ -32,6 +33,12 @@ class ScreenReaderService : AccessibilityService() {
 
     override fun onInterrupt() {
         session?.interrupt()
+    }
+
+    /** Người dùng đổi ngôn ngữ ứng dụng khi dịch vụ đang chạy: giọng đọc phải đổi theo. */
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        session?.onLocaleChanged()
     }
 
     override fun onUnbind(intent: Intent?): Boolean {

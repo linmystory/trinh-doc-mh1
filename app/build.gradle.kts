@@ -12,13 +12,17 @@ android {
 
     defaultConfig {
         applicationId = "com.example.vnscreenreader"
-        minSdk = 30 // onGesture(AccessibilityGestureEvent) và các API hỗ trợ tiếp cận cần API 30
+        minSdk = 35 // Android 15+: bỏ mọi nhánh tương thích cũ; ngôn ngữ theo ứng dụng có sẵn trong hệ thống
         targetSdk = 36
-        versionCode = 3
-        versionName = "1.2.0"
+        versionCode = 9
+        versionName = "2.3.0"
     }
 
     buildTypes {
+        debug {
+            // Giả lập ngôn ngữ (en-XA chữ dài/có dấu, ar-XB đảo chiều RTL) để soát lỗi vỡ chữ trước khi phát hành.
+            isPseudoLocalesEnabled = true
+        }
         release {
             isMinifyEnabled = true
             isShrinkResources = true
@@ -39,6 +43,11 @@ android {
         compose = true
     }
 
+    // Tự sinh locales_config.xml từ các thư mục values-xx: ngôn ngữ theo ứng dụng trong Cài đặt hệ thống.
+    androidResources {
+        generateLocaleConfig = true
+    }
+
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
@@ -56,6 +65,10 @@ dependencies {
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.foundation)
     implementation(libs.androidx.compose.material3)
+
+    // ML Kit chạy trên máy với mô hình ĐÓNG GÓI SẴN trong APK (không tải thêm, không cần INTERNET).
+    implementation(libs.mlkit.text.recognition)
+    implementation(libs.mlkit.image.labeling)
 
     testImplementation(libs.junit)
     // org.json thật để test bộ phân tích script (android.jar chỉ có bản stub).

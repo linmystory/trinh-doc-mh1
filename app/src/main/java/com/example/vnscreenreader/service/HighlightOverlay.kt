@@ -9,6 +9,8 @@ import android.graphics.Rect
 import android.util.Log
 import android.view.View
 import android.view.WindowManager
+import com.example.vnscreenreader.core.S
+import com.example.vnscreenreader.core.t
 
 /** Khung viền xanh lá quanh phần tử đang chọn, vẽ bằng cửa sổ TYPE_ACCESSIBILITY_OVERLAY. */
 class HighlightOverlay(private val context: Context) {
@@ -28,7 +30,7 @@ class HighlightOverlay(private val context: Context) {
                 WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
                 WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
             PixelFormat.TRANSLUCENT,
-        ).apply { title = OVERLAY_TITLE }
+        ).apply { title = t(S.OVERLAY_TITLE) }
         try {
             windowManager.addView(view, params)
             attached = true
@@ -88,6 +90,5 @@ class HighlightOverlay(private val context: Context) {
 
     private companion object {
         const val TAG = "HighlightOverlay"
-        const val OVERLAY_TITLE = "Khung viền đọc màn hình"
     }
 }

@@ -4,6 +4,8 @@ import android.content.Context
 import android.util.Log
 import android.view.accessibility.AccessibilityNodeInfo
 import androidx.core.content.edit
+import com.example.vnscreenreader.core.S
+import com.example.vnscreenreader.core.t
 
 data class PluginInfo(
     val id: String,
@@ -59,7 +61,7 @@ class PluginRegistry(context: Context) {
                 plugin.execute(root)
             } catch (e: RuntimeException) {
                 Log.w(TAG, "Tiện ích ${plugin.id} gặp lỗi", e)
-                PluginResult(false, "Tiện ích ${plugin.displayName} gặp lỗi")
+                PluginResult(false, t(S.PLUGIN_ERROR, plugin.displayName))
             }
             results += result
             if (result.handled) break

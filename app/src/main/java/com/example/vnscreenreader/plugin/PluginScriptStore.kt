@@ -8,6 +8,8 @@ import java.io.InputStream
 import java.nio.file.AtomicMoveNotSupportedException
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
+import com.example.vnscreenreader.core.S
+import com.example.vnscreenreader.core.t
 
 /**
  * Lưu script trong thư mục riêng của ứng dụng (filesDir/plugin_scripts).
@@ -23,17 +25,17 @@ class PluginScriptStore(private val dir: File) {
      */
     fun install(json: String, reservedIds: Set<String> = emptySet()): Result<ScriptDefinition> {
         if (json.toByteArray(Charsets.UTF_8).size > MAX_BYTES) {
-            return Result.failure(IllegalArgumentException("Tệp quá lớn (tối đa 64 KB)"))
+            return Result.failure(IllegalArgumentException(t(S.STORE_ERR_TOO_LARGE)))
         }
         val definition = ScriptParser.parse(json).getOrElse { return Result.failure(it) }
         if (definition.id in reservedIds) {
-            return Result.failure(IllegalArgumentException("id \"${definition.id}\" trùng với tiện ích dựng sẵn"))
+            return Result.failure(IllegalArgumentException(t(S.STORE_ERR_BUILTIN_ID, definition.id)))
         }
         return try {
             writeAtomically(File(dir, "${definition.id}.json"), json)
             Result.success(definition)
         } catch (e: IOException) {
-            Result.failure(IOException("Không lưu được script"))
+            Result.failure(IOException(t(S.STORE_ERR_SAVE)))
         }
     }
 
@@ -59,7 +61,7 @@ class PluginScriptStore(private val dir: File) {
      * và không làm mất bản cũ.
      */
     private fun writeAtomically(target: File, content: String) {
-        if (!dir.exists() && !dir.mkdirs() && !dir.exists()) throw IOException("Không tạo được thư mục lưu trữ")
+        if (!dir.exists() && !dir.mkdirs() && !dir.exists()) throw IOException(t(S.STORE_ERR_DIR))
         val temp = File.createTempFile("script_", ".tmp", dir)
         try {
             temp.writeText(content, Charsets.UTF_8)

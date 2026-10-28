@@ -174,3 +174,41 @@ class ScriptRuleTest {
         rule()
     }
 }
+
+
+class ScriptExtensionTest {
+    private fun script(rule: String) =
+        """{"id":"x","name":"X","rules":[$rule]}"""
+
+    @Test
+    fun newActions_areParsed() {
+        listOf(
+            "long_click" to RuleAction.LONG_CLICK,
+            "scroll_forward" to RuleAction.SCROLL_FORWARD,
+            "scroll_backward" to RuleAction.SCROLL_BACKWARD,
+        ).forEach { (name, expected) ->
+            val parsed = ScriptParser.parse(script("""{"text":"a","action":"$name"}""")).getOrThrow()
+            assertEquals(expected, parsed.rules.single().action)
+        }
+    }
+
+    @Test
+    fun classNameOnly_isAValidCriterion_andMatches() {
+        val rule = ScriptParser.parse(script("""{"className":"EditText","message":"Đã chọn ô nhập"}""")).getOrThrow().rules.single()
+        assertEquals("Đã chọn ô nhập", rule.message)
+        assertTrue(rule.matches(null, null, null, "android.widget.EditText"))
+        assertTrue(!rule.matches(null, null, null, "android.widget.Button"))
+        assertTrue(!rule.matches(null, null, null, null))
+    }
+
+    @Test
+    fun tooLongMessage_isRejected() {
+        val long = "m".repeat(ScriptParser.MAX_MESSAGE_LENGTH + 1)
+        assertTrue(ScriptParser.parse(script("""{"text":"a","message":"$long"}""")).isFailure)
+    }
+
+    @Test
+    fun unknownAction_isRejected() {
+        assertTrue(ScriptParser.parse(script("""{"text":"a","action":"shell"}""")).isFailure)
+    }
+}

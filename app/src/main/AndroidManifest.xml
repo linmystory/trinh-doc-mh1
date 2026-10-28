@@ -1,5 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!--
+      Ứng dụng KHÔNG dùng mạng. Thư viện ML Kit có thể khai báo INTERNET/ACCESS_NETWORK_STATE
+      (để tải mô hình và gửi telemetry) nên gỡ chúng khỏi manifest sau khi gộp.
+    -->
+    <!-- Rung phản hồi khi chuyển phần tử (quyền loại thường, không cần hỏi người dùng). -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.INTERNET" tools:node="remove" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" tools:node="remove" />
 
     <!-- Cần để TextToSpeech tìm thấy engine TTS trên Android 11+ (package visibility). -->
     <queries>
@@ -9,6 +19,7 @@
     </queries>
 
     <application
+        android:name=".VnApplication"
         android:allowBackup="false"
         android:enableOnBackInvokedCallback="true"
         android:label="@string/app_name"
@@ -23,6 +34,18 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".LabelEditorActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:label="@string/label_editor_title" />
+
+        <activity
+            android:name=".ScreenSearchActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:label="@string/search_title" />
 
         <service
             android:name=".service.ScreenReaderService"

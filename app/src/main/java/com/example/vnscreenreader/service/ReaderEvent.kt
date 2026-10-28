@@ -20,6 +20,8 @@ class ReaderEvent(
     val isPassword: Boolean,
     val source: AccessibilityNodeInfo?,
     val timeMs: Long,
+    /** Từng đoạn chữ riêng của sự kiện (thông báo: tiêu đề, nội dung...). */
+    val texts: List<String> = emptyList(),
 ) {
     fun dedupKey(): String =
         "$type|${source?.viewIdResourceName}|$text|$fromIndex|$addedCount|$removedCount"
@@ -40,6 +42,7 @@ class ReaderEvent(
                 isPassword = event.isPassword,
                 source = event.source,
                 timeMs = event.eventTime,
+                texts = event.text.map { it.toString() },
             )
         }
     }

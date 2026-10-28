@@ -42,7 +42,8 @@ class GestureAnalyzerTest {
     fun twoStepFlag_isConsistentWithNaming_andReadme() {
         Gesture.entries.forEach { assertEquals(it.name, it.name.contains("_THEN_"), it.isTwoStep) }
         assertEquals(12, Gesture.entries.count { it.isTwoStep })
-        assertEquals(17, Gesture.entries.size)
+        assertEquals(17, Gesture.entries.count { it.fingers == 1 })
+        assertEquals(33, Gesture.entries.size)
     }
 
     @Test
@@ -57,7 +58,9 @@ class GestureMappingTest {
     fun defaults_coverEveryGesture_andMatchSpec() {
         val mapping = GestureMapping()
         assertEquals(Gesture.entries.toSet(), mapping.toMap().keys)
-        assertEquals(GestureAction.NOTIFICATIONS, mapping.actionFor(Gesture.DOWN_THEN_RIGHT))
+        assertEquals(GestureAction.OPEN_LOCAL_MENU, mapping.actionFor(Gesture.DOWN_THEN_RIGHT))
+        assertEquals(GestureAction.OPEN_GLOBAL_MENU, mapping.actionFor(Gesture.UP_THEN_RIGHT))
+        assertEquals(GestureAction.NOTIFICATIONS, mapping.actionFor(Gesture.RIGHT_THEN_DOWN))
         assertEquals(GestureAction.BACK, mapping.actionFor(Gesture.UP_THEN_LEFT))
         assertEquals(GestureAction.NEXT_ELEMENT, mapping.actionFor(Gesture.SWIPE_RIGHT))
         assertEquals(GestureAction.NONE, mapping.actionFor(Gesture.LEFT_THEN_UP))
@@ -90,5 +93,37 @@ class GestureMappingTest {
         val parsed = GestureMapping.parse("SWIPE_UP=HOME;BOGUS=BACK;SWIPE_DOWN=NOT_AN_ACTION;;x;a=b=c")
         assertEquals(GestureAction.HOME, parsed.actionFor(Gesture.SWIPE_UP))
         assertEquals(GestureAction.SCROLL_BACKWARD, parsed.actionFor(Gesture.SWIPE_DOWN))
+    }
+}
+
+
+class MultiFingerGestureTest {
+    @Test
+    fun multiFingerIds_areRecognized() {
+        assertEquals(Gesture.TWO_FINGER_TAP, GestureAnalyzer.analyze(AccessibilityService.GESTURE_2_FINGER_SINGLE_TAP))
+        assertEquals(Gesture.THREE_FINGER_SWIPE_UP, GestureAnalyzer.analyze(AccessibilityService.GESTURE_3_FINGER_SWIPE_UP))
+        assertEquals(Gesture.FOUR_FINGER_DOUBLE_TAP, GestureAnalyzer.analyze(AccessibilityService.GESTURE_4_FINGER_DOUBLE_TAP))
+    }
+
+    @Test
+    fun fingerCount_matchesNaming() {
+        Gesture.entries.filter { it.fingers > 1 }.forEach {
+            val prefix = when (it.fingers) { 2 -> "TWO_"; 3 -> "THREE_"; else -> "FOUR_" }
+            assertTrue(it.name, it.name.startsWith(prefix))
+        }
+    }
+
+    @Test
+    fun everyMultiFingerGesture_hasADefaultExceptRarelyUsed() {
+        val mapping = GestureMapping()
+        assertEquals(GestureAction.OPEN_GLOBAL_MENU, mapping.actionFor(Gesture.THREE_FINGER_TAP))
+        assertEquals(GestureAction.READ_FROM_TOP, mapping.actionFor(Gesture.THREE_FINGER_SWIPE_UP))
+        assertEquals(GestureAction.NONE, mapping.actionFor(Gesture.TWO_FINGER_TRIPLE_TAP))
+    }
+
+    @Test
+    fun menuGestures_defaultIsReachable() {
+        val mapped = GestureMapping().toMap().values
+        assertTrue(GestureAction.OPEN_GLOBAL_MENU in mapped && GestureAction.OPEN_LOCAL_MENU in mapped)
     }
 }
