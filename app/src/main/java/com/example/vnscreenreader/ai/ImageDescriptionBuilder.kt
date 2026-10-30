@@ -1,12 +1,12 @@
 package com.example.vnscreenreader.ai
 
 import com.example.vnscreenreader.core.S
-import com.example.vnscreenreader.core.Texts
+import com.example.vnscreenreader.core.Dictionaries
 import com.example.vnscreenreader.core.t
 
 /**
  * Biến nhãn tiếng Anh của bộ phân loại ảnh ML Kit (chạy offline) thành câu mô tả. Từ điển dịch hiện chỉ có
- * tiếng Việt; ngôn ngữ khác đọc nhãn tiếng Anh gốc trong câu đã dịch.
+ * tiếng Việt ([com.example.vnscreenreader.core.VietnameseDictionary]); ngôn ngữ khác đọc nhãn tiếng Anh gốc.
  * Mô hình chỉ cho biết "có gì trong ảnh" (không viết thành câu như AI sinh văn bản), nên câu luôn
  * dùng lời dè dặt "có thể" để không khẳng định sai với người không nhìn được ảnh.
  */
@@ -23,12 +23,8 @@ object ImageDescriptionBuilder {
         val confident = labels.filter { it.confidence >= minConfidence }.sortedByDescending { it.confidence }
         if (confident.isEmpty()) return t(S.IMG_NONE)
 
-        if (Texts.provider.language != "vi") {
-            // Chưa có từ điển cho ngôn ngữ này: đọc nhãn gốc (tiếng Anh) trong câu đã được dịch.
-            val raw = confident.map { it.text.trim() }.distinct().take(maxLabels)
-            return t(S.IMG_MAY_BE, raw.joinToString(", "))
-        }
-        val translated = confident.mapNotNull { LabelTranslator.toVietnamese(it.text) }.distinct().take(maxLabels)
+        val dictionary = Dictionaries.current()
+        val translated = confident.mapNotNull { dictionary.imageLabel(it.text) }.distinct().take(maxLabels)
         if (translated.isEmpty()) {
             return t(S.IMG_UNTRANSLATED, confident.take(maxLabels).joinToString(", ") { it.text })
         }

@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.AlertDialog
@@ -44,6 +46,7 @@ import androidx.compose.ui.unit.sp
 import com.example.vnscreenreader.plugin.PluginInfo
 import com.example.vnscreenreader.plugin.PluginRegistry
 import com.example.vnscreenreader.plugin.PluginScriptStore
+import com.example.vnscreenreader.plugin.ScriptParser
 import java.io.IOException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -58,6 +61,8 @@ fun PluginManagerScreen() {
     var plugins by remember { mutableStateOf<List<PluginInfo>>(emptyList()) }
     var status by remember { mutableStateOf<String?>(null) }
     var pendingDelete by remember { mutableStateOf<PluginInfo?>(null) }
+    // Script không khai báo "packages" sẽ chạy ở MỌI ứng dụng: phải được người dùng xác nhận trước khi cài.
+    var pendingAllApps by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
 
     suspend fun reload() {
@@ -69,8 +74,15 @@ fun PluginManagerScreen() {
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) {
             scope.launch {
-                status = withContext(Dispatchers.IO) { importScript(context, registry, uri) }
-                reload()
+                val json = withContext(Dispatchers.IO) { readScript(context, uri) }
+                if (json == null) {
+                    status = context.getString(R.string.pl_read_failed)
+                } else if (ScriptParser.parse(json).getOrNull()?.packages?.isEmpty() == true) {
+                    pendingAllApps = json
+                } else {
+                    status = withContext(Dispatchers.IO) { installScript(context, registry, json) }
+                    reload()
+                }
             }
         }
     }
@@ -124,12 +136,34 @@ fun PluginManagerScreen() {
         }
     }
 
+    pendingAllApps?.let { json ->
+        AlertDialog(
+            onDismissRequest = { pendingAllApps = null },
+            title = { Text(stringResource(R.string.pl_allapps_title)) },
+            text = { Column(Modifier.verticalScroll(rememberScrollState())) { Text(stringResource(R.string.pl_allapps_msg)) } },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        pendingAllApps = null
+                        scope.launch {
+                            status = withContext(Dispatchers.IO) { installScript(context, registry, json) }
+                            reload()
+                        }
+                    },
+                ) { Text(stringResource(R.string.pl_allapps_confirm), fontSize = 18.sp) }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingAllApps = null }) { Text(stringResource(R.string.ui_cancel), fontSize = 18.sp) }
+            },
+        )
+    }
+
     pendingDelete?.let { target ->
         val deletedText = stringResource(R.string.pl_deleted, target.name)
         AlertDialog(
             onDismissRequest = { pendingDelete = null },
             title = { Text(stringResource(R.string.pl_delete_q)) },
-            text = { Text(stringResource(R.string.pl_delete_msg, target.name)) },
+            text = { Column(Modifier.verticalScroll(rememberScrollState())) { Text(stringResource(R.string.pl_delete_msg, target.name)) } },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -174,7 +208,7 @@ private fun PluginRow(info: PluginInfo, onToggle: (Boolean) -> Unit, onDelete: (
             Switch(
                 checked = info.enabled,
                 onCheckedChange = null,
-                modifier = Modifier.padding(end = 12.dp).scale(1.4f),
+                modifier = Modifier.padding(horizontal = 16.dp).scale(1.4f), // chừa chỗ vì scale không đổi kích thước layout
                 colors = highContrastSwitchColors(),
             )
         }
@@ -191,19 +225,18 @@ private fun PluginRow(info: PluginInfo, onToggle: (Boolean) -> Unit, onDelete: (
     }
 }
 
-private fun importScript(context: Context, registry: PluginRegistry, uri: Uri): String {
-    val raw: String? = try {
-        context.contentResolver.openInputStream(uri)?.use {
-            PluginScriptStore.readLimited(it, PluginScriptStore.MAX_BYTES)
-        }
-    } catch (e: IOException) {
-        null
-    } catch (e: SecurityException) {
-        null
+private fun readScript(context: Context, uri: Uri): String? = try {
+    context.contentResolver.openInputStream(uri)?.use {
+        PluginScriptStore.readLimited(it, PluginScriptStore.MAX_BYTES)
     }
-    val json = raw ?: return context.getString(R.string.pl_read_failed)
-    return registry.installScript(json).fold(
+} catch (e: IOException) {
+    null
+} catch (e: SecurityException) {
+    null
+}
+
+private fun installScript(context: Context, registry: PluginRegistry, json: String): String =
+    registry.installScript(json).fold(
         onSuccess = { context.getString(R.string.pl_installed, it.name) },
         onFailure = { context.getString(R.string.pl_error, it.message ?: context.getString(R.string.pl_unknown)) },
     )
-}

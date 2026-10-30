@@ -8,8 +8,19 @@ import com.example.vnscreenreader.core.TextProvider
 /** Lấy chuỗi từ tài nguyên Android theo ngôn ngữ hiện hành của ứng dụng. SINH TỰ ĐỘNG. */
 class ResourceTexts(private val context: Context) : TextProvider {
     override val language: String get() = context.resources.configuration.locales[0].language
-    override fun get(key: S, args: Array<out Any>): String =
-        if (args.isEmpty()) context.getString(idOf(key)) else context.getString(idOf(key), *args)
+    override fun get(key: S, args: Array<out Any>): String = when (key) {
+        S.NOTIF_BURST -> plural(R.plurals.notif_burst, 2, args)
+        S.MENU_OPENING -> plural(R.plurals.menu_opening, 2, args)
+        S.SCRIPT_ERR_NAME -> plural(R.plurals.script_err_name, 1, args)
+        S.SCRIPT_ERR_PACKAGES -> plural(R.plurals.script_err_packages, 1, args)
+        S.SCRIPT_ERR_MESSAGE -> plural(R.plurals.script_err_message, 1, args)
+        S.SCRIPT_ERR_PATTERN -> plural(R.plurals.script_err_pattern, 2, args)
+        S.GS_N_FINGERS -> plural(R.plurals.gs_n_fingers, 1, args)
+        else -> if (args.isEmpty()) context.getString(idOf(key)) else context.getString(idOf(key), *args)
+    }
+
+    private fun plural(id: Int, quantityArg: Int, args: Array<out Any>): String =
+        context.resources.getQuantityString(id, (args[quantityArg - 1] as Number).toInt(), *args)
 
     private fun idOf(key: S): Int = when (key) {
         S.APP_NAME -> R.string.app_name
@@ -113,7 +124,6 @@ class ResourceTexts(private val context: Context) : TextProvider {
         S.SHOT_NO_ACCESS -> R.string.shot_no_access
         S.SHOT_FAILED -> R.string.shot_failed
         S.NOTIF_SINGLE -> R.string.notif_single
-        S.NOTIF_BURST -> R.string.notif_burst
         S.NOTIF_APP_FALLBACK -> R.string.notif_app_fallback
         S.NOTIF_LINK -> R.string.notif_link
         S.IMG_NONE -> R.string.img_none
@@ -125,7 +135,6 @@ class ResourceTexts(private val context: Context) : TextProvider {
         S.FB_OFF -> R.string.fb_off
         S.MENU_GLOBAL_TITLE -> R.string.menu_global_title
         S.MENU_LOCAL_TITLE -> R.string.menu_local_title
-        S.MENU_OPENING -> R.string.menu_opening
         S.MENU_POSITION -> R.string.menu_position
         S.MENU_ACTIVATE -> R.string.menu_activate
         S.MENU_LONG_CLICK -> R.string.menu_long_click
@@ -206,14 +215,10 @@ class ResourceTexts(private val context: Context) : TextProvider {
         S.SCRIPT_ERR_DEPTH -> R.string.script_err_depth
         S.SCRIPT_ERR_JSON -> R.string.script_err_json
         S.SCRIPT_ERR_ID -> R.string.script_err_id
-        S.SCRIPT_ERR_NAME -> R.string.script_err_name
-        S.SCRIPT_ERR_PACKAGES -> R.string.script_err_packages
         S.SCRIPT_ERR_NO_RULES -> R.string.script_err_no_rules
         S.SCRIPT_ERR_RULES_COUNT -> R.string.script_err_rules_count
         S.SCRIPT_ERR_MATCH -> R.string.script_err_match
         S.SCRIPT_ERR_ACTION -> R.string.script_err_action
-        S.SCRIPT_ERR_MESSAGE -> R.string.script_err_message
-        S.SCRIPT_ERR_PATTERN -> R.string.script_err_pattern
         S.STORE_ERR_TOO_LARGE -> R.string.store_err_too_large
         S.STORE_ERR_BUILTIN_ID -> R.string.store_err_builtin_id
         S.STORE_ERR_SAVE -> R.string.store_err_save
@@ -273,8 +278,6 @@ class ResourceTexts(private val context: Context) : TextProvider {
         S.VO_LANG_UNAVAILABLE -> R.string.vo_lang_unavailable
         S.FBK_TITLE -> R.string.fbk_title
         S.FBK_INTRO -> R.string.fbk_intro
-        S.FBK_MODE_HEAD -> R.string.fbk_mode_head
-        S.FBK_EACH_HEAD -> R.string.fbk_each_head
         S.FBK_HAPTIC_TITLE -> R.string.fbk_haptic_title
         S.FBK_HAPTIC_DESC -> R.string.fbk_haptic_desc
         S.FBK_SOUND_TITLE -> R.string.fbk_sound_title
@@ -322,7 +325,6 @@ class ResourceTexts(private val context: Context) : TextProvider {
         S.GS_TITLE -> R.string.gs_title
         S.GS_INTRO -> R.string.gs_intro
         S.GS_ONE_FINGER -> R.string.gs_one_finger
-        S.GS_N_FINGERS -> R.string.gs_n_fingers
         S.GS_MULTI_NOTE -> R.string.gs_multi_note
         S.GS_RESET -> R.string.gs_reset
         S.GS_TWO_STEP -> R.string.gs_two_step
@@ -346,5 +348,71 @@ class ResourceTexts(private val context: Context) : TextProvider {
         S.LE_CLEAR -> R.string.le_clear
         S.SS_FIELD -> R.string.ss_field
         S.SS_FIND -> R.string.ss_find
+        S.GRAN_PARAGRAPH -> R.string.gran_paragraph
+        S.GRAN_SENTENCE -> R.string.gran_sentence
+        S.GRAN_WORD -> R.string.gran_word
+        S.GRAN_CHARACTER -> R.string.gran_character
+        S.GA_UNIT_NEXT -> R.string.ga_unit_next
+        S.GA_UNIT_PREV -> R.string.ga_unit_prev
+        S.GA_CYCLE_GRANULARITY -> R.string.ga_cycle_granularity
+        S.GA_COPY_UNIT -> R.string.ga_copy_unit
+        S.GA_PASTE -> R.string.ga_paste
+        S.GA_CUT -> R.string.ga_cut
+        S.GA_SELECT_ALL -> R.string.ga_select_all
+        S.MENU_UNIT_NEXT -> R.string.menu_unit_next
+        S.MENU_UNIT_PREV -> R.string.menu_unit_prev
+        S.MENU_GRANULARITY -> R.string.menu_granularity
+        S.MENU_COPY_UNIT -> R.string.menu_copy_unit
+        S.MENU_PASTE -> R.string.menu_paste
+        S.MENU_CUT -> R.string.menu_cut
+        S.MENU_SELECT_ALL -> R.string.menu_select_all
+        S.MSG_GRANULARITY -> R.string.msg_granularity
+        S.MSG_UNIT_END -> R.string.msg_unit_end
+        S.MSG_UNIT_START -> R.string.msg_unit_start
+        S.MSG_UNIT_COPIED -> R.string.msg_unit_copied
+        S.MSG_PASTED -> R.string.msg_pasted
+        S.MSG_CUT_DONE -> R.string.msg_cut_done
+        S.MSG_SELECTED_ALL -> R.string.msg_selected_all
+        S.MSG_NOT_EDITABLE -> R.string.msg_not_editable
+        S.RD_PW_TITLE -> R.string.rd_pw_title
+        S.RD_PW_DESC -> R.string.rd_pw_desc
+        S.RD_HINT_TITLE -> R.string.rd_hint_title
+        S.RD_HINT_DESC -> R.string.rd_hint_desc
+        S.GA_OCR_FOCUSED -> R.string.ga_ocr_focused
+        S.MENU_OCR_FOCUSED -> R.string.menu_ocr_focused
+        S.MSG_ELEMENT_CHANGED -> R.string.msg_element_changed
+        S.PL_ALLAPPS_TITLE -> R.string.pl_allapps_title
+        S.PL_ALLAPPS_MSG -> R.string.pl_allapps_msg
+        S.PL_ALLAPPS_CONFIRM -> R.string.pl_allapps_confirm
+        S.MENU_MORE_TITLE -> R.string.menu_more_title
+        S.MENU_EDIT_TITLE -> R.string.menu_edit_title
+        S.MENU_BACK -> R.string.menu_back
+        S.GA_CURSOR_START -> R.string.ga_cursor_start
+        S.GA_CURSOR_END -> R.string.ga_cursor_end
+        S.GA_SELECT_TO_START -> R.string.ga_select_to_start
+        S.GA_SELECT_TO_END -> R.string.ga_select_to_end
+        S.MSG_CURSOR_START -> R.string.msg_cursor_start
+        S.MSG_CURSOR_END -> R.string.msg_cursor_end
+        S.MSG_SELECTED_TO_START -> R.string.msg_selected_to_start
+        S.MSG_SELECTED_TO_END -> R.string.msg_selected_to_end
+        S.GT_UNKNOWN -> R.string.gt_unknown
+        S.SEC_GESTTEST -> R.string.sec_gesttest
+        S.SEC_GESTTEST_SUM -> R.string.sec_gesttest_sum
+        S.GT_INTRO -> R.string.gt_intro
+        S.GT_START -> R.string.gt_start
+        S.GT_STOP -> R.string.gt_stop
+        S.GT_ACTIVE -> R.string.gt_active
+        S.GT_INACTIVE -> R.string.gt_inactive
+        S.GT_STOPPED -> R.string.gt_stopped
+        S.MN_GESTURE_LINE -> R.string.mn_gesture_line
+        S.MN_GESTURE_NONE -> R.string.mn_gesture_none
+        S.OCR_UNSUPPORTED -> R.string.ocr_unsupported
+        S.OCR_MAYBE_WRONG -> R.string.ocr_maybe_wrong
+        S.OCR_AUTO_TEXT -> R.string.ocr_auto_text
+        S.RD_AUTOOCR_TITLE -> R.string.rd_autoocr_title
+        S.RD_AUTOOCR_DESC -> R.string.rd_autoocr_desc
+        S.G_DOUBLE_HOLD -> R.string.g_double_hold
+        S.MSG_LONG_CLICKED -> R.string.msg_long_clicked
+        else -> error("Khóa plurals đã xử lý ở get(): $key")
     }
 }

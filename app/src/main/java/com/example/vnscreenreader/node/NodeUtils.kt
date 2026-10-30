@@ -1,10 +1,14 @@
 package com.example.vnscreenreader.node
 
+import android.graphics.Rect
 import android.os.Build
 import android.view.accessibility.AccessibilityNodeInfo
 import com.example.vnscreenreader.core.CheckedState
 import com.example.vnscreenreader.core.HoverPolicy
 import com.example.vnscreenreader.core.NodeSnapshot
+import com.example.vnscreenreader.core.ScrollCandidate
+import com.example.vnscreenreader.core.ScrollOrdering
+import com.example.vnscreenreader.core.TraversalBudget
 
 fun AccessibilityNodeInfo.toSnapshot(): NodeSnapshot = NodeSnapshot(
     text = text?.toString(),
@@ -68,7 +72,11 @@ private fun AccessibilityNodeInfo.readCheckedState(): CheckedState {
 /** Duyệt cây giao diện (có giới hạn) và các tiện ích tìm phần tử. Chỉ gọi từ luồng nền. */
 object NodeCollector {
 
-    const val MAX_NODES = 1000
+    /**
+     * Số nút HIỂN THỊ tối đa mỗi lần duyệt (xem [TraversalBudget]). Chọn 1.500: đủ cho màn hình dài thực tế
+     * (danh sách vài trăm dòng, mỗi dòng 3–5 nút) mà vẫn giới hạn thời gian duyệt trên máy yếu.
+     */
+    const val MAX_NODES = TraversalBudget.DEFAULT_MAX_VISIBLE
     const val MAX_ANCESTOR_DEPTH = 12
     private const val MAX_HOVER_ANCESTOR_DEPTH = 4
     private const val MERGE_MAX_PARTS = 6
@@ -79,10 +87,10 @@ object NodeCollector {
         val result = ArrayList<AccessibilityNodeInfo>()
         val stack = ArrayDeque<AccessibilityNodeInfo>()
         stack.addLast(root)
-        var visited = 0
-        while (stack.isNotEmpty() && visited < maxNodes) {
+        val budget = TraversalBudget(maxNodes)
+        while (stack.isNotEmpty() && budget.canContinue) {
             val node = stack.removeLast()
-            visited++
+            budget.record(node.isVisibleToUser)
             if (!node.isVisibleToUser) continue
             result += node
             for (i in node.childCount - 1 downTo 0) {
@@ -107,10 +115,10 @@ object NodeCollector {
         val result = ArrayList<AccessibilityNodeInfo>()
         val stack = ArrayDeque<Pair<AccessibilityNodeInfo, Boolean>>() // (nút, đã được cha gộp nhãn)
         stack.addLast(root to false)
-        var visited = 0
-        while (stack.isNotEmpty() && visited < maxNodes) {
+        val budget = TraversalBudget(maxNodes)
+        while (stack.isNotEmpty() && budget.canContinue) {
             val (node, consumed) = stack.removeLast()
-            visited++
+            budget.record(node.isVisibleToUser)
             if (!node.isVisibleToUser) continue
 
             val own = hasOwnLabel(node)
@@ -199,15 +207,40 @@ object NodeCollector {
         return null
     }
 
-    /** Tìm vùng cuộn gần phần tử đang chọn nhất, nếu không có thì lấy vùng cuộn đầu tiên trên màn hình. */
-    fun findScrollable(from: AccessibilityNodeInfo?, root: AccessibilityNodeInfo): AccessibilityNodeInfo? {
+    /**
+     * Mọi vùng cuộn đang hiển thị, đã sắp theo [ScrollOrdering] và chỉ giữ vùng còn hỗ trợ hướng cuộn yêu cầu
+     * (vùng đã ở cuối không còn hành động tương ứng trong actionList).
+     */
+    fun scrollTargets(from: AccessibilityNodeInfo?, root: AccessibilityNodeInfo, forward: Boolean): List<AccessibilityNodeInfo> {
+        val nodes = ArrayList<AccessibilityNodeInfo>()
+        val candidates = ArrayList<ScrollCandidate>()
+        fun add(node: AccessibilityNodeInfo, rank: Int?) {
+            if (nodes.any { it == node }) return
+            node.refresh()
+            if (!node.isScrollable || !node.isVisibleToUser) return
+            val bounds = Rect().also { node.getBoundsInScreen(it) }
+            nodes += node
+            candidates += ScrollCandidate(nodes.lastIndex, rank, bounds.width().toLong() * bounds.height())
+        }
         var current = from
         var depth = 0
         while (current != null && depth < MAX_ANCESTOR_DEPTH) {
-            if (current.isScrollable) return current
+            if (current.isScrollable) add(current, depth)
             current = current.parent
             depth++
         }
-        return traverse(root).firstOrNull { it.isScrollable }
+        traverse(root).filter { it.isScrollable }.forEach { add(it, null) }
+
+        val wanted = scrollActions(forward)
+        return ScrollOrdering.order(candidates).map { nodes[it.id] }
+            .filter { node -> node.actionList.any { a -> a.id in wanted } }
     }
+
+    /** Hai hành động cuộn tương đương theo hướng (ưu tiên FORWARD/BACKWARD rồi tới DOWN/UP). */
+    fun scrollActions(forward: Boolean): IntArray =
+        if (forward) {
+            intArrayOf(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD, AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_DOWN.id)
+        } else {
+            intArrayOf(AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD, AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_UP.id)
+        }
 }

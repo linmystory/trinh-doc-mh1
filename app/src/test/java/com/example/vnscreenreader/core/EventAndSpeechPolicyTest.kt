@@ -87,3 +87,26 @@ class EventDeduplicatorLruTest {
         assertTrue(dedup.shouldProcess("a", 3)) // "a" đã bị quên
     }
 }
+
+class PasswordAndHintsTest {
+    @org.junit.Test
+    fun passwordCharsHiddenByDefaultAndSpokenWhenEnabled() {
+        val off = SpeechTextBuilder.describeTextChange("abc", 2, 1, 0, isPassword = true)
+        org.junit.Assert.assertEquals("Đã nhập ký tự", off)
+        val on = SpeechTextBuilder.describeTextChange("abc", 2, 1, 0, isPassword = true, speakPasswordChars = true)
+        org.junit.Assert.assertEquals("c", on)
+        val masked = SpeechTextBuilder.describeTextChange("•••", 2, 1, 0, isPassword = true, speakPasswordChars = true)
+        org.junit.Assert.assertEquals("Đã nhập ký tự", masked)
+    }
+
+    @org.junit.Test
+    fun menuHintsCanBeSwitchedOff() {
+        val state = com.example.vnscreenreader.menu.MenuState.open(
+            com.example.vnscreenreader.menu.MenuKind.GLOBAL,
+            com.example.vnscreenreader.menu.Menus.global(),
+        ).next()
+        org.junit.Assert.assertTrue(state.describeCurrent(hints = true).contains("1 trên"))
+        org.junit.Assert.assertEquals(state.current!!.label, state.describeCurrent(hints = false))
+        org.junit.Assert.assertEquals("Trình đơn chung, ${state.items.size} mục.", state.opening())
+    }
+}

@@ -8,11 +8,13 @@ import android.content.Intent
 import android.os.BatteryManager
 import com.example.vnscreenreader.core.SettingsRepository
 import com.example.vnscreenreader.core.SpeechFormats
+import com.example.vnscreenreader.core.UnitMove
 import com.example.vnscreenreader.menu.MenuKind
 import java.time.LocalTime
 import com.example.vnscreenreader.core.SpeechEngine
 import com.example.vnscreenreader.gesture.GestureAction
 import com.example.vnscreenreader.plugin.PluginRegistry
+import com.example.vnscreenreader.core.EditOp
 import com.example.vnscreenreader.core.S
 import com.example.vnscreenreader.core.t
 
@@ -45,6 +47,7 @@ internal class ActionDispatcher(
             GestureAction.STOP_SPEECH -> speech.stop()
             GestureAction.OCR_SCREEN -> ai.ocrScreen()
             GestureAction.DESCRIBE_FOCUSED -> ai.describeFocused()
+            GestureAction.OCR_FOCUSED -> ai.ocrFocused()
             GestureAction.LABEL_FOCUSED -> editLabel()
             GestureAction.OPEN_GLOBAL_MENU -> openMenu(MenuKind.GLOBAL)
             GestureAction.OPEN_LOCAL_MENU -> openMenu(MenuKind.LOCAL)
@@ -61,6 +64,17 @@ internal class ActionDispatcher(
                 onFailure = { speech.speak(it.message ?: t(S.MSG_CANNOT_SPELL), true) },
             )
             GestureAction.LONG_CLICK_FOCUSED -> navigator.longClick()
+            GestureAction.UNIT_NEXT -> moveUnit(forward = true)
+            GestureAction.UNIT_PREVIOUS -> moveUnit(forward = false)
+            GestureAction.CYCLE_GRANULARITY -> speech.speak(t(S.MSG_GRANULARITY, navigator.cycleGranularity().label), true)
+            GestureAction.COPY_UNIT -> copyUnit()
+            GestureAction.PASTE_FOCUSED -> editText(EditOp.PASTE)
+            GestureAction.CUT_FOCUSED -> editText(EditOp.CUT)
+            GestureAction.SELECT_ALL_FOCUSED -> editText(EditOp.SELECT_ALL)
+            GestureAction.CURSOR_START -> editText(EditOp.CURSOR_START)
+            GestureAction.CURSOR_END -> editText(EditOp.CURSOR_END)
+            GestureAction.SELECT_TO_START -> editText(EditOp.SELECT_TO_START)
+            GestureAction.SELECT_TO_END -> editText(EditOp.SELECT_TO_END)
         }
     }
 
@@ -123,17 +137,61 @@ internal class ActionDispatcher(
         speech.speak(text, true)
     }
 
-    private fun copyFocused() {
-        navigator.focusedText().fold(
-            onSuccess = { text ->
-                val clipboard = service.getSystemService(ClipboardManager::class.java)
-                if (clipboard == null) {
-                    speech.speak(t(S.MSG_CLIPBOARD_UNAVAILABLE), true)
-                } else {
-                    clipboard.setPrimaryClip(ClipData.newPlainText("", text))
-                    speech.speak(t(S.MSG_COPIED), true)
+    private fun moveUnit(forward: Boolean) {
+        val text = when (val move = navigator.moveUnit(forward)) {
+            is UnitMove.At -> if (move.text.isBlank()) SpeechFormats.spell(move.text) else move.text
+            UnitMove.End -> t(S.MSG_UNIT_END)
+            UnitMove.Start -> t(S.MSG_UNIT_START)
+            null -> t(S.MSG_NO_TEXT)
+        }
+        speech.speak(text, true)
+    }
+
+    /** Sao chép đơn vị đang đọc; chưa chọn đơn vị nào thì sao chép cả phần tử (giống nút "Sao chép chữ"). */
+    private fun copyUnit() {
+        val unit = navigator.currentUnit()
+        if (unit == null) {
+            copyFocused()
+            return
+        }
+        if (putOnClipboard(unit)) speech.speak(t(S.MSG_UNIT_COPIED, unit), true)
+    }
+
+    private fun editText(op: EditOp) {
+        val result = navigator.editText(op)
+        speech.speak(
+            when (result) {
+                FocusNavigator.EditResult.DONE -> when (op) {
+                    EditOp.PASTE -> t(S.MSG_PASTED)
+                    EditOp.CUT -> t(S.MSG_CUT_DONE)
+                    EditOp.SELECT_ALL -> t(S.MSG_SELECTED_ALL)
+                    EditOp.CURSOR_START -> t(S.MSG_CURSOR_START)
+                    EditOp.CURSOR_END -> t(S.MSG_CURSOR_END)
+                    EditOp.SELECT_TO_START -> t(S.MSG_SELECTED_TO_START)
+                    EditOp.SELECT_TO_END -> t(S.MSG_SELECTED_TO_END)
                 }
+                FocusNavigator.EditResult.NO_SELECTION -> t(S.MSG_NOTHING_SELECTED)
+                FocusNavigator.EditResult.NOT_EDITABLE -> t(S.MSG_NOT_EDITABLE)
+                FocusNavigator.EditResult.PASSWORD -> t(S.MSG_PASSWORD_NO_ACTION)
+                FocusNavigator.EditResult.FAILED -> t(S.MSG_ACTION_FAILED)
             },
+            true,
+        )
+    }
+
+    private fun putOnClipboard(text: String): Boolean {
+        val clipboard = service.getSystemService(ClipboardManager::class.java)
+        if (clipboard == null) {
+            speech.speak(t(S.MSG_CLIPBOARD_UNAVAILABLE), true)
+            return false
+        }
+        clipboard.setPrimaryClip(ClipData.newPlainText("", text))
+        return true
+    }
+
+    private fun copyFocused() {
+        navigator.focusedText(preferSelection = true).fold(
+            onSuccess = { text -> if (putOnClipboard(text)) speech.speak(t(S.MSG_COPIED), true) },
             onFailure = { speech.speak(it.message ?: t(S.MSG_CANNOT_COPY), true) },
         )
     }

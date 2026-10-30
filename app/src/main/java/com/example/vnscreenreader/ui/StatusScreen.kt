@@ -72,7 +72,7 @@ fun StatusScreen() {
             Switch(
                 checked = serviceEnabled,
                 onCheckedChange = null,
-                modifier = Modifier.padding(end = 16.dp).scale(1.6f),
+                modifier = Modifier.padding(horizontal = 20.dp).scale(1.6f), // chừa chỗ vì scale không đổi kích thước layout
                 colors = highContrastSwitchColors(),
             )
         }

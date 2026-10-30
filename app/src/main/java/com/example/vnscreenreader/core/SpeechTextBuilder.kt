@@ -36,6 +36,8 @@ data class NodeSnapshot(
 
 object SpeechTextBuilder {
 
+    private const val MASK_CHARS = "•*●·∗"
+
     /** Tạo câu đọc cho một phần tử: nhãn, vai trò và trạng thái. */
     fun buildNodeDescription(node: NodeSnapshot): String {
         if (node.isPassword) return t(S.SP_PASSWORD_FIELD)
@@ -64,8 +66,9 @@ object SpeechTextBuilder {
         addedCount: Int,
         removedCount: Int,
         isPassword: Boolean,
+        speakPasswordChars: Boolean = false,
     ): String? {
-        if (isPassword) {
+        if (isPassword && !speakPasswordChars) {
             return when {
                 addedCount > 0 -> t(S.SP_TYPED)
                 removedCount > 0 -> t(S.SP_DELETED_CHAR)
@@ -79,6 +82,8 @@ object SpeechTextBuilder {
                 added.isEmpty() -> null
                 added == " " -> t(S.SP_SPACE)
                 added.isBlank() -> t(S.SP_WHITESPACE)
+                // Ô mật khẩu thường che ký tự thành chấm: đọc "đã nhập ký tự" thay vì "chấm".
+                isPassword && added.all { it in MASK_CHARS } -> t(S.SP_TYPED)
                 else -> added
             }
         }

@@ -15,6 +15,9 @@ fun ReadingScreen() {
     val context = LocalContext.current
     val settings = remember { SettingsRepository(context) }
     var notifications by remember { mutableStateOf(settings.readNotifications) }
+    var passwords by remember { mutableStateOf(settings.speakPasswords) }
+    var hints by remember { mutableStateOf(settings.speakHints) }
+    var autoOcr by remember { mutableStateOf(settings.autoOcrUnlabeled) }
 
     ScreenColumn(stringResource(R.string.rd_title)) {
         SettingSwitch(
@@ -24,6 +27,35 @@ fun ReadingScreen() {
             onCheckedChange = {
                 notifications = it
                 settings.readNotifications = it
+            },
+        )
+
+        SettingSwitch(
+            title = stringResource(R.string.rd_pw_title),
+            description = stringResource(R.string.rd_pw_desc),
+            checked = passwords,
+            onCheckedChange = {
+                passwords = it
+                settings.speakPasswords = it
+            },
+        )
+        SettingSwitch(
+            title = stringResource(R.string.rd_hint_title),
+            description = stringResource(R.string.rd_hint_desc),
+            checked = hints,
+            onCheckedChange = {
+                hints = it
+                settings.speakHints = it
+            },
+        )
+
+        SettingSwitch(
+            title = stringResource(R.string.rd_autoocr_title),
+            description = stringResource(R.string.rd_autoocr_desc),
+            checked = autoOcr,
+            onCheckedChange = {
+                autoOcr = it
+                settings.autoOcrUnlabeled = it
             },
         )
 

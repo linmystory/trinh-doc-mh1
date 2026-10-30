@@ -63,7 +63,7 @@
     <string name="msg_service_on">Trình đọc màn hình đã bật</string>
     <string name="msg_menu_pick_first">Hãy vuốt để chọn một mục trước</string>
     <string name="msg_menu_closed">Đã đóng trình đơn</string>
-    <string name="msg_menu_hint">Đang mở trình đơn. Vuốt để chọn, chạm hai lần để thực hiện, quay lại để đóng.</string>
+    <string name="msg_menu_hint">Đang mở trình đơn. Vuốt để chọn, chạm hai lần để chạy.</string>
     <string name="msg_action_failed">Không thực hiện được</string>
     <string name="msg_tapped">Đã nhấn, %1$s</string>
     <string name="msg_back">Quay lại</string>
@@ -101,7 +101,6 @@
     <string name="shot_no_access">Dịch vụ chưa được cấp quyền chụp màn hình</string>
     <string name="shot_failed">Không chụp được màn hình</string>
     <string name="notif_single">Thông báo từ %1$s: %2$s</string>
-    <string name="notif_burst">%2$d thông báo mới từ %1$s, mới nhất: %3$s</string>
     <string name="notif_app_fallback">ứng dụng</string>
     <string name="notif_link">liên kết</string>
     <string name="img_none">Không nhận diện được nội dung hình ảnh</string>
@@ -113,7 +112,6 @@
     <string name="fb_off">Tắt tất cả</string>
     <string name="menu_global_title">Trình đơn chung</string>
     <string name="menu_local_title">Trình đơn phần tử</string>
-    <string name="menu_opening">%1$s, %2$d mục. Vuốt để chọn, chạm hai lần để thực hiện.</string>
     <string name="menu_position">%1$s, %2$d trên %3$d</string>
     <string name="menu_activate">Nhấn</string>
     <string name="menu_long_click">Nhấn giữ</string>
@@ -194,14 +192,10 @@
     <string name="script_err_depth">JSON lồng quá sâu (tối đa %1$d cấp)</string>
     <string name="script_err_json">JSON không hợp lệ: %1$s</string>
     <string name="script_err_id">id chỉ gồm a-z, 0-9, _ và tối đa 40 ký tự</string>
-    <string name="script_err_name">name không được rỗng và tối đa %1$d ký tự</string>
-    <string name="script_err_packages">Tối đa %1$d package</string>
     <string name="script_err_no_rules">Thiếu danh sách rules</string>
     <string name="script_err_rules_count">rules phải có từ 1 đến %1$d phần tử</string>
     <string name="script_err_match">match phải là contains hoặc equals</string>
     <string name="script_err_action">action phải là click, long_click, focus, scroll_forward hoặc scroll_backward</string>
-    <string name="script_err_message">message dài tối đa %1$d ký tự</string>
-    <string name="script_err_pattern">%1$s dài tối đa %2$d ký tự</string>
     <string name="store_err_too_large">Tệp quá lớn (tối đa 64 KB)</string>
     <string name="store_err_builtin_id">id \"%1$s\" trùng với tiện ích dựng sẵn</string>
     <string name="store_err_save">Không lưu được script</string>
@@ -261,8 +255,6 @@
     <string name="vo_lang_unavailable">Không mở được cài đặt ngôn ngữ. Hãy mở Cài đặt → Hệ thống → Ngôn ngữ → Ngôn ngữ ứng dụng.</string>
     <string name="fbk_title">Âm báo và rung</string>
     <string name="fbk_intro">Phản hồi ngắn khi chuyển tiêu điểm, chạm đầu/cuối danh sách hoặc nhấn. Bật hay tắt ở đây không ảnh hưởng giọng đọc.</string>
-    <string name="fbk_mode_head">Chế độ phản hồi</string>
-    <string name="fbk_each_head">Bật tắt riêng từng loại</string>
     <string name="fbk_haptic_title">Rung phản hồi</string>
     <string name="fbk_haptic_desc">Rung nhẹ khi chuyển phần tử, rung mạnh khi chạm giới hạn, rung click khi nhấn.</string>
     <string name="fbk_sound_title">Âm báo</string>
@@ -296,11 +288,11 @@
     <string name="hp_limit_edge">Android không cho dịch vụ hỗ trợ tiếp cận bắt cử chỉ vuốt từ cạnh màn hình hay vẽ ký tự.</string>
     <string name="hp_translation_note">Bản dịch các ngôn ngữ ngoài tiếng Việt do máy dịch và chưa được người bản ngữ rà soát; mong bạn góp ý khi gặp câu chưa tự nhiên.</string>
     <string name="mn_title">Trình đơn nhanh</string>
-    <string name="mn_intro">Có hai trình đơn. Cách mở mặc định: vuốt lên rồi sang phải (hoặc ba ngón chạm một lần) mở trình đơn chung; vuốt xuống rồi sang phải (hoặc ba ngón chạm hai lần) mở trình đơn của phần tử đang chọn. Có thể đổi trong mục Cử chỉ.</string>
-    <string name="mn_when_open">Khi trình đơn mở: vuốt phải/trái để chọn mục, chạm hai lần để thực hiện, quay lại hoặc dừng đọc để đóng.</string>
+    <string name="mn_intro">Có hai trình đơn nhanh: chung và của phần tử. Cử chỉ bên dưới là cử chỉ bạn đang dùng.</string>
+    <string name="mn_when_open">Vuốt để chọn, chạm hai lần để chạy, quay lại để đóng.</string>
     <string name="mn_global_head">Trình đơn chung</string>
     <string name="mn_local_head">Trình đơn của phần tử</string>
-    <string name="mn_local_extra">Cuối trình đơn này còn có các hành động riêng mà ứng dụng khai báo cho phần tử đó (ví dụ \"Xóa tin nhắn\"), nếu có.</string>
+    <string name="mn_local_extra">Cuối trình đơn có thêm hành động riêng của ứng dụng. Mục chỉnh sửa văn bản chỉ hiện ở ô nhập liệu.</string>
     <string name="lb_title">Nhãn của tôi</string>
     <string name="lb_intro">Gán nhãn cho nút mà ứng dụng quên đặt tên: chọn nút đó, rồi dùng cử chỉ được gán cho \"Gắn nhãn cho phần tử đang chọn\" (mục Cử chỉ). Nhãn được nhớ cho đúng nút ở mọi lần mở ứng dụng.</string>
     <string name="lb_limits">Chỉ nút có mã định danh nội bộ mới gắn được. Tối đa %1$d nhãn.</string>
@@ -310,7 +302,6 @@
     <string name="gs_title">Gán chức năng cho cử chỉ</string>
     <string name="gs_intro">Chọn một cử chỉ, rồi chọn chức năng trong danh sách. Thay đổi có hiệu lực ngay.</string>
     <string name="gs_one_finger">Một ngón</string>
-    <string name="gs_n_fingers">%1$d ngón</string>
     <string name="gs_multi_note">Cử chỉ nhiều ngón cần bật khám phá bằng cảm ứng (đã bật sẵn). Nếu máy không nhận, hãy thử lại với các ngón đặt chạm cùng lúc.</string>
     <string name="gs_reset">Khôi phục cài đặt mặc định</string>
     <string name="gs_two_step">(hai bước)</string>
@@ -334,4 +325,90 @@
     <string name="le_clear">Xóa nhãn</string>
     <string name="ss_field">Chữ cần tìm (không cần gõ dấu)</string>
     <string name="ss_find">Tìm</string>
+    <string name="gran_paragraph">đoạn</string>
+    <string name="gran_sentence">câu</string>
+    <string name="gran_word">từ</string>
+    <string name="gran_character">ký tự</string>
+    <string name="ga_unit_next">Đơn vị đọc kế tiếp (đoạn, câu, từ, ký tự)</string>
+    <string name="ga_unit_prev">Đơn vị đọc trước đó (đoạn, câu, từ, ký tự)</string>
+    <string name="ga_cycle_granularity">Đổi đơn vị đọc (đoạn, câu, từ, ký tự)</string>
+    <string name="ga_copy_unit">Sao chép đơn vị đang đọc</string>
+    <string name="ga_paste">Dán vào ô đang chọn</string>
+    <string name="ga_cut">Cắt chữ ở ô đang chọn</string>
+    <string name="ga_select_all">Chọn toàn bộ chữ trong ô</string>
+    <string name="menu_unit_next">Đơn vị kế tiếp</string>
+    <string name="menu_unit_prev">Đơn vị trước</string>
+    <string name="menu_granularity">Đổi đơn vị đọc</string>
+    <string name="menu_copy_unit">Sao chép đơn vị</string>
+    <string name="menu_paste">Dán</string>
+    <string name="menu_cut">Cắt</string>
+    <string name="menu_select_all">Chọn tất cả</string>
+    <string name="msg_granularity">Đơn vị đọc: %1$s</string>
+    <string name="msg_unit_end">Hết văn bản</string>
+    <string name="msg_unit_start">Đầu văn bản</string>
+    <string name="msg_unit_copied">Đã sao chép: %1$s</string>
+    <string name="msg_pasted">Đã dán</string>
+    <string name="msg_cut_done">Đã cắt</string>
+    <string name="msg_selected_all">Đã chọn toàn bộ chữ</string>
+    <string name="msg_not_editable">Phần tử này không phải ô nhập chữ</string>
+    <string name="rd_pw_title">Đọc ký tự khi gõ mật khẩu</string>
+    <string name="rd_pw_desc">Tắt: chỉ báo \"đã nhập ký tự\". Bật: đọc từng ký tự bạn gõ, người xung quanh có thể nghe thấy.</string>
+    <string name="rd_hint_title">Đọc hướng dẫn</string>
+    <string name="rd_hint_desc">Bật: đọc thêm vị trí và gợi ý (ví dụ \"1 trên 13\" trong trình đơn). Tắt: chỉ đọc tên.</string>
+    <string name="ga_ocr_focused">Đọc chữ trong ảnh của phần tử đang chọn</string>
+    <string name="menu_ocr_focused">Đọc chữ trong ảnh</string>
+    <string name="msg_element_changed">Phần tử đã thay đổi</string>
+    <string name="pl_allapps_title">Script này áp dụng cho mọi ứng dụng</string>
+    <string name="pl_allapps_msg">Script này không nêu ứng dụng nào nên sẽ chạy ở mọi ứng dụng. Chỉ cài nếu bạn tin tưởng nó.</string>
+    <string name="pl_allapps_confirm">Vẫn cài</string>
+    <string name="menu_more_title">Khác</string>
+    <string name="menu_edit_title">Chỉnh sửa văn bản</string>
+    <string name="menu_back">Quay lại</string>
+    <string name="ga_cursor_start">Đưa con trỏ về đầu</string>
+    <string name="ga_cursor_end">Đưa con trỏ về cuối</string>
+    <string name="ga_select_to_start">Chọn đến đầu</string>
+    <string name="ga_select_to_end">Chọn đến cuối</string>
+    <string name="msg_cursor_start">Con trỏ ở đầu</string>
+    <string name="msg_cursor_end">Con trỏ ở cuối</string>
+    <string name="msg_selected_to_start">Đã chọn đến đầu</string>
+    <string name="msg_selected_to_end">Đã chọn đến cuối</string>
+    <string name="gt_unknown">Cử chỉ không nhận ra, mã %1$d</string>
+    <string name="sec_gesttest">Kiểm tra cử chỉ</string>
+    <string name="sec_gesttest_sum">Xem hệ thống có gửi cử chỉ nào tới ứng dụng</string>
+    <string name="gt_intro">Khi đang kiểm tra, mỗi cử chỉ chỉ được đọc tên và không chạy chức năng nào. Cử chỉ nào không được đọc tên là hệ thống không gửi tới ứng dụng.</string>
+    <string name="gt_start">Bắt đầu kiểm tra cử chỉ</string>
+    <string name="gt_stop">Dừng kiểm tra cử chỉ</string>
+    <string name="gt_active">Đang kiểm tra. Hãy làm một cử chỉ để nghe tên.</string>
+    <string name="gt_inactive">Chưa bắt đầu kiểm tra</string>
+    <string name="gt_stopped">Đã dừng kiểm tra</string>
+    <string name="mn_gesture_line">Mở bằng: %1$s.</string>
+    <string name="mn_gesture_none">Chưa gán cử chỉ nào. Hãy gán trong mục Cử chỉ.</string>
+    <string name="ocr_unsupported">Chưa hỗ trợ đọc chữ trong ảnh cho ngôn ngữ này trên thiết bị.</string>
+    <string name="ocr_maybe_wrong">%1$s. Có thể sai.</string>
+    <string name="ocr_auto_text">Chữ trong ảnh: %1$s</string>
+    <string name="rd_autoocr_title">Tự đọc chữ trong ảnh không nhãn</string>
+    <string name="rd_autoocr_desc">Mặc định tắt. Chỉ khi bạn chọn một ảnh không có nhãn, chữ trong ảnh được đọc ngay trên máy. Kết quả có thể sai và không đáng tin với ảnh xác minh.</string>
+    <string name="g_double_hold">Chạm hai lần và giữ</string>
+    <string name="msg_long_clicked">Đã nhấn giữ</string>
+    <plurals name="notif_burst">
+        <item quantity="other">%2$d thông báo mới từ %1$s, mới nhất: %3$s</item>
+    </plurals>
+    <plurals name="menu_opening">
+        <item quantity="other">%1$s, %2$d mục.</item>
+    </plurals>
+    <plurals name="script_err_name">
+        <item quantity="other">name không được rỗng và tối đa %1$d ký tự</item>
+    </plurals>
+    <plurals name="script_err_packages">
+        <item quantity="other">Tối đa %1$d package</item>
+    </plurals>
+    <plurals name="script_err_message">
+        <item quantity="other">message dài tối đa %1$d ký tự</item>
+    </plurals>
+    <plurals name="script_err_pattern">
+        <item quantity="other">%1$s dài tối đa %2$d ký tự</item>
+    </plurals>
+    <plurals name="gs_n_fingers">
+        <item quantity="other">%1$d ngón</item>
+    </plurals>
 </resources>

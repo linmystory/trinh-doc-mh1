@@ -5,6 +5,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -12,8 +16,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -33,6 +38,7 @@ import com.example.vnscreenreader.gesture.Gesture
 import com.example.vnscreenreader.gesture.GestureAction
 import com.example.vnscreenreader.gesture.GestureMapping
 import com.example.vnscreenreader.gesture.GestureMappingStore
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import com.example.vnscreenreader.R
 
@@ -60,7 +66,7 @@ fun GestureSettingsScreen() {
         Gesture.entries.groupBy { it.fingers }.forEach { (fingers, gestures) ->
             item(key = "heading_$fingers") {
                 Text(
-                    text = if (fingers == 1) stringResource(R.string.gs_one_finger) else stringResource(R.string.gs_n_fingers, fingers),
+                    text = if (fingers == 1) stringResource(R.string.gs_one_finger) else pluralStringResource(R.plurals.gs_n_fingers, fingers, fingers),
                     color = HighContrastGreen,
                     fontSize = 22.sp,
                     modifier = Modifier.semantics { heading() },
@@ -130,17 +136,54 @@ private fun GestureRow(
             ) {
                 Text(action.label, fontSize = 18.sp)
             }
-            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                GestureAction.entries.forEach { option ->
-                    DropdownMenuItem(
-                        text = { Text(option.label, fontSize = 18.sp) },
-                        onClick = {
-                            expanded = false
-                            onSelected(option)
-                        },
-                    )
-                }
-            }
         }
     }
+
+    if (expanded) {
+        ActionPickerDialog(
+            title = gesture.label + suffix,
+            selected = action,
+            onDismiss = { expanded = false },
+            onPick = {
+                expanded = false
+                onSelected(it)
+            },
+        )
+    }
+}
+
+/**
+ * Hộp thoại chọn chức năng: danh sách CUỘN được, hiện đủ mọi chức năng (menu thả xuống kiểu cũ bị cắt trên máy
+ * nhỏ/chữ lớn), mỗi hàng là một nút chọn rộng, đánh dấu chức năng đang dùng.
+ */
+@Composable
+private fun ActionPickerDialog(
+    title: String,
+    selected: GestureAction,
+    onDismiss: () -> Unit,
+    onPick: (GestureAction) -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title, fontSize = 20.sp) },
+        text = {
+            LazyColumn(modifier = Modifier.fillMaxWidth()) {
+                items(GestureAction.entries.toList(), key = { it.name }) { option ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 56.dp)
+                            .selectable(selected = option == selected, role = Role.RadioButton) { onPick(option) },
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        RadioButton(selected = option == selected, onClick = null)
+                        Text(option.label, fontSize = 18.sp, modifier = Modifier.weight(1f))
+                    }
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.ui_cancel), fontSize = 18.sp) } },
+    )
 }

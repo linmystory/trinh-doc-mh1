@@ -21,7 +21,7 @@ class MenuStateTest {
     fun opensWithoutSelection_thenNextStartsAtFirst() {
         val s = MenuState.open(MenuKind.GLOBAL, items)
         assertNull(s.current)
-        assertEquals("Trình đơn chung, 3 mục. Vuốt để chọn, chạm hai lần để thực hiện.", s.opening())
+        assertEquals("Trình đơn chung, 3 mục.", s.opening())
         assertEquals("A, 1 trên 3", s.next().describeCurrent())
     }
 
@@ -47,7 +47,7 @@ class MenuStateTest {
     fun menus_haveExpectedContent_andOnlyUniqueActions() {
         val global = Menus.global()
         assertTrue(global.any { it.action == GestureAction.READ_FROM_TOP })
-        assertTrue(global.any { it.action == GestureAction.OPEN_SETTINGS })
+        assertTrue(Menus.globalMore().any { it.action == GestureAction.OPEN_SETTINGS })
         assertEquals(global.size, global.map { it.action }.toSet().size)
         val local = Menus.local(listOf(CustomAction(0x7f000001, "Xóa tin")))
         assertEquals("Nhấn", local.first().label)
@@ -57,7 +57,7 @@ class MenuStateTest {
     @Test
     fun customActions_areCapped() {
         val many = (1..50).map { CustomAction(0x7f000000 + it, "a$it") }
-        assertEquals(6 + Menus.MAX_CUSTOM_ACTIONS, Menus.local(many).size)
+        assertEquals(11 + Menus.MAX_CUSTOM_ACTIONS, Menus.local(many).size)
     }
 
     @Test

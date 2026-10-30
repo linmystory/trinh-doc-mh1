@@ -11,7 +11,7 @@ Trình đọc màn hình (screen reader) cho Android dành cho người khiếm 
 - Khung viền xanh lá quanh phần tử đang chọn.
 - Khám phá bằng cảm ứng: đặt ngón tay lên phần tử nào thì đọc phần tử đó; chạm hai lần (ở bất kỳ đâu) để nhấn
   phần tử vừa nghe.
-- 33 cử chỉ (1 ngón: vuốt 4 hướng, 12 cử chỉ hai bước, chạm hai lần; 2, 3, 4 ngón), gán chức năng tùy ý.
+- 34 cử chỉ (1 ngón: vuốt 4 hướng, 12 cử chỉ hai bước, chạm hai lần, chạm hai lần và giữ; 2, 3, 4 ngón), gán chức năng tùy ý.
 - **AI trên máy, không dùng mạng** (mô hình ML Kit đóng gói sẵn trong APK; ứng dụng không xin quyền INTERNET):
   - *Đọc chữ trên màn hình (OCR)* và *Mô tả hình ảnh của phần tử đang chọn* - gán vào cử chỉ bất kỳ trong thẻ "Cử chỉ".
   - Đọc thông báo mới đã được tóm tắt (bỏ trùng, rút gọn, gộp khi dồn dập); bật/tắt ở thẻ cài đặt chung.
@@ -29,9 +29,10 @@ Trình đọc màn hình (screen reader) cho Android dành cho người khiếm 
 |---|---|
 | Vuốt phải / trái | Phần tử kế tiếp / trước đó |
 | Chạm hai lần | Nhấn phần tử đang chọn |
+| Chạm hai lần và giữ | Nhấn giữ phần tử đang chọn (nếu hệ thống gửi cử chỉ này tới app; kiểm tra bằng **Kiểm tra cử chỉ**) |
 | Vuốt lên / xuống | Cuộn xuống / cuộn lên |
-| Lên rồi phải | **Trình đơn chung** |
-| Xuống rồi phải | **Trình đơn của phần tử đang chọn** |
+| Xuống rồi phải | **Trình đơn chung** |
+| Lên rồi phải | **Trình đơn của phần tử đang chọn** |
 | Xuống rồi trái | Cài đặt nhanh |
 | Lên rồi trái | Quay lại |
 | Phải rồi xuống | Mở thanh thông báo |
@@ -46,14 +47,30 @@ Trình đọc màn hình (screen reader) cho Android dành cho người khiếm 
 | Ba ngón vuốt trái / phải | Thông báo / cài đặt nhanh |
 | Bốn ngón chạm / chạm hai lần | Đổi chế độ rung và âm báo / cho biết giờ và pin |
 
-Tất cả đều đổi được trong mục **Cử chỉ**. Android không cho dịch vụ hỗ trợ tiếp cận bắt cử chỉ vuốt từ cạnh màn hình.
+Bản này đổi hai cử chỉ mở trình đơn so với các bản trước (chung: xuống rồi phải; phần tử: lên rồi phải). Chỉ áp dụng cho người **chưa từng lưu cử chỉ riêng**; ai đã chỉnh cử chỉ thì giữ nguyên cấu hình cũ. Tất cả đều đổi được trong mục **Cử chỉ**. Android không cho dịch vụ hỗ trợ tiếp cận bắt cử chỉ vuốt từ cạnh màn hình.
 
 ## Trình đơn nhanh
-- **Chung** (13 mục): đọc từ đầu, đọc từ phần tử hiện tại, lặp lại, tìm chữ, OCR, đổi chế độ rung/âm báo, giờ và pin,
-  thông báo, cài đặt nhanh, màn hình chính, ứng dụng gần đây, chạy tiện ích, cài đặt ứng dụng.
-- **Phần tử**: nhấn, nhấn giữ, sao chép chữ, đọc từng ký tự, gắn/sửa nhãn, mô tả hình ảnh, cộng các hành động
-  tùy chỉnh do ứng dụng khai báo cho phần tử đó.
-- Khi trình đơn mở: vuốt phải/trái chọn mục, chạm hai lần thực hiện, quay lại hoặc dừng đọc để đóng.
+Cử chỉ mở trình đơn hiển thị ở mục **Trình đơn** trong ứng dụng, lấy từ cấu hình thật của bạn.
+- **Chung** (7 mục + "Khác"): đọc từ đầu, đọc từ phần tử hiện tại, lặp lại, tìm chữ, đọc chữ trên màn hình (OCR),
+  thông báo, màn hình chính. Trình đơn con **Khác**: cài đặt nhanh, ứng dụng gần đây, đổi chế độ rung/âm báo,
+  giờ và pin, chạy tiện ích, cài đặt ứng dụng, **Quay lại**.
+- **Phần tử**: nhấn, nhấn giữ, đơn vị kế/trước, đổi đơn vị đọc, sao chép đơn vị, sao chép, đọc từng ký tự,
+  gắn nhãn, mô tả hình ảnh, đọc chữ trong ảnh, cộng các hành động tùy chỉnh của ứng dụng. Riêng **ô nhập liệu**
+  có thêm trình đơn con **Chỉnh sửa văn bản**: dán, cắt, chọn tất cả, đưa con trỏ về đầu/cuối, chọn đến đầu/cuối, **Quay lại**.
+- Khi trình đơn mở: vuốt phải/trái chọn mục, chạm hai lần thực hiện, quay lại để lùi một cấp. Mở trình đơn đọc
+  "Tên, N mục."; cử chỉ không dùng được trong trình đơn chỉ nhắc ngắn một lần.
+- Cài đặt **Đọc hướng dẫn thao tác** (Đọc, mặc định bật): tắt thì trình đơn chỉ đọc tên mục, không đọc vị trí và lời nhắc.
+
+## Kiểm tra cử chỉ
+Mục **Kiểm tra cử chỉ** trong cài đặt: khi bật, mọi cử chỉ hệ thống gửi tới ứng dụng chỉ được **đọc tên** (ví dụ
+"Vuốt hai ngón lên"), không chạy chức năng đã gán. Cử chỉ nào không được đọc tên nghĩa là hệ thống không gửi tới
+ứng dụng. Thoát bằng nút trên màn hình hoặc Back; tự tắt khi rời màn hình. Không lưu lịch sử.
+
+## Điều kiện hệ thống ảnh hưởng cử chỉ
+- Cử chỉ nhiều ngón và cử chỉ hai bước chỉ hoạt động khi bật chế độ khám phá bằng cảm ứng và hệ thống gửi cử chỉ tới
+  dịch vụ; một số hãng máy/phiên bản Android hoặc trình đọc màn hình khác đang bật có thể chiếm cử chỉ. Hãy dùng
+  **Kiểm tra cử chỉ** để biết cử chỉ nào thật sự tới được ứng dụng trên máy của bạn.
+- Cử chỉ vuốt từ cạnh màn hình (Back/Home của hệ thống) không bắt được.
 
 ## Cài đặt
 1. Tải APK từ tab **Actions** (mục Artifacts) hoặc build bằng Android Studio.
@@ -88,25 +105,81 @@ Script là JSON khai báo, không chứa mã thực thi. Xem mẫu trong `sample
 - Giới hạn an toàn: tệp ≤ 64 KB, JSON lồng ≤ 8 cấp, tối đa 20 rule. So khớp chữ không phân biệt hoa/thường và
   không phân biệt dạng Unicode dựng sẵn/tổ hợp của tiếng Việt.
 
+## Đọc theo đơn vị, sao chép, dán, cắt (v2.4.0)
+- Đơn vị đọc: đoạn → câu → từ → ký tự. Mặc định: vuốt phải rồi lên = đơn vị kế, vuốt trái rồi lên = đơn vị trước, vuốt lên rồi xuống = sao chép đơn vị đang đọc, hai ngón chạm ba lần = đổi đơn vị.
+- Sao chép: nếu đang có vùng chọn trong ô nhập (kể cả chọn ngược) thì chỉ sao chép đoạn đã chọn.
+- Thêm hành động: đưa con trỏ về đầu/cuối, chọn đến đầu/cuối. Ô mật khẩu chỉ cho phép dán; cắt, chọn, di chuyển con trỏ, sao chép đều bị chặn. Cắt và dán do hệ thống thực hiện, ứng dụng không đọc hay ghi clipboard.
+- Dán, cắt, chọn tất cả và các mục trên có trong trình đơn con "Chỉnh sửa văn bản" của ô nhập; có thể gán cho cử chỉ bất kỳ trong mục Cử chỉ.
+- Cuộn trang thử mọi vùng cuộn (vùng chứa phần tử đang chọn trước, rồi vùng lớn nhất) thay vì chỉ một vùng.
+
 ## Đa ngôn ngữ (v2.3.0)
-- Giao diện và câu đọc bằng giọng nói có 7 ngôn ngữ: Tiếng Việt, English, Français, Español, Русский, العربية (RTL), 中文 — 6 ngôn ngữ chính thức của Liên hợp quốc và tiếng Việt. Mặc định (khi máy dùng ngôn ngữ khác) là English.
+- Giao diện và câu đọc bằng giọng nói có 7 ngôn ngữ: Tiếng Việt, English, Français, Español, Русский, العربية (RTL), 中文 — 6 ngôn ngữ chính thức của Liên hợp quốc và tiếng Việt. Có thêm biến thể: 中文 giản thể (zh-Hans) và phồn thể (zh-Hant, Đài Loan/Hồng Kông), English Mỹ (mặc định) và Anh (en-GB, chỉ khác chính tả). Bản phồn thể được chuyển từ giản thể bằng bảng ký tự tự lập, cần người bản ngữ rà soát. Mặc định (khi máy dùng ngôn ngữ khác) là English.
 - Đổi ngôn ngữ: Cài đặt → Giọng nói (TTS) → "Chọn ngôn ngữ ứng dụng" (mở thẳng màn hình ngôn ngữ riêng của ứng dụng trong hệ thống). Giọng đọc đổi theo; cần cài giọng tương ứng trong công cụ TTS.
-- Chuỗi nằm ở `app/src/main/res/values*/strings.xml`. Các tệp này, `core/S.kt`, `core/FallbackTexts.kt` và `i18n/ResourceTexts.kt` được SINH TỰ ĐỘNG từ một bảng dịch; khi thêm chuỗi phải cập nhật đủ 7 ngôn ngữ (unit test `TextsTest` kiểm tra đủ khóa và đúng tham số).
-- Bản dịch do máy dịch, CHƯA được người bản ngữ rà soát. Từ điển mô tả hình ảnh và đoán nhãn từ tên view chỉ có tiếng Việt; ngôn ngữ khác đọc từ tiếng Anh gốc. OCR chỉ nhận chữ Latin.
+- Chuỗi nằm ở `app/src/main/res/values*/strings.xml`. Các tệp này, `core/S.kt`, `core/FallbackTexts.kt` và `i18n/ResourceTexts.kt` được SINH TỰ ĐỘNG từ bảng dịch trong `tools/i18n/` (xem `tools/README.md`, chạy `python3 tools/i18n/gen.py .`); khi thêm chuỗi phải cập nhật đủ 7 ngôn ngữ (unit test `TextsTest` kiểm tra đủ khóa và đúng tham số).
+- Bản dịch do máy dịch, CHƯA được người bản ngữ rà soát. Từ điển mô tả hình ảnh và đoán nhãn từ tên view hiện chỉ có tiếng Việt (giao diện `LanguageDictionary`, thêm ngôn ngữ = thêm một lớp); ngôn ngữ khác đọc từ tiếng Anh gốc. Chuỗi có số đếm (số nhiều) dùng `plurals` đủ dạng theo từng ngôn ngữ (ru: one/few/many/other, ar: 6 dạng).
 - Bố cục dùng kích thước tối thiểu (`heightIn(min)`) và chữ tự xuống dòng nên không cắt chữ; bản debug bật pseudo-locale (en-XA, ar-XB) để soát lỗi vỡ chữ/đảo chiều.
 
 ## Giới hạn của phần AI (nói thẳng)
-- OCR dùng bộ nhận dạng Latin của ML Kit: đọc chữ Việt ở mức cơ bản, dấu thanh có thể sai với chữ nhỏ/mờ.
+- OCR chạy hoàn toàn trên máy bằng mô hình ML Kit **đóng gói sẵn**, chọn theo ngôn ngữ ứng dụng: **Latin** (Việt, Anh,
+  Pháp, Tây Ban Nha...) và **Trung** (chữ Hán). **Nga (Cyrillic) và Ả Rập: ML Kit chưa có mô hình gói sẵn nên ứng dụng
+  báo "chưa hỗ trợ" thay vì đọc ra kết quả sai.** Chữ Việt đọc được ở mức cơ bản, dấu thanh có thể sai với chữ nhỏ/mờ.
+  Kết quả có độ tin cậy thấp được thêm "có thể sai". Mô hình Trung làm APK nặng thêm khoảng 4 MB mỗi kiến trúc CPU (theo
+  tài liệu ML Kit; chưa đo trên bản build thật).
+- **Ảnh xác minh/CAPTCHA:** OCR thông thường **không đáng tin** với chữ méo, nhiễu, gạch chéo, và ứng dụng **không có chức
+  năng giải hay vượt xác minh**. Nếu gặp ảnh xác minh, hãy dùng lựa chọn âm thanh của dịch vụ đó, kênh hỗ trợ dành cho
+  người khiếm thị của họ, hoặc nhờ người nhìn giúp.
+- **Tự đọc chữ trong ảnh không nhãn** (Cài đặt → Đọc, **mặc định tắt**): chỉ khi bạn chọn một ảnh không có chữ/mô tả/nhãn,
+  mỗi lần một tác vụ, hủy khi chọn phần tử khác, không đọc lại cùng phần tử trong cùng cửa sổ, bỏ qua ô mật khẩu và
+  cửa sổ bảo mật, không ghi gì ra đĩa. Cách này chụp màn hình mỗi lần chọn nên tốn pin hơn.
 - "Mô tả hình ảnh" gán nhãn (khoảng 400 loại, dịch sang tiếng Việt bằng từ điển), không viết thành câu văn như AI sinh văn bản.
   Mô hình sinh mô tả của Google (GenAI) hiện chỉ có tiếng Anh, cần Gemini Nano và tải qua mạng nên chưa dùng.
 - Chụp màn hình bị Android chặn ở màn hình bảo mật (mật khẩu, ngân hàng); khi đó ứng dụng sẽ báo thay vì đọc.
+- Khi chụp màn hình, khung viền xanh được ẩn tạm (chờ 2 khung hình) rồi hiện lại, kể cả khi lỗi hoặc bị hủy.
 - Phần chụp màn hình/ML Kit mới chỉ được biên dịch trên GitHub Actions, chưa thử trên máy thật.
+
+## Quyết định thiết kế
+- **Không đăng ký `typeWindowContentChanged` / `typeViewScrolled`:** hai loại sự kiện này phát dồn dập (mỗi lần cuộn, mỗi
+  khung hoạt ảnh) gây bão sự kiện, tốn pin và làm trễ giọng đọc. Ứng dụng chỉ lấy lại cây giao diện khi cần (chọn, cuộn
+  bằng cử chỉ, đổi cửa sổ) và làm mới nút (`refresh()`) trước khi dùng; nút đã cũ thì đọc "Phần tử đã thay đổi".
+- **Giới hạn duyệt cây:** tối đa 1500 phần tử nhìn thấy (trang dài vẫn đọc được) và trần cứng 6000 nút để tránh treo.
+- **Script không khai báo `packages`** chạy ở mọi ứng dụng: khi nạp, ứng dụng hỏi xác nhận trước khi cài.
+- **Không dịch vụ nền (foreground service):** dịch vụ trợ năng đã được hệ thống giữ chạy.
+
+## Quyền (manifest) và Google Play
+| Quyền / khai báo | Lý do |
+|---|---|
+| `BIND_ACCESSIBILITY_SERVICE` (dịch vụ) | Đọc và điều khiển giao diện để làm trình đọc màn hình |
+| `canTakeScreenshot` (cấu hình dịch vụ) | OCR/mô tả ảnh; ảnh chỉ nằm trong RAM, giải phóng ngay |
+| `VIBRATE` | Rung phản hồi khi chuyển phần tử |
+| `<queries>`: TTS_SERVICE, MAIN/LAUNCHER | Liệt kê công cụ TTS; tra tên ứng dụng khi đọc thông báo (không dùng `QUERY_ALL_PACKAGES`) |
+| Không có INTERNET / ACCESS_NETWORK_STATE | Mọi xử lý trên máy, không gửi dữ liệu đi đâu |
+
+Khi đưa lên Google Play: chỉ khai báo các quyền trên, khai báo mục đích dịch vụ hỗ trợ tiếp cận (Accessibility API
+declaration) và chính sách quyền riêng tư nêu rõ **không thu thập, không gửi dữ liệu ra ngoài thiết bị**.
+
+## Rà soát bố cục (5.5) — đã đọc mã, CHƯA xem trên máy
+Kiểm theo mã nguồn (không có thiết bị/emulator ở môi trường làm việc):
+| Màn hình | Cuộn dọc | Ghi chú |
+|---|---|---|
+| Danh sách mục + Trạng thái, Giọng nói, Rung/âm báo, Đọc, Nhãn, Trình đơn, Kiểm tra cử chỉ, Trợ giúp | Có (`ScreenColumn`) | chữ tự xuống dòng, hàng công tắc cao tối thiểu 80dp |
+| Cử chỉ, Tiện ích | Có (`LazyColumn`) | hộp chọn chức năng cuộn được |
+| Gắn nhãn, Tìm chữ (Activity riêng) | **Đã thêm** `verticalScroll` + `imePadding` | trước đó cột cố định, bàn phím/ chữ lớn/xoay ngang có thể che nút |
+| Hộp thoại xác nhận (xóa tiện ích, script mọi ứng dụng) | **Đã thêm** cuộn | chữ dài ở ngôn ngữ khác không bị cắt |
+| Màn hình rộng/xoay ngang | Danh sách trái + nội dung phải, mỗi bên cuộn riêng | ngưỡng 600dp |
+| RTL (ar, ar-XB) | Dùng `start/end` của Compose | cần xem thật |
+Việc còn lại: chạy bản debug với en-XA/ar-XB, cỡ chữ lớn nhất, màn hình nhỏ/ngang/lớn.
 
 ## Build
 - Android Studio (bản hỗ trợ AGP 9.4): mở thư mục dự án, chờ sync, chọn *Build → Build APK(s)*.
 - Dòng lệnh: `./gradlew :app:testDebugUnitTest :app:lintDebug :app:assembleDebug`
   (Gradle wrapper đã ghim Gradle 9.8.2 kèm checksum SHA-256).
 - GitHub Actions: workflow `.github/workflows/build.yml` tự chạy test, lint và build APK mỗi lần push.
+- **Bản release đã ký:** khóa KHÔNG nằm trong repo. `app/build.gradle.kts` chỉ ký khi đủ 4 biến môi trường
+  `RELEASE_KEYSTORE_PATH`, `RELEASE_KEYSTORE_PASSWORD`, `RELEASE_KEY_ALIAS`, `RELEASE_KEY_PASSWORD` (thiếu thì ra APK
+  chưa ký). Trên GitHub: tạo keystore (`keytool -genkeypair -v -keystore release.jks -alias key -keyalg RSA -keysize 4096 -validity 10000`),
+  mã hóa `base64 -w0 release.jks`, lưu vào Secrets `RELEASE_KEYSTORE_BASE64`, `RELEASE_KEYSTORE_PASSWORD`,
+  `RELEASE_KEY_ALIAS`, `RELEASE_KEY_PASSWORD`, rồi chạy tay workflow **Build release** (`release.yml`) để lấy APK/AAB đã ký.
+  Giữ kỹ keystore: mất khóa là không cập nhật được ứng dụng.
 
 ## Công nghệ (cập nhật 10/2026)
 | Thành phần | Phiên bản |

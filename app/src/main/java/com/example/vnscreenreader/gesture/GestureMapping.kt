@@ -13,6 +13,9 @@ class GestureMapping(initial: Map<Gesture, GestureAction> = defaults()) {
 
     fun toMap(): Map<Gesture, GestureAction> = map
 
+    /** Các cử chỉ đang gán cho [action], theo thứ tự khai báo (dùng cho màn hình trợ giúp). */
+    fun gesturesFor(action: GestureAction): List<Gesture> = Gesture.entries.filter { map.getValue(it) == action }
+
     /** Dạng chuỗi lưu trữ: "SWIPE_UP=SCROLL_FORWARD;SWIPE_DOWN=...". */
     fun serialize(): String = map.entries.joinToString(";") { "${it.key.name}=${it.value.name}" }
 
@@ -22,12 +25,15 @@ class GestureMapping(initial: Map<Gesture, GestureAction> = defaults()) {
             Gesture.SWIPE_RIGHT to GestureAction.NEXT_ELEMENT,
             Gesture.SWIPE_LEFT to GestureAction.PREVIOUS_ELEMENT,
             Gesture.DOUBLE_TAP to GestureAction.ACTIVATE,
+            // Giống TalkBack: chạm hai lần và giữ = nhấn giữ phần tử đang chọn (nếu hệ thống gửi cử chỉ này tới app).
+            Gesture.DOUBLE_TAP_AND_HOLD to GestureAction.LONG_CLICK_FOCUSED,
             Gesture.SWIPE_UP to GestureAction.SCROLL_FORWARD,
             Gesture.SWIPE_DOWN to GestureAction.SCROLL_BACKWARD,
-            // Giống TalkBack/Jieshuo: lên-rồi-phải = trình đơn chung, xuống-rồi-phải = trình đơn của phần tử.
+            // Xuống-rồi-phải = trình đơn chung, lên-rồi-phải = trình đơn của phần tử. Chỉ áp dụng khi người dùng
+            // chưa từng lưu cử chỉ riêng (bản đã lưu giữ nguyên, xem GestureMappingStore).
             // Thông báo, màn hình chính... vẫn dùng được qua trình đơn chung.
-            Gesture.DOWN_THEN_RIGHT to GestureAction.OPEN_LOCAL_MENU,
-            Gesture.UP_THEN_RIGHT to GestureAction.OPEN_GLOBAL_MENU,
+            Gesture.DOWN_THEN_RIGHT to GestureAction.OPEN_GLOBAL_MENU,
+            Gesture.UP_THEN_RIGHT to GestureAction.OPEN_LOCAL_MENU,
             Gesture.DOWN_THEN_LEFT to GestureAction.QUICK_SETTINGS,
             Gesture.UP_THEN_LEFT to GestureAction.BACK,
             Gesture.RIGHT_THEN_DOWN to GestureAction.NOTIFICATIONS,
@@ -49,6 +55,10 @@ class GestureMapping(initial: Map<Gesture, GestureAction> = defaults()) {
             Gesture.RIGHT_THEN_LEFT to GestureAction.RECENTS,
             Gesture.LEFT_THEN_RIGHT to GestureAction.STOP_SPEECH,
             Gesture.DOWN_THEN_UP to GestureAction.RUN_PLUGINS,
+            Gesture.RIGHT_THEN_UP to GestureAction.UNIT_NEXT,
+            Gesture.LEFT_THEN_UP to GestureAction.UNIT_PREVIOUS,
+            Gesture.UP_THEN_DOWN to GestureAction.COPY_UNIT,
+            Gesture.TWO_FINGER_TRIPLE_TAP to GestureAction.CYCLE_GRANULARITY,
         )
 
         /** Đọc chuỗi đã lưu; mục sai/không nhận ra bị bỏ qua, mục thiếu lấy giá trị mặc định. */

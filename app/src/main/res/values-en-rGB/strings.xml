@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="service_description">Reads the screen aloud with customisable gestures, low-latency background event handling and a plugin system based on scripts.</string>
+    <string name="msg_label_no_id">This element has no identifier, so it can\'t be labelled</string>
+    <string name="img_none">Couldn\'t recognise the image content</string>
+    <string name="sec_reading_sum">Notifications, unlabelled elements</string>
+    <string name="st_battery_optimized">Currently: the app is battery-optimised.</string>
+    <string name="st_battery_button">Open battery optimisation settings</string>
+    <string name="hp_limit_ocr">OCR uses ML Kit\'s Latin-script recogniser: it reads Latin text well, but accents may be wrong with small or blurry text, and other scripts (Chinese, Arabic, Cyrillic) are not recognised.</string>
+    <string name="hp_limit_describe">\"Describe image\" only lists recognised objects (about 400 kinds, in English, translated where possible) and does not write full sentences.</string>
+    <string name="lb_limits">Only buttons with an internal identifier can be labelled. At most %1$d labels.</string>
+    <string name="gs_multi_note">Multi-finger gestures need touch exploration (already on). If the phone doesn\'t recognise them, try again placing all fingers at the same time.</string>
+    <string name="gt_unknown">Unrecognised gesture, code %1$d</string>
+    <string name="rd_autoocr_title">Auto-read text in unlabelled images</string>
+</resources>

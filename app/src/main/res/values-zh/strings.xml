@@ -63,7 +63,7 @@
     <string name="msg_service_on">读屏已开启</string>
     <string name="msg_menu_pick_first">请先滑动选择一项</string>
     <string name="msg_menu_closed">菜单已关闭</string>
-    <string name="msg_menu_hint">菜单已打开。滑动选择，双击执行，返回以关闭。</string>
+    <string name="msg_menu_hint">菜单已打开。滑动选择，双击执行。</string>
     <string name="msg_action_failed">无法执行</string>
     <string name="msg_tapped">已点按，%1$s</string>
     <string name="msg_back">返回</string>
@@ -101,7 +101,6 @@
     <string name="shot_no_access">服务没有截屏权限</string>
     <string name="shot_failed">无法截取屏幕</string>
     <string name="notif_single">来自%1$s的通知：%2$s</string>
-    <string name="notif_burst">%1$s的新通知：%2$d 条。最新：%3$s</string>
     <string name="notif_app_fallback">某应用</string>
     <string name="notif_link">链接</string>
     <string name="img_none">无法识别图片内容</string>
@@ -113,7 +112,6 @@
     <string name="fb_off">全部关闭</string>
     <string name="menu_global_title">通用菜单</string>
     <string name="menu_local_title">元素菜单</string>
-    <string name="menu_opening">%1$s，共%2$d项。滑动选择，双击执行。</string>
     <string name="menu_position">%1$s，第%2$d项，共%3$d项</string>
     <string name="menu_activate">点按</string>
     <string name="menu_long_click">长按</string>
@@ -194,14 +192,10 @@
     <string name="script_err_depth">JSON 嵌套过深（最多 %1$d 层）</string>
     <string name="script_err_json">JSON 无效：%1$s</string>
     <string name="script_err_id">id 只能包含 a-z、0-9 和 _，最长 40 个字符</string>
-    <string name="script_err_name">name 不能为空，且最长 %1$d 个字符</string>
-    <string name="script_err_packages">最多 %1$d 个包名</string>
     <string name="script_err_no_rules">缺少 rules 列表</string>
     <string name="script_err_rules_count">rules 必须包含 1 到 %1$d 项</string>
     <string name="script_err_match">match 必须是 contains 或 equals</string>
     <string name="script_err_action">action 必须是 click、long_click、focus、scroll_forward 或 scroll_backward</string>
-    <string name="script_err_message">message 最长 %1$d 个字符</string>
-    <string name="script_err_pattern">%1$s 最长 %2$d 个字符</string>
     <string name="store_err_too_large">文件过大（最大 64 KB）</string>
     <string name="store_err_builtin_id">id“%1$s”与内置插件冲突</string>
     <string name="store_err_save">无法保存脚本</string>
@@ -261,8 +255,6 @@
     <string name="vo_lang_unavailable">无法打开语言设置。请打开 设置 → 系统 → 语言 → 应用语言。</string>
     <string name="fbk_title">声音与振动</string>
     <string name="fbk_intro">移动焦点、到达列表首尾或点按时的简短反馈。在此开关不影响语音朗读。</string>
-    <string name="fbk_mode_head">反馈模式</string>
-    <string name="fbk_each_head">单独开关各类反馈</string>
     <string name="fbk_haptic_title">振动反馈</string>
     <string name="fbk_haptic_desc">切换元素时轻振，到达边界时强振，点按时短促振动。</string>
     <string name="fbk_sound_title">提示音</string>
@@ -296,11 +288,11 @@
     <string name="hp_limit_edge">Android 不允许无障碍服务捕获从屏幕边缘滑动或手绘字符的手势。</string>
     <string name="hp_translation_note">翻译由机器生成，尚未经母语者审校；如发现措辞问题，欢迎反馈。</string>
     <string name="mn_title">快捷菜单</string>
-    <string name="mn_intro">共有两个菜单。默认：先向上再向右滑动（或三指单击）打开通用菜单；先向下再向右滑动（或三指双击）打开所选元素的菜单。可在“手势”中修改。</string>
-    <string name="mn_when_open">菜单打开时：向右/向左滑动选择项目，双击执行，返回或停止朗读可关闭。</string>
+    <string name="mn_intro">有两个快捷菜单：通用菜单和元素菜单。下面是你当前设置的手势。</string>
+    <string name="mn_when_open">滑动选择，双击执行，返回关闭。</string>
     <string name="mn_global_head">通用菜单</string>
     <string name="mn_local_head">元素菜单</string>
-    <string name="mn_local_extra">此菜单末尾还有应用为该元素声明的专属操作（例如“删除消息”），如果有的话。</string>
+    <string name="mn_local_extra">末尾会加入应用自己的操作。文本编辑项仅在输入框中显示。</string>
     <string name="lb_title">我的标签</string>
     <string name="lb_intro">为应用忘记命名的按钮添加标签：选中该按钮，然后使用分配给“为所选元素添加标签”的手势（见“手势”）。每次打开应用都会记住该按钮的标签。</string>
     <string name="lb_limits">只有带内部标识符的按钮才能添加标签。最多 %1$d 个标签。</string>
@@ -310,7 +302,6 @@
     <string name="gs_title">为手势分配功能</string>
     <string name="gs_intro">选择一个手势，再从列表中选择功能。更改立即生效。</string>
     <string name="gs_one_finger">单指</string>
-    <string name="gs_n_fingers">%1$d 指</string>
     <string name="gs_multi_note">多指手势需要触摸探索（已默认开启）。如果手机无法识别，请让所有手指同时接触屏幕再试。</string>
     <string name="gs_reset">恢复默认设置</string>
     <string name="gs_two_step">（两步）</string>
@@ -334,4 +325,90 @@
     <string name="le_clear">删除标签</string>
     <string name="ss_field">要查找的文字（无需输入重音符号）</string>
     <string name="ss_find">查找</string>
+    <string name="gran_paragraph">段落</string>
+    <string name="gran_sentence">句子</string>
+    <string name="gran_word">词</string>
+    <string name="gran_character">字符</string>
+    <string name="ga_unit_next">下一个朗读单位</string>
+    <string name="ga_unit_prev">上一个朗读单位</string>
+    <string name="ga_cycle_granularity">切换朗读单位</string>
+    <string name="ga_copy_unit">复制当前单位</string>
+    <string name="ga_paste">粘贴</string>
+    <string name="ga_cut">剪切</string>
+    <string name="ga_select_all">全选</string>
+    <string name="menu_unit_next">下一单位</string>
+    <string name="menu_unit_prev">上一单位</string>
+    <string name="menu_granularity">切换单位</string>
+    <string name="menu_copy_unit">复制单位</string>
+    <string name="menu_paste">粘贴</string>
+    <string name="menu_cut">剪切</string>
+    <string name="menu_select_all">全选</string>
+    <string name="msg_granularity">朗读单位：%1$s</string>
+    <string name="msg_unit_end">文本结束</string>
+    <string name="msg_unit_start">文本开头</string>
+    <string name="msg_unit_copied">已复制：%1$s</string>
+    <string name="msg_pasted">已粘贴</string>
+    <string name="msg_cut_done">已剪切</string>
+    <string name="msg_selected_all">已全选</string>
+    <string name="msg_not_editable">此元素不是文本框</string>
+    <string name="rd_pw_title">朗读输入的密码字符</string>
+    <string name="rd_pw_desc">关闭：只提示“已输入字符”。开启：逐个朗读输入的字符，旁人可能听到。</string>
+    <string name="rd_hint_title">朗读提示</string>
+    <string name="rd_hint_desc">开启：额外朗读位置和提示（如菜单中的“第1项，共13项”）。关闭：只读名称。</string>
+    <string name="ga_ocr_focused">朗读所选图片中的文字</string>
+    <string name="menu_ocr_focused">朗读图片中的文字</string>
+    <string name="msg_element_changed">元素已变化</string>
+    <string name="pl_allapps_title">此脚本适用于所有应用</string>
+    <string name="pl_allapps_msg">此脚本未指定任何应用，将在所有应用中运行。仅在信任它时安装。</string>
+    <string name="pl_allapps_confirm">仍要安装</string>
+    <string name="menu_more_title">更多</string>
+    <string name="menu_edit_title">编辑文本</string>
+    <string name="menu_back">返回</string>
+    <string name="ga_cursor_start">光标移到开头</string>
+    <string name="ga_cursor_end">光标移到末尾</string>
+    <string name="ga_select_to_start">选择到开头</string>
+    <string name="ga_select_to_end">选择到末尾</string>
+    <string name="msg_cursor_start">光标在开头</string>
+    <string name="msg_cursor_end">光标在末尾</string>
+    <string name="msg_selected_to_start">已选择到开头</string>
+    <string name="msg_selected_to_end">已选择到末尾</string>
+    <string name="gt_unknown">无法识别的手势，代码%1$d</string>
+    <string name="sec_gesttest">手势测试</string>
+    <string name="sec_gesttest_sum">查看系统向应用发送了哪些手势</string>
+    <string name="gt_intro">测试期间每个手势只会朗读名称，不执行任何功能。未朗读的手势表示系统没有发送给应用。</string>
+    <string name="gt_start">开始手势测试</string>
+    <string name="gt_stop">停止手势测试</string>
+    <string name="gt_active">测试进行中。做一个手势即可听到名称。</string>
+    <string name="gt_inactive">测试未开始</string>
+    <string name="gt_stopped">测试已停止</string>
+    <string name="mn_gesture_line">打开方式：%1$s。</string>
+    <string name="mn_gesture_none">尚未分配手势。请在“手势”中分配。</string>
+    <string name="ocr_unsupported">此设备暂不支持该语言的图片文字识别。</string>
+    <string name="ocr_maybe_wrong">%1$s。可能有误。</string>
+    <string name="ocr_auto_text">图片中的文字：%1$s</string>
+    <string name="rd_autoocr_title">自动朗读无标签图片中的文字</string>
+    <string name="rd_autoocr_desc">默认关闭。仅在选中无标签图片时，才在本机朗读其中的文字。结果可能有误，验证图片也无法可靠识别。</string>
+    <string name="g_double_hold">双击并按住</string>
+    <string name="msg_long_clicked">已长按</string>
+    <plurals name="notif_burst">
+        <item quantity="other">%1$s的新通知：%2$d 条。最新：%3$s</item>
+    </plurals>
+    <plurals name="menu_opening">
+        <item quantity="other">%1$s，共%2$d项。</item>
+    </plurals>
+    <plurals name="script_err_name">
+        <item quantity="other">name 不能为空，且最长 %1$d 个字符</item>
+    </plurals>
+    <plurals name="script_err_packages">
+        <item quantity="other">最多 %1$d 个包名</item>
+    </plurals>
+    <plurals name="script_err_message">
+        <item quantity="other">message 最长 %1$d 个字符</item>
+    </plurals>
+    <plurals name="script_err_pattern">
+        <item quantity="other">%1$s 最长 %2$d 个字符</item>
+    </plurals>
+    <plurals name="gs_n_fingers">
+        <item quantity="other">%1$d 指</item>
+    </plurals>
 </resources>

@@ -42,8 +42,9 @@ class GestureAnalyzerTest {
     fun twoStepFlag_isConsistentWithNaming_andReadme() {
         Gesture.entries.forEach { assertEquals(it.name, it.name.contains("_THEN_"), it.isTwoStep) }
         assertEquals(12, Gesture.entries.count { it.isTwoStep })
-        assertEquals(17, Gesture.entries.count { it.fingers == 1 })
-        assertEquals(33, Gesture.entries.size)
+        assertEquals(18, Gesture.entries.count { it.fingers == 1 })
+        assertEquals(34, Gesture.entries.size)
+        assertEquals(GestureAction.LONG_CLICK_FOCUSED, GestureMapping().actionFor(Gesture.DOUBLE_TAP_AND_HOLD))
     }
 
     @Test
@@ -58,12 +59,13 @@ class GestureMappingTest {
     fun defaults_coverEveryGesture_andMatchSpec() {
         val mapping = GestureMapping()
         assertEquals(Gesture.entries.toSet(), mapping.toMap().keys)
-        assertEquals(GestureAction.OPEN_LOCAL_MENU, mapping.actionFor(Gesture.DOWN_THEN_RIGHT))
-        assertEquals(GestureAction.OPEN_GLOBAL_MENU, mapping.actionFor(Gesture.UP_THEN_RIGHT))
+        assertEquals(GestureAction.OPEN_GLOBAL_MENU, mapping.actionFor(Gesture.DOWN_THEN_RIGHT))
+        assertEquals(GestureAction.OPEN_LOCAL_MENU, mapping.actionFor(Gesture.UP_THEN_RIGHT))
         assertEquals(GestureAction.NOTIFICATIONS, mapping.actionFor(Gesture.RIGHT_THEN_DOWN))
         assertEquals(GestureAction.BACK, mapping.actionFor(Gesture.UP_THEN_LEFT))
         assertEquals(GestureAction.NEXT_ELEMENT, mapping.actionFor(Gesture.SWIPE_RIGHT))
-        assertEquals(GestureAction.NONE, mapping.actionFor(Gesture.LEFT_THEN_UP))
+        assertEquals(GestureAction.UNIT_PREVIOUS, mapping.actionFor(Gesture.LEFT_THEN_UP))
+        assertEquals(GestureAction.NONE, mapping.actionFor(Gesture.THREE_FINGER_TRIPLE_TAP))
     }
 
     @Test
@@ -118,7 +120,7 @@ class MultiFingerGestureTest {
         val mapping = GestureMapping()
         assertEquals(GestureAction.OPEN_GLOBAL_MENU, mapping.actionFor(Gesture.THREE_FINGER_TAP))
         assertEquals(GestureAction.READ_FROM_TOP, mapping.actionFor(Gesture.THREE_FINGER_SWIPE_UP))
-        assertEquals(GestureAction.NONE, mapping.actionFor(Gesture.TWO_FINGER_TRIPLE_TAP))
+        assertEquals(GestureAction.CYCLE_GRANULARITY, mapping.actionFor(Gesture.TWO_FINGER_TRIPLE_TAP))
     }
 
     @Test

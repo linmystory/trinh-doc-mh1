@@ -18,10 +18,9 @@ object UnlabeledNamer {
         val name = viewId.substringAfter(":id/", viewId).substringAfterLast('/')
         val tokens = tokenize(name).filter { it !in GENERIC }
         if (tokens.isEmpty() || tokens.size > MAX_TOKENS) return null
-        // Từ điển dịch chỉ có tiếng Việt. Ngôn ngữ khác: giữ nguyên từ tiếng Anh trong id (đã biết là có nghĩa
-        // vì nằm trong từ điển), để TTS đọc thay vì đoán bừa một bản dịch chưa có.
-        val vietnamese = Texts.provider.language == "vi"
-        val translated = tokens.map { token -> TRANSLATIONS[token]?.let { if (vietnamese) it else token } ?: return null }
+        // Từ điển theo ngôn ngữ; ngôn ngữ chưa có từ điển giữ nguyên từ tiếng Anh đã biết nghĩa.
+        val dictionary = Dictionaries.current()
+        val translated = tokens.map { token -> dictionary.viewIdWord(token) ?: return null }
         return translated.joinToString(" ")
     }
 
@@ -30,6 +29,9 @@ object UnlabeledNamer {
         val spaced = name.replace(CAMEL_BOUNDARY, "$1 $2")
         return spaced.split(SEPARATORS).map { it.lowercase() }.filter { it.isNotEmpty() && !it.all(Char::isDigit) }
     }
+
+    /** Các từ id đã biết nghĩa (khóa của từ điển tiếng Việt). */
+    internal val KNOWN_WORDS: Set<String> get() = TRANSLATIONS.keys
 
     private const val MAX_TOKENS = 3
     private val CAMEL_BOUNDARY = Regex("([a-z0-9])([A-Z])")
@@ -40,7 +42,7 @@ object UnlabeledNamer {
         "action", "tv", "text", "container", "holder", "bg", "the", "of",
     )
 
-    private val TRANSLATIONS = mapOf(
+    internal val TRANSLATIONS = mapOf(
         "close" to "đóng", "dismiss" to "đóng", "cancel" to "hủy", "back" to "quay lại", "up" to "lên",
         "down" to "xuống", "next" to "tiếp theo", "previous" to "trước đó", "prev" to "trước đó",
         "ok" to "đồng ý", "done" to "xong", "confirm" to "xác nhận", "accept" to "chấp nhận", "save" to "lưu",

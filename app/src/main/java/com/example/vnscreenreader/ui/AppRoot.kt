@@ -14,7 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -51,6 +51,7 @@ private enum class Section(
     VOICE("voice", R.string.grp_voice, R.string.sec_voice, R.string.sec_voice_sum),
     FEEDBACK("feedback", R.string.grp_voice, R.string.sec_feedback, R.string.sec_feedback_sum),
     GESTURES("gestures", R.string.grp_control, R.string.sec_gestures, R.string.sec_gestures_sum),
+    GESTURE_TEST("gesturetest", R.string.grp_control, R.string.sec_gesttest, R.string.sec_gesttest_sum),
     MENUS("menus", R.string.grp_control, R.string.sec_menus, R.string.sec_menus_sum),
     READING("reading", R.string.grp_advanced, R.string.sec_reading, R.string.sec_reading_sum),
     LABELS("labels", R.string.grp_advanced, R.string.sec_labels, R.string.sec_labels_sum),
@@ -63,6 +64,9 @@ private enum class Section(
 }
 
 private const val WIDE_LAYOUT_DP = 600
+
+/** Cột danh sách chiếm tỉ lệ chiều rộng (có chặn min/max) nên chuỗi dài của ngôn ngữ khác vẫn xuống dòng, không tràn. */
+private const val LIST_WIDTH_FRACTION = 0.35f
 
 /**
  * Bố cục thích ứng: màn hình rộng (máy tính bảng, gập mở, xoay ngang) hiện danh sách mục bên trái và nội dung bên
@@ -83,7 +87,7 @@ fun AppRoot() {
                 SectionList(
                     selected = selected ?: Section.STATUS,
                     onSelect = { selectedKey = it.key },
-                    modifier = Modifier.width(300.dp).fillMaxHeight(),
+                    modifier = Modifier.fillMaxWidth(LIST_WIDTH_FRACTION).widthIn(min = 260.dp, max = 380.dp).fillMaxHeight(),
                 )
                 Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
                     SectionContent(selected ?: Section.STATUS)
@@ -157,6 +161,7 @@ private fun SectionContent(section: Section) {
         Section.VOICE -> VoiceScreen()
         Section.FEEDBACK -> FeedbackScreen()
         Section.MENUS -> MenusScreen()
+        Section.GESTURE_TEST -> GestureTestScreen()
         Section.READING -> ReadingScreen()
         Section.LABELS -> LabelsScreen()
         Section.GESTURES -> GestureSettingsScreen()

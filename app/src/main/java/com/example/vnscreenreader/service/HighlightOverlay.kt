@@ -7,9 +7,15 @@ import android.graphics.Paint
 import android.graphics.PixelFormat
 import android.graphics.Rect
 import android.util.Log
+import android.view.Choreographer
 import android.view.View
 import android.view.WindowManager
 import com.example.vnscreenreader.core.S
+import com.example.vnscreenreader.core.withOverlayHidden
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withContext
+import kotlin.coroutines.resume
 import com.example.vnscreenreader.core.t
 
 /** Khung viền xanh lá quanh phần tử đang chọn, vẽ bằng cửa sổ TYPE_ACCESSIBILITY_OVERLAY. */
@@ -42,6 +48,31 @@ class HighlightOverlay(private val context: Context) {
     fun show(bounds: Rect) = view.setTarget(Rect(bounds))
 
     fun clear() = view.setTarget(null)
+
+    /**
+     * Ẩn khung, chờ hai khung hình để bảo đảm lớp phủ đã biến mất khỏi màn hình, chạy [block] (chụp màn hình),
+     * rồi hiện lại khung — kể cả khi [block] thất bại hoặc bị hủy. Gọi từ coroutine bất kỳ luồng nào.
+     */
+    suspend fun <T> withHidden(block: suspend () -> T): T = withOverlayHidden(
+        hide = {
+            if (attached) withContext(Dispatchers.Main) {
+                view.visibility = View.INVISIBLE
+                awaitFrames(FRAMES_TO_WAIT)
+            }
+        },
+        show = { if (attached) withContext(Dispatchers.Main) { view.visibility = View.VISIBLE } },
+        block = block,
+    )
+
+    private suspend fun awaitFrames(count: Int) {
+        repeat(count) {
+            suspendCancellableCoroutine { cont ->
+                val callback = Choreographer.FrameCallback { cont.resume(Unit) }
+                Choreographer.getInstance().postFrameCallback(callback)
+                cont.invokeOnCancellation { Choreographer.getInstance().removeFrameCallback(callback) }
+            }
+        }
+    }
 
     fun detach() {
         if (!attached) return
@@ -90,5 +121,6 @@ class HighlightOverlay(private val context: Context) {
 
     private companion object {
         const val TAG = "HighlightOverlay"
+        const val FRAMES_TO_WAIT = 2
     }
 }

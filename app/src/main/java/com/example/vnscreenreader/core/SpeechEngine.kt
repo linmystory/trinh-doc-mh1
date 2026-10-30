@@ -148,10 +148,12 @@ class SpeechEngine(
 
     /** Đọc theo ngôn ngữ hiện hành của ứng dụng (đổi trong Cài đặt hệ thống → Ngôn ngữ ứng dụng). */
     private fun applyLanguage(engine: TextToSpeech) {
-        val locale = Locale.getDefault()
+        // Lấy theo cấu hình tài nguyên của ứng dụng (đã áp dụng "ngôn ngữ theo ứng dụng"), không theo Locale.getDefault().
+        val locale: Locale = appContext.resources.configuration.locales[0]
         val result = engine.setLanguage(locale)
         if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
-            Log.w(TAG, "No TTS voice for $locale, using the engine default.")
+            // Không có giọng cho ngôn ngữ này: giữ giọng hiện có của engine (không im lặng) và ghi log để dễ chẩn đoán.
+            Log.w(TAG, "No TTS voice for $locale (result=$result); keeping the engine's current voice.")
         }
     }
 

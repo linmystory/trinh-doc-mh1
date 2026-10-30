@@ -18,11 +18,17 @@ import com.example.vnscreenreader.core.SpeechTextBuilder
 import com.example.vnscreenreader.gesture.GestureAction
 import com.example.vnscreenreader.gesture.GestureAnalyzer
 import com.example.vnscreenreader.gesture.GestureMappingStore
+import com.example.vnscreenreader.core.AutoOcrPolicy
+import com.example.vnscreenreader.core.GestureTestLogic
+import com.example.vnscreenreader.core.GestureTestMode
+import com.example.vnscreenreader.menu.AnnouncementGate
 import com.example.vnscreenreader.menu.MenuItem
 import com.example.vnscreenreader.menu.MenuKind
 import com.example.vnscreenreader.menu.MenuState
 import com.example.vnscreenreader.menu.Menus
 import com.example.vnscreenreader.node.NodeCollector
+import com.example.vnscreenreader.node.toSnapshot
+import android.view.accessibility.AccessibilityNodeInfo
 import com.example.vnscreenreader.plugin.PluginRegistry
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.CancellationException
@@ -57,12 +63,16 @@ internal class ReaderSession(private val service: AccessibilityService) {
     private val navigator = FocusNavigator(service, overlay, customLabels, feedback) { text, interrupt -> speech.speak(text, interrupt) }
     private val ai = AiAssistant(
         capture = ScreenCapture(service),
+        overlay = overlay,
         navigator = navigator,
         speech = speech,
-        recognizerFactory = { MlKitTextRecognizer() },
+        recognizerFactory = { script -> MlKitTextRecognizer(script) },
         labelerFactory = { MlKitImageLabeler() },
     )
     private val notificationSummarizer = NotificationSummarizer()
+    init {
+        navigator.onFocused = { node -> onElementFocused(node) }
+    }
     private val dispatcher = ActionDispatcher(
         service = service,
         navigator = navigator,
@@ -81,6 +91,7 @@ internal class ReaderSession(private val service: AccessibilityService) {
 
     /** Trình đơn đang mở (null = không có). Chỉ đọc/ghi trên luồng xử lý duy nhất của [scope]. */
     private var menu: MenuState? = null
+    private val menuGate = AnnouncementGate()
 
     // Giữ tham chiếu mạnh vì SharedPreferences chỉ giữ listener bằng weak reference.
     private val settingsListener = SharedPreferences.OnSharedPreferenceChangeListener { _, _ ->
@@ -94,6 +105,32 @@ internal class ReaderSession(private val service: AccessibilityService) {
     /** Gọi trên luồng chính khi cấu hình (ngôn ngữ) đổi. */
     fun onLocaleChanged() {
         speech.updateLanguage()
+    }
+
+    /**
+     * Tự đọc chữ trong ảnh không nhãn (công tắc mặc định TẮT). Điều kiện và chống lặp nằm ở [AutoOcrPolicy]; việc
+     * hủy tác vụ cũ khi chọn phần tử khác nằm ở [AiAssistant.onFocusChanged].
+     */
+    private fun onElementFocused(node: AccessibilityNodeInfo) {
+        val enabled = settings.autoOcrUnlabeled
+        if (!enabled) {
+            ai.cancelAuto()
+            return
+        }
+        val snapshot = node.toSnapshot()
+        val eligible = AutoOcrPolicy.eligible(
+            enabled = true,
+            node = snapshot,
+            hasCustomLabel = !customLabels.find(snapshot.packageName, snapshot.viewId).isNullOrBlank(),
+            hasMergedChildLabel = NodeCollector.mergedLabel(node).isNotBlank(),
+        )
+        val bounds = android.graphics.Rect().also { node.getBoundsInScreen(it) }
+        ai.onFocusChanged(
+            node = node,
+            eligible = eligible,
+            windowKey = "${snapshot.packageName}#${node.windowId}",
+            elementKey = "${snapshot.viewId}|$bounds",
+        )
     }
 
     /** Gọi trên luồng chính. */
@@ -124,7 +161,14 @@ internal class ReaderSession(private val service: AccessibilityService) {
 
     /** Trả về true để báo đã xử lý cử chỉ (kể cả khi được gán t(S.GA_NONE)). */
     fun handleGesture(gestureId: Int): Boolean {
-        val gesture = GestureAnalyzer.analyze(gestureId) ?: return false
+        val gesture = GestureAnalyzer.analyze(gestureId)
+        // Chế độ "Kiểm tra cử chỉ": chỉ đọc tên cử chỉ hệ thống gửi tới, KHÔNG thực hiện chức năng đã gán.
+        if (GestureTestMode.active) {
+            val label = gesture?.label ?: t(S.GT_UNKNOWN, gestureId)
+            GestureTestLogic.announcement(true, label)?.let { speech.speak(it, true) }
+            return true
+        }
+        if (gesture == null) return false
         val action = mapping.actionFor(gesture)
         if (action == GestureAction.NONE) return true
 
@@ -172,12 +216,18 @@ internal class ReaderSession(private val service: AccessibilityService) {
                     speech.speak(t(S.MSG_NOTHING_SELECTED), true)
                     return
                 }
-                Menus.local(navigator.customActions())
+                Menus.local(navigator.customActions(), editable = navigator.isCurrentEditable())
             }
+            else -> return // trình đơn con chỉ mở từ trình đơn cha
         }
-        val opened = MenuState.open(kind, items)
-        menu = opened
-        speech.speak(opened.opening(), true)
+        menuGate.reset()
+        announce(MenuState.open(kind, items).also { menu = it }.opening())
+    }
+
+    /** Đọc một thông báo của trình đơn và ghi nhận để lời nhắc không bị đọc lặp liên tiếp. */
+    private fun announce(text: String) {
+        menuGate.record(text)
+        speech.speak(text, true)
     }
 
     /**
@@ -192,23 +242,55 @@ internal class ReaderSession(private val service: AccessibilityService) {
             GestureAction.ACTIVATE -> {
                 val item = current.current
                 if (item == null) {
-                    speech.speak(t(S.MSG_MENU_PICK_FIRST), true)
+                    if (menuGate.shouldSpeak(t(S.MSG_MENU_PICK_FIRST))) speech.speak(t(S.MSG_MENU_PICK_FIRST), true)
                     return
                 }
-                menu = null
-                execute(item)
+                when {
+                    item.isBack -> returnToParent(current)
+                    item.submenu != null -> openSubmenu(current, item.submenu)
+                    else -> {
+                        menu = null
+                        execute(item)
+                    }
+                }
             }
-            GestureAction.BACK, GestureAction.STOP_SPEECH, GestureAction.OPEN_GLOBAL_MENU, GestureAction.OPEN_LOCAL_MENU -> {
-                menu = null
-                speech.speak(t(S.MSG_MENU_CLOSED), true)
+            // Quay lại: từ trình đơn con thì về trình đơn cha, từ cấp đầu thì đóng hẳn.
+            GestureAction.BACK -> if (current.parent != null) returnToParent(current) else closeMenu()
+            GestureAction.STOP_SPEECH, GestureAction.OPEN_GLOBAL_MENU, GestureAction.OPEN_LOCAL_MENU -> closeMenu()
+            // Cử chỉ không dùng được trong trình đơn: nhắc ngắn MỘT lần, tắt hướng dẫn thì im lặng.
+            else -> if (settings.speakHints) {
+                val hint = t(S.MSG_MENU_HINT)
+                if (menuGate.shouldSpeak(hint)) speech.speak(hint, true)
             }
-            else -> speech.speak(t(S.MSG_MENU_HINT), true)
         }
     }
 
     private fun advance(next: MenuState) {
         menu = next
-        speech.speak(next.describeCurrent(), true)
+        announce(next.describeCurrent(settings.speakHints))
+    }
+
+    private fun closeMenu() {
+        menu = null
+        menuGate.reset()
+        speech.speak(t(S.MSG_MENU_CLOSED), true)
+    }
+
+    private fun openSubmenu(parent: MenuState, kind: MenuKind) {
+        val items = when (kind) {
+            MenuKind.GLOBAL_MORE -> Menus.globalMore()
+            MenuKind.LOCAL_EDIT -> Menus.localEdit()
+            else -> return
+        }
+        val child = parent.child(kind, items)
+        menu = child
+        announce(child.opening())
+    }
+
+    private fun returnToParent(state: MenuState) {
+        val parent = state.back() ?: return closeMenu()
+        menu = parent
+        announce(parent.describeCurrent(settings.speakHints))
     }
 
     private fun execute(item: MenuItem) {
@@ -254,6 +336,7 @@ internal class ReaderSession(private val service: AccessibilityService) {
                     addedCount = event.addedCount,
                     removedCount = event.removedCount,
                     isPassword = event.isPassword,
+                    speakPasswordChars = settings.speakPasswords,
                 )?.let { speech.speak(it, true) }
             }
         }

@@ -14,8 +14,27 @@ android {
         applicationId = "com.example.vnscreenreader"
         minSdk = 35 // Android 15+: bỏ mọi nhánh tương thích cũ; ngôn ngữ theo ứng dụng có sẵn trong hệ thống
         targetSdk = 36
-        versionCode = 9
-        versionName = "2.3.0"
+        versionCode = 16
+        versionName = "2.5.1"
+    }
+
+    // Ký bản release: chỉ khi đủ 4 biến môi trường (CI secrets / máy cá nhân). Khóa KHÔNG nằm trong repo.
+    // Thiếu biến thì build release vẫn chạy nhưng ra APK chưa ký (không cài được) — an toàn, không lộ khóa.
+    val keystorePath = System.getenv("RELEASE_KEYSTORE_PATH")
+    val keystorePassword = System.getenv("RELEASE_KEYSTORE_PASSWORD")
+    val keyAliasName = System.getenv("RELEASE_KEY_ALIAS")
+    val keyPasswordValue = System.getenv("RELEASE_KEY_PASSWORD")
+    val hasReleaseSigning = listOf(keystorePath, keystorePassword, keyAliasName, keyPasswordValue)
+        .all { !it.isNullOrBlank() }
+    if (hasReleaseSigning) {
+        signingConfigs {
+            create("release") {
+                storeFile = file(keystorePath!!)
+                storePassword = keystorePassword
+                keyAlias = keyAliasName
+                keyPassword = keyPasswordValue
+            }
+        }
     }
 
     buildTypes {
@@ -30,6 +49,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
+            if (hasReleaseSigning) signingConfig = signingConfigs.getByName("release")
         }
     }
 
@@ -68,6 +88,7 @@ dependencies {
 
     // ML Kit chạy trên máy với mô hình ĐÓNG GÓI SẴN trong APK (không tải thêm, không cần INTERNET).
     implementation(libs.mlkit.text.recognition)
+    implementation(libs.mlkit.text.recognition.chinese)
     implementation(libs.mlkit.image.labeling)
 
     testImplementation(libs.junit)

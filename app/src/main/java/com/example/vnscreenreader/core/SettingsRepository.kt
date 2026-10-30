@@ -23,6 +23,24 @@ class SettingsRepository(context: Context) {
         get() = prefs.getBoolean(KEY_NOTIFICATIONS, true)
         set(value) = prefs.edit { putBoolean(KEY_NOTIFICATIONS, value) }
 
+    /**
+     * Tự đọc chữ trong ảnh KHÔNG nhãn khi người dùng chọn ảnh đó. Mặc định TẮT: tốn pin, chụp màn hình mỗi lần chọn
+     * và kết quả có thể sai.
+     */
+    var autoOcrUnlabeled: Boolean
+        get() = prefs.getBoolean(KEY_AUTO_OCR, false)
+        set(value) = prefs.edit { putBoolean(KEY_AUTO_OCR, value) }
+
+    /** Đọc ký tự đang gõ trong ô mật khẩu. Mặc định TẮT (chỉ báo "đã nhập ký tự") để không lộ mật khẩu khi có người nghe. */
+    var speakPasswords: Boolean
+        get() = prefs.getBoolean(KEY_SPEAK_PASSWORDS, false)
+        set(value) = prefs.edit { putBoolean(KEY_SPEAK_PASSWORDS, value) }
+
+    /** Đọc thêm lời hướng dẫn/vị trí (ví dụ "1 trên 13" trong trình đơn). Tắt = chỉ đọc tên mục cho gọn. */
+    var speakHints: Boolean
+        get() = prefs.getBoolean(KEY_SPEAK_HINTS, true)
+        set(value) = prefs.edit { putBoolean(KEY_SPEAK_HINTS, value) }
+
     var hapticEnabled: Boolean
         get() = prefs.getBoolean(KEY_HAPTIC, true)
         set(value) = prefs.edit { putBoolean(KEY_HAPTIC, value) }
@@ -64,6 +82,9 @@ class SettingsRepository(context: Context) {
         const val MIN_SOUND_VOLUME = 0.1f
         const val DEFAULT_SOUND_VOLUME = 0.4f
         private const val KEY_NOTIFICATIONS = "read_notifications"
+        private const val KEY_SPEAK_PASSWORDS = "speak_passwords"
+        private const val KEY_SPEAK_HINTS = "speak_hints"
+        private const val KEY_AUTO_OCR = "auto_ocr_unlabeled"
         private const val KEY_HAPTIC = "haptic_enabled"
         private const val KEY_SOUND = "sound_enabled"
         private const val KEY_SOUND_VOLUME = "sound_volume"

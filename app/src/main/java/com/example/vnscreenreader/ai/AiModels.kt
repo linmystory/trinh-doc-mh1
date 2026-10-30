@@ -1,7 +1,15 @@
 package com.example.vnscreenreader.ai
 
 /** Một khối chữ do OCR nhận ra, tọa độ theo pixel ảnh (gốc ở góc trên trái). */
-data class OcrBlock(val text: String, val left: Int, val top: Int, val right: Int, val bottom: Int) {
+data class OcrBlock(
+    val text: String,
+    val left: Int,
+    val top: Int,
+    val right: Int,
+    val bottom: Int,
+    /** Độ tin cậy 0..1 của dòng chữ (null nếu bộ nhận dạng không cung cấp). */
+    val confidence: Float? = null,
+) {
     val centerY: Int get() = (top + bottom) / 2
     val height: Int get() = (bottom - top).coerceAtLeast(1)
 }

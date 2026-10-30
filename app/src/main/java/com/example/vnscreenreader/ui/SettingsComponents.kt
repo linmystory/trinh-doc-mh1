@@ -81,7 +81,10 @@ fun SettingSwitch(
             .fillMaxWidth()
             .heightIn(min = 80.dp)
             .toggleable(value = checked, role = Role.Switch, onValueChange = onCheckedChange)
-            .semantics { stateDescription = if (checked) onText else offText },
+            .semantics {
+                contentDescription = if (description.isNullOrBlank()) title else "$title. $description"
+                stateDescription = if (checked) onText else offText
+            },
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {

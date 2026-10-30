@@ -60,18 +60,49 @@ class TextsTest {
     /** Chạy trong Gradle (thư mục làm việc = module app): mọi ngôn ngữ phải đủ khóa và đúng tham số. */
     @Test
     fun allLanguagesCoverAllKeysWithSamePlaceholders() {
-        val resDir = listOf(File("src/main/res"), File("app/src/main/res")).firstOrNull { it.isDirectory }
-        assumeTrue("không tìm thấy thư mục res (chạy ngoài Gradle)", resDir != null)
+        val resDir = resDir()
         val base = readStrings(File(resDir, "values/strings.xml"))
-        assertEquals("S enum và values/strings.xml lệch nhau", S.entries.map { it.name.lowercase() }.toSet(), base.keys)
-        val placeholder = Regex("%(\\d+)\\$\\d*([sd])")
-        fun signature(s: String) = placeholder.findAll(s).map { it.groupValues[1] + it.groupValues[2] }.sorted().toList()
-        listOf("vi", "fr", "es", "ru", "ar", "zh").forEach { lang ->
-            val tr = readStrings(File(resDir, "values-$lang/strings.xml"))
+        val basePlurals = readPlurals(File(resDir, "values/strings.xml"))
+        assertEquals(
+            "S enum và values/strings.xml lệch nhau",
+            S.entries.map { it.name.lowercase() }.toSet(), base.keys + basePlurals.keys,
+        )
+        listOf("vi", "fr", "es", "ru", "ar", "zh", "b+zh+Hant").forEach { lang ->
+            val file = File(resDir, "values-$lang/strings.xml")
+            val tr = readStrings(file)
             assertEquals("values-$lang thiếu/thừa khóa", base.keys, tr.keys)
             base.forEach { (k, v) -> assertEquals("$lang/$k lệch tham số", signature(v), signature(tr.getValue(k))) }
+            val trPlurals = readPlurals(file)
+            assertEquals("values-$lang thiếu/thừa plurals", basePlurals.keys, trPlurals.keys)
         }
     }
+
+    /** Mỗi ngôn ngữ phải có đủ dạng số nhiều theo CLDR (ru: one/few/many/other, ar: đủ 6 dạng...). */
+    @Test
+    fun pluralsHaveAllRequiredQuantities() {
+        val resDir = resDir()
+        val required = mapOf(
+            "values" to setOf("one", "other"), "values-vi" to setOf("other"),
+            "values-fr" to setOf("one", "many", "other"), "values-es" to setOf("one", "many", "other"),
+            "values-ru" to setOf("one", "few", "many", "other"),
+            "values-ar" to setOf("zero", "one", "two", "few", "many", "other"),
+            "values-zh" to setOf("other"), "values-b+zh+Hant" to setOf("other"),
+        )
+        required.forEach { (folder, quantities) ->
+            val plurals = readPlurals(File(resDir, "$folder/strings.xml"))
+            assertTrue("$folder không có plurals", plurals.isNotEmpty())
+            plurals.forEach { (k, forms) -> assertEquals("$folder/$k sai dạng số nhiều", quantities, forms.keys) }
+        }
+    }
+
+    private fun resDir(): File {
+        val dir = listOf(File("src/main/res"), File("app/src/main/res")).firstOrNull { it.isDirectory }
+        assumeTrue("không tìm thấy thư mục res (chạy ngoài Gradle)", dir != null)
+        return dir!!
+    }
+
+    private val placeholder = Regex("%(\\d+)\\$\\d*([sd])")
+    private fun signature(s: String) = placeholder.findAll(s).map { it.groupValues[1] + it.groupValues[2] }.sorted().toList()
 
     private fun readStrings(file: File): Map<String, String> {
         val doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(file)
@@ -79,6 +110,18 @@ class TextsTest {
         return (0 until nodes.length).associate { i ->
             val n = nodes.item(i)
             n.attributes.getNamedItem("name").nodeValue to n.textContent
+        }
+    }
+
+    private fun readPlurals(file: File): Map<String, Map<String, String>> {
+        val doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(file)
+        val nodes = doc.getElementsByTagName("plurals")
+        return (0 until nodes.length).associate { i ->
+            val n = nodes.item(i)
+            val items = (n as org.w3c.dom.Element).getElementsByTagName("item")
+            n.attributes.getNamedItem("name").nodeValue to (0 until items.length).associate { j ->
+                items.item(j).attributes.getNamedItem("quantity").nodeValue to items.item(j).textContent
+            }
         }
     }
 }

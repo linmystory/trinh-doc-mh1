@@ -9,6 +9,7 @@ lifecycle = "2.11.0"
 coroutines = "1.11.0"
 junit = "4.13.2"
 mlkitTextRecognition = "16.0.1"  # bản gói sẵn mô hình Latin (ổn định, cập nhật gần nhất 08/2024)
+mlkitTextRecognitionChinese = "16.0.1" # mô hình Trung gói sẵn (~4 MB mỗi kiến trúc theo tài liệu ML Kit)
 mlkitImageLabeling = "17.0.9"     # bản gói sẵn mô hình 400 nhãn
 orgJson = "20260814"          # org.json thật cho unit test (android.jar chỉ có stub)
 
@@ -23,6 +24,7 @@ androidx-compose-material3 = { module = "androidx.compose.material3:material3" }
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
 junit = { module = "junit:junit", version.ref = "junit" }
 mlkit-text-recognition = { module = "com.google.mlkit:text-recognition", version.ref = "mlkitTextRecognition" }
+mlkit-text-recognition-chinese = { module = "com.google.mlkit:text-recognition-chinese", version.ref = "mlkitTextRecognitionChinese" }
 mlkit-image-labeling = { module = "com.google.mlkit:image-labeling", version.ref = "mlkitImageLabeling" }
 org-json = { module = "org.json:json", version.ref = "orgJson" }
 
