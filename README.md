@@ -59,6 +59,14 @@ Cử chỉ mở trình đơn hiển thị ở mục **Trình đơn** trong ứng
   "Tên, N mục."; cử chỉ không dùng được trong trình đơn chỉ nhắc ngắn một lần.
 - Cài đặt **Đọc hướng dẫn thao tác** (Đọc, mặc định bật): tắt thì trình đơn chỉ đọc tên mục, không đọc vị trí và lời nhắc.
 
+## Bản 2.7.3
+
+Dọn cảnh báo lint: icon ứng dụng (loa phát sóng âm, adaptive + monochrome), `dataExtractionRules` (không sao lưu), `AppRoot` dùng `LocalWindowInfo` thay `screenWidthDp`, `app/lint.xml` bỏ qua gợi ý chính tả/plurals của chuỗi sinh tự động.
+
+## Bản 2.7.2
+
+Sửa 408 lỗi lint `MissingTranslation`: `values-en-rGB` cố ý chỉ có 13 chuỗi nên lint đòi đủ bản dịch. Thêm `tools:ignore="MissingTranslation"` vào `values/strings.xml` (do `tools/i18n/gen.py` sinh); độ phủ ngôn ngữ vẫn được `TextsTest` kiểm.
+
 ## Bản 2.7.1
 
 Sửa lỗi lint `LocalContextGetResourceValueCall` ở `PluginManagerScreen` (lấy chuỗi bằng `stringResource` thay vì `context.getString` trong Composable).

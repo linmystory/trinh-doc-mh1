@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<lint>
+    <!-- Gợi ý chính tả/định dạng của chuỗi sinh tự động từ tools/i18n: không ảnh hưởng người dùng. -->
+    <issue id="TypographyDashes" severity="ignore" />
+    <issue id="TypographyEllipsis" severity="ignore" />
+    <issue id="PluralsCandidate" severity="ignore" />
+</lint>

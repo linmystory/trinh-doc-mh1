@@ -26,7 +26,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -76,7 +77,10 @@ private const val LIST_WIDTH_FRACTION = 0.35f
 fun AppRoot() {
     var selectedKey by rememberSaveable { mutableStateOf<String?>(null) }
     val selected = Section.fromKey(selectedKey)
-    val wide = LocalConfiguration.current.screenWidthDp >= WIDE_LAYOUT_DP
+    // Chiều rộng cửa sổ (dp) lấy từ LocalWindowInfo: đúng cả khi chia đôi màn hình/đổi cỡ cửa sổ (khuyến nghị của lint).
+    val density = LocalDensity.current
+    val windowWidthDp = with(density) { LocalWindowInfo.current.containerSize.width.toDp().value }
+    val wide = windowWidthDp >= WIDE_LAYOUT_DP
 
     // Màn hình hẹp: Back từ một mục quay về danh sách thay vì thoát ứng dụng.
     BackHandler(enabled = !wide && selected != null) { selectedKey = null }

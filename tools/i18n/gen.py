@@ -51,6 +51,11 @@ for i, l in enumerate(LANGS):
     d = f"{RES}/{FOLDERS[l]}"
     os.makedirs(d, exist_ok=True)
     out = ['<?xml version="1.0" encoding="utf-8"?>', "<resources>"]
+    if l == "en":
+        # values-en-rGB cố ý chỉ chứa vài chuỗi đổi chính tả Anh-Mỹ -> Anh-Anh (phần còn lại rơi về đây). Lint coi đó là
+        # "thiếu bản dịch" (hàng trăm lỗi MissingTranslation). Độ phủ các ngôn ngữ khác đã có TextsTest bảo vệ.
+        out = ['<?xml version="1.0" encoding="utf-8"?>',
+               '<resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">']
     for r in ROWS:
         out.append(f'    <string name="{r[0]}">{xml_escape(r[1 + i])}</string>')
     for k in PLURAL_KEYS:
