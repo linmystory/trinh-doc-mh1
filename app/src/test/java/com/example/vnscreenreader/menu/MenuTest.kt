@@ -57,7 +57,7 @@ class MenuStateTest {
     @Test
     fun customActions_areCapped() {
         val many = (1..50).map { CustomAction(0x7f000000 + it, "a$it") }
-        assertEquals(11 + Menus.MAX_CUSTOM_ACTIONS, Menus.local(many).size)
+        assertEquals(12 + Menus.MAX_CUSTOM_ACTIONS, Menus.local(many).size)
     }
 
     @Test

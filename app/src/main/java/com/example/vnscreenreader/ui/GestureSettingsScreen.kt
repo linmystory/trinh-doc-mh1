@@ -41,12 +41,17 @@ import com.example.vnscreenreader.gesture.GestureMappingStore
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import com.example.vnscreenreader.R
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
+import com.example.vnscreenreader.menu.MenuGestures
 
 @Composable
 fun GestureSettingsScreen() {
     val context = LocalContext.current
     val store = remember { GestureMappingStore(context) }
     var mapping by remember { mutableStateOf(store.load()) }
+    // Đổi cử chỉ làm mất hết cử chỉ của một hành động thiết yếu: hỏi lại trước khi áp dụng.
+    var pendingChange by remember { mutableStateOf<Triple<Gesture, GestureAction, GestureAction>?>(null) }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -86,8 +91,13 @@ fun GestureSettingsScreen() {
                     gesture = gesture,
                     action = mapping.actionFor(gesture),
                     onSelected = { selected ->
-                        mapping = mapping.with(gesture, selected)
-                        store.save(mapping)
+                        val lost = MenuGestures.essentialLost(mapping, gesture, selected)
+                        if (lost != null) {
+                            pendingChange = Triple(gesture, selected, lost)
+                        } else {
+                            mapping = mapping.with(gesture, selected)
+                            store.save(mapping)
+                        }
                     },
                 )
             }
@@ -108,6 +118,33 @@ fun GestureSettingsScreen() {
             }
         }
     }
+
+    pendingChange?.let { (gesture, selected, lost) ->
+        EssentialLostDialog(
+            lostAction = lost,
+            onConfirm = {
+                mapping = mapping.with(gesture, selected)
+                store.save(mapping)
+                pendingChange = null
+            },
+            onDismiss = { pendingChange = null },
+        )
+    }
+}
+
+@Composable
+private fun EssentialLostDialog(lostAction: GestureAction, onConfirm: () -> Unit, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.gs_lost_title), fontSize = 20.sp) },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState())) {
+                Text(stringResource(R.string.gs_lost_msg, lostAction.label), fontSize = 18.sp)
+            }
+        },
+        confirmButton = { TextButton(onClick = onConfirm) { Text(stringResource(R.string.gs_lost_confirm), fontSize = 18.sp) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.ui_cancel), fontSize = 18.sp) } },
+    )
 }
 
 @Composable

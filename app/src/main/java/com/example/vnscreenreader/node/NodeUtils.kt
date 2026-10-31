@@ -109,9 +109,10 @@ object NodeCollector {
      *  - Ô nhập/công tắc chưa gắn nhãn: giữ (quan trọng, phải tới được).
      *  - Còn lại (khung bố cục thuần túy, ảnh trang trí không nhấn được) bị bỏ qua nhưng vẫn duyệt các con.
      * Các con có thể tương tác (nút bấm lồng trong thẻ) luôn được giữ.
+     * [detailed] = tiêu điểm chi tiết: thêm các nút bấm được không nhãn bị khung cha "nuốt" (ô tích bị giấu).
      * Thời gian O(số nút duyệt) với trần [MAX_NODES].
      */
-    fun collect(root: AccessibilityNodeInfo, maxNodes: Int = MAX_NODES): List<AccessibilityNodeInfo> {
+    fun collect(root: AccessibilityNodeInfo, maxNodes: Int = MAX_NODES, detailed: Boolean = false): List<AccessibilityNodeInfo> {
         val result = ArrayList<AccessibilityNodeInfo>()
         val stack = ArrayDeque<Pair<AccessibilityNodeInfo, Boolean>>() // (nút, đã được cha gộp nhãn)
         stack.addLast(root to false)
@@ -136,6 +137,8 @@ object NodeCollector {
                     childrenConsumed = true
                 }
                 !own && (node.isEditable || node.isCheckable) -> result += node
+                // Tiêu điểm chi tiết: ô tích/nút không nhãn nằm trong khung bấm được vẫn là một điểm dừng riêng.
+                detailed && !own && node.isClickable -> result += node
             }
             for (i in node.childCount - 1 downTo 0) {
                 node.getChild(i)?.let { stack.addLast(it to childrenConsumed) }
@@ -212,6 +215,45 @@ object NodeCollector {
      * (vùng đã ở cuối không còn hành động tương ứng trong actionList).
      */
     fun scrollTargets(from: AccessibilityNodeInfo?, root: AccessibilityNodeInfo, forward: Boolean): List<AccessibilityNodeInfo> {
+        val wanted = scrollActions(forward)
+        return scrollTargetsBy(from, root) { node -> node.actionList.any { a -> a.id in wanted } }
+    }
+
+    /**
+     * Vùng cuộn/chuyển trang NGANG (ViewPager, tab vuốt ngang, danh sách ngang): nút có bất kỳ hành động ngang nào
+     * (trái/phải/trang trái/trang phải), cùng thứ tự ưu tiên như [scrollTargets].
+     */
+    fun pageTargets(from: AccessibilityNodeInfo?, root: AccessibilityNodeInfo): List<AccessibilityNodeInfo> =
+        scrollTargetsBy(from, root) { node -> node.actionList.any { a -> a.id in HORIZONTAL_ACTION_IDS } }
+
+    /** Thứ tự thử hành động chuyển trang: FORWARD/BACKWARD (tự xử lý RTL) trước, rồi trang, rồi cuộn trái/phải. */
+    fun pageActions(forward: Boolean): IntArray =
+        if (forward) {
+            intArrayOf(
+                AccessibilityNodeInfo.ACTION_SCROLL_FORWARD,
+                AccessibilityNodeInfo.AccessibilityAction.ACTION_PAGE_RIGHT.id,
+                AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_RIGHT.id,
+            )
+        } else {
+            intArrayOf(
+                AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD,
+                AccessibilityNodeInfo.AccessibilityAction.ACTION_PAGE_LEFT.id,
+                AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_LEFT.id,
+            )
+        }
+
+    private val HORIZONTAL_ACTION_IDS: Set<Int> = setOf(
+        AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_LEFT.id,
+        AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_RIGHT.id,
+        AccessibilityNodeInfo.AccessibilityAction.ACTION_PAGE_LEFT.id,
+        AccessibilityNodeInfo.AccessibilityAction.ACTION_PAGE_RIGHT.id,
+    )
+
+    private fun scrollTargetsBy(
+        from: AccessibilityNodeInfo?,
+        root: AccessibilityNodeInfo,
+        accepts: (AccessibilityNodeInfo) -> Boolean,
+    ): List<AccessibilityNodeInfo> {
         val nodes = ArrayList<AccessibilityNodeInfo>()
         val candidates = ArrayList<ScrollCandidate>()
         fun add(node: AccessibilityNodeInfo, rank: Int?) {
@@ -231,9 +273,7 @@ object NodeCollector {
         }
         traverse(root).filter { it.isScrollable }.forEach { add(it, null) }
 
-        val wanted = scrollActions(forward)
-        return ScrollOrdering.order(candidates).map { nodes[it.id] }
-            .filter { node -> node.actionList.any { a -> a.id in wanted } }
+        return ScrollOrdering.order(candidates).map { nodes[it.id] }.filter(accepts)
     }
 
     /** Hai hành động cuộn tương đương theo hướng (ưu tiên FORWARD/BACKWARD rồi tới DOWN/UP). */

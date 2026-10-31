@@ -61,11 +61,18 @@ class GestureMappingTest {
         assertEquals(Gesture.entries.toSet(), mapping.toMap().keys)
         assertEquals(GestureAction.OPEN_GLOBAL_MENU, mapping.actionFor(Gesture.DOWN_THEN_RIGHT))
         assertEquals(GestureAction.OPEN_LOCAL_MENU, mapping.actionFor(Gesture.UP_THEN_RIGHT))
-        assertEquals(GestureAction.NOTIFICATIONS, mapping.actionFor(Gesture.RIGHT_THEN_DOWN))
+        assertEquals(GestureAction.HOME, mapping.actionFor(Gesture.DOWN_THEN_LEFT))
         assertEquals(GestureAction.BACK, mapping.actionFor(Gesture.UP_THEN_LEFT))
         assertEquals(GestureAction.NEXT_ELEMENT, mapping.actionFor(Gesture.SWIPE_RIGHT))
-        assertEquals(GestureAction.UNIT_PREVIOUS, mapping.actionFor(Gesture.LEFT_THEN_UP))
-        assertEquals(GestureAction.NONE, mapping.actionFor(Gesture.THREE_FINGER_TRIPLE_TAP))
+        // Không gán cử chỉ hai bước bắt đầu bằng trái/phải: dễ bị nhận nhầm từ cú vuốt trái/phải hơi cong.
+        listOf(
+            Gesture.RIGHT_THEN_DOWN, Gesture.LEFT_THEN_DOWN, Gesture.RIGHT_THEN_UP, Gesture.LEFT_THEN_UP,
+            Gesture.RIGHT_THEN_LEFT, Gesture.LEFT_THEN_RIGHT,
+        ).forEach { assertEquals(it.name, GestureAction.NONE, mapping.actionFor(it)) }
+        assertEquals(GestureAction.PAGE_NEXT, mapping.actionFor(Gesture.TWO_FINGER_SWIPE_LEFT))
+        assertEquals(GestureAction.PAGE_PREVIOUS, mapping.actionFor(Gesture.TWO_FINGER_SWIPE_RIGHT))
+        assertEquals(GestureAction.PAGE_NEXT, mapping.actionFor(Gesture.THREE_FINGER_SWIPE_LEFT))
+        assertEquals(GestureAction.PAGE_PREVIOUS, mapping.actionFor(Gesture.THREE_FINGER_SWIPE_RIGHT))
     }
 
     @Test
@@ -119,7 +126,8 @@ class MultiFingerGestureTest {
     fun everyMultiFingerGesture_hasADefaultExceptRarelyUsed() {
         val mapping = GestureMapping()
         assertEquals(GestureAction.OPEN_GLOBAL_MENU, mapping.actionFor(Gesture.THREE_FINGER_TAP))
-        assertEquals(GestureAction.READ_FROM_TOP, mapping.actionFor(Gesture.THREE_FINGER_SWIPE_UP))
+        assertEquals(GestureAction.UNIT_PREVIOUS, mapping.actionFor(Gesture.THREE_FINGER_SWIPE_UP))
+        assertEquals(GestureAction.READ_FROM_TOP, mapping.actionFor(Gesture.THREE_FINGER_TRIPLE_TAP))
         assertEquals(GestureAction.CYCLE_GRANULARITY, mapping.actionFor(Gesture.TWO_FINGER_TRIPLE_TAP))
     }
 

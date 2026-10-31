@@ -36,6 +36,8 @@ internal class ActionDispatcher(
             GestureAction.ACTIVATE -> navigator.activate()
             GestureAction.SCROLL_FORWARD -> navigator.scroll(forward = true)
             GestureAction.SCROLL_BACKWARD -> navigator.scroll(forward = false)
+            GestureAction.PAGE_NEXT -> navigator.scrollPage(forward = true)
+            GestureAction.PAGE_PREVIOUS -> navigator.scrollPage(forward = false)
             GestureAction.BACK -> global(AccessibilityService.GLOBAL_ACTION_BACK, t(S.MSG_BACK))
             GestureAction.HOME -> global(AccessibilityService.GLOBAL_ACTION_HOME, t(S.MSG_HOME))
             GestureAction.RECENTS -> global(AccessibilityService.GLOBAL_ACTION_RECENTS, t(S.MSG_RECENTS))
@@ -75,6 +77,9 @@ internal class ActionDispatcher(
             GestureAction.CURSOR_END -> editText(EditOp.CURSOR_END)
             GestureAction.SELECT_TO_START -> editText(EditOp.SELECT_TO_START)
             GestureAction.SELECT_TO_END -> editText(EditOp.SELECT_TO_END)
+            GestureAction.TOGGLE_DETAILED_FOCUS -> toggleDetailedFocus()
+            GestureAction.DESCRIBE_TECHNICAL ->
+                speech.speak(navigator.technicalInfo() ?: t(S.MSG_NOTHING_SELECTED), true)
         }
     }
 
@@ -155,6 +160,13 @@ internal class ActionDispatcher(
             return
         }
         if (putOnClipboard(unit)) speech.speak(t(S.MSG_UNIT_COPIED, unit), true)
+    }
+
+    /** Bật/tắt tiêu điểm chi tiết; phiên đọc áp cờ hệ thống khi cài đặt đổi (xem ReaderSession). */
+    private fun toggleDetailedFocus() {
+        val next = !settings.detailedFocus
+        settings.detailedFocus = next
+        speech.speak(if (next) t(S.MSG_DETAILED_ON) else t(S.MSG_DETAILED_OFF), true)
     }
 
     private fun editText(op: EditOp) {

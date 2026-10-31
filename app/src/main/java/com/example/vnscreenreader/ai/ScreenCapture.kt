@@ -43,7 +43,7 @@ class ScreenCapture(private val service: AccessibilityService) {
                     val buffer = result.hardwareBuffer
                     try {
                         val hardware = Bitmap.wrapHardwareBuffer(buffer, result.colorSpace)
-                        val software = hardware?.copy(Bitmap.Config.ARGB_8888, false)
+                        val software = hardware?.copy(Bitmap.Config.ARGB_8888, true) // mutable: để che vùng mật khẩu trước khi nhận dạng
                         hardware?.recycle()
                         cont.resume(
                             if (software != null) Result.success(software)

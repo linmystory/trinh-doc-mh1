@@ -9,7 +9,6 @@ import android.speech.tts.UtteranceProgressListener
 import android.util.Log
 import java.util.Locale
 import java.util.UUID
-import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
@@ -45,9 +44,17 @@ class SpeechEngine(
     private var pendingText: String? = null
     private var enginePackage = initialEnginePackage
 
+    /** Câu gần nhất ở dạng GỐC (chưa lập kế hoạch) để "đọc lại" lập lại đúng các khoảng lặng. */
     @Volatile private var lastText: String? = null
 
-    private val pendingIds: MutableSet<String> = ConcurrentHashMap.newKeySet()
+    /**
+     * Lập kế hoạch đọc từ chữ gốc: đổi emoji thành tên và xen khoảng lặng giữa các mục. Đặt một lần khi khởi tạo
+     * phiên; mặc định đọc nguyên văn.
+     */
+    @Volatile var planner: (String) -> List<SpeechPart> = { SpeechPlan.single(it) }
+
+    // Đếm theo CÂU (một lần speak gồm nhiều đoạn và khoảng lặng), không theo từng đoạn phát.
+    private val pending = SpeechPendingTracker()
 
     // Tăng mỗi khi stop(): một lần speak() đang chia nhỏ văn bản dài sẽ dừng xếp hàng các đoạn còn lại.
     private val stopEpoch = AtomicInteger()
@@ -56,20 +63,20 @@ class SpeechEngine(
         override fun onStart(utteranceId: String?) = Unit
 
         override fun onDone(utteranceId: String?) {
-            utteranceId?.let { pendingIds.remove(it) }
+            utteranceId?.let { pending.complete(it) }
         }
 
         @Deprecated("Deprecated in Java")
         override fun onError(utteranceId: String?) {
-            utteranceId?.let { pendingIds.remove(it) }
+            utteranceId?.let { pending.complete(it) }
         }
 
         override fun onError(utteranceId: String?, errorCode: Int) {
-            utteranceId?.let { pendingIds.remove(it) }
+            utteranceId?.let { pending.complete(it) }
         }
 
         override fun onStop(utteranceId: String?, interrupted: Boolean) {
-            utteranceId?.let { pendingIds.remove(it) }
+            utteranceId?.let { pending.complete(it) }
         }
     }
 
@@ -149,6 +156,7 @@ class SpeechEngine(
     /** Đọc theo ngôn ngữ hiện hành của ứng dụng (đổi trong Cài đặt hệ thống → Ngôn ngữ ứng dụng). */
     private fun applyLanguage(engine: TextToSpeech) {
         // Lấy theo cấu hình tài nguyên của ứng dụng (đã áp dụng "ngôn ngữ theo ứng dụng"), không theo Locale.getDefault().
+        // CÙNG nguồn với chữ giao diện ([com.example.vnscreenreader.i18n.ResourceTexts.language]): giọng và chữ không lệch nhau.
         val locale: Locale = appContext.resources.configuration.locales[0]
         val result = engine.setLanguage(locale)
         if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
@@ -167,41 +175,50 @@ class SpeechEngine(
      * interrupt = true: ngắt câu đang đọc ngay lập tức. false: xếp hàng (tự flush nếu hàng đợi quá dài).
      * Chưa sẵn sàng: giữ lại câu mới nhất và đọc ngay khi engine khởi tạo xong.
      */
-    fun speak(text: String, interrupt: Boolean = true) {
-        if (text.isBlank()) return
-        lastText = text
+    fun speak(rawText: String, interrupt: Boolean = true) {
+        if (rawText.isBlank()) return
+        val parts = SpeechPlan.chunk(planner(rawText), TextToSpeech.getMaxSpeechInputLength())
+        if (parts.isEmpty()) return
+        lastText = rawText
         val engine = synchronized(lock) {
             if (closed) return
             if (!ready) {
-                pendingText = text
+                pendingText = rawText
                 return
             }
             tts
         } ?: return
 
         val epoch = stopEpoch.get()
-        val chunks = SpeechChunker.split(text, TextToSpeech.getMaxSpeechInputLength())
-        for ((index, chunk) in chunks.withIndex()) {
-            if (stopEpoch.get() != epoch) return // stop() được gọi giữa chừng: bỏ các đoạn còn lại
-            // Chỉ đoạn đầu mới theo chính sách hàng đợi; các đoạn sau luôn nối tiếp để không tự flush chính mình.
-            val flush = index == 0 &&
-                SpeechQueuePolicy.modeFor(interrupt, pendingIds.size) == SpeechQueuePolicy.Mode.FLUSH
-            enqueue(engine, chunk, flush)
+        val messageId = UUID.randomUUID().toString()
+        // Chính sách hàng đợi chỉ quyết định MỘT lần cho cả câu; các đoạn sau luôn nối tiếp để không tự flush chính mình.
+        val mode = SpeechQueuePolicy.modeFor(interrupt, pending.pendingMessages())
+        if (mode == SpeechQueuePolicy.Mode.DROP) return
+        val flush = mode == SpeechQueuePolicy.Mode.FLUSH
+        val currentRate = synchronized(lock) { rate }
+        for ((index, part) in parts.withIndex()) {
+            if (stopEpoch.get() != epoch) return // stop() được gọi giữa chừng: bỏ các phần còn lại
+            enqueue(engine, part, flush && index == 0, messageId, currentRate)
         }
     }
 
-    private fun enqueue(engine: TextToSpeech, chunk: String, flush: Boolean) {
+    private fun enqueue(engine: TextToSpeech, part: SpeechPart, flush: Boolean, messageId: String, speechRate: Float) {
         val queueMode = if (flush) {
-            pendingIds.clear()
+            pending.clear()
             TextToSpeech.QUEUE_FLUSH
         } else {
             TextToSpeech.QUEUE_ADD
         }
         val id = UUID.randomUUID().toString()
-        pendingIds.add(id)
-        if (engine.speak(chunk, queueMode, null, id) == TextToSpeech.ERROR) {
-            pendingIds.remove(id)
-            Log.w(TAG, "TextToSpeech.speak trả về ERROR")
+        pending.register(messageId, id)
+        val result = when (part) {
+            is SpeechPart.Say -> engine.speak(part.text, queueMode, null, id)
+            is SpeechPart.Pause ->
+                engine.playSilentUtterance(SpeechPlan.scaledPause(part.millis, speechRate).toLong(), queueMode, id)
+        }
+        if (result == TextToSpeech.ERROR) {
+            pending.complete(id)
+            Log.w(TAG, "TextToSpeech trả về ERROR khi xếp hàng một đoạn")
         }
     }
 
@@ -219,7 +236,7 @@ class SpeechEngine(
             pendingText = null
             tts.also { tts = null }
         }
-        pendingIds.clear()
+        pending.clear()
         old?.stop()
         old?.shutdown()
         mainHandler.post { connect() }
@@ -244,7 +261,7 @@ class SpeechEngine(
 
     fun stop() {
         stopEpoch.incrementAndGet()
-        pendingIds.clear()
+        pending.clear()
         val engine = synchronized(lock) {
             pendingText = null // câu đang chờ engine khởi tạo đã cũ, không đọc nữa
             tts
@@ -262,7 +279,7 @@ class SpeechEngine(
             tts.also { tts = null }
         }
         mainHandler.removeCallbacksAndMessages(null)
-        pendingIds.clear()
+        pending.clear()
         engine?.stop()
         engine?.shutdown()
     }

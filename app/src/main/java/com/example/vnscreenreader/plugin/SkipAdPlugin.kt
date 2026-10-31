@@ -13,9 +13,12 @@ class SkipAdPlugin : ScreenReaderPlugin {
     override val description: String get() = t(S.PLUGIN_SKIPAD_DESC)
 
     override fun execute(node: AccessibilityNodeInfo): PluginResult {
-        for (keyword in KEYWORDS) {
+        // Cụm đầy đủ: khớp một phần. Từ chung ("Bỏ qua", "Skip"): chỉ khi CẢ nhãn đúng bằng từ đó, để không bấm nhầm
+        // "Bỏ qua bước này"/"Skip verification" trong các luồng xác nhận.
+        for ((keyword, exact) in KEYWORDS) {
             for (candidate in node.findAccessibilityNodeInfosByText(keyword)) {
                 if (!candidate.isVisibleToUser) continue
+                if (exact && !isExactly(candidate, keyword)) continue
                 val target = NodeCollector.findClickableAncestorOrSelf(candidate) ?: continue
                 if (target.performAction(AccessibilityNodeInfo.ACTION_CLICK)) {
                     return PluginResult(true, t(S.PLUGIN_SKIPAD_DONE))
@@ -28,7 +31,11 @@ class SkipAdPlugin : ScreenReaderPlugin {
     companion object {
         const val ID = "builtin_skip_ad"
         private val KEYWORDS = listOf(
-            "Bỏ qua quảng cáo", "Đóng quảng cáo", "Skip ads", "Skip ad", "Bỏ qua", "Skip",
+            "Bỏ qua quảng cáo" to false, "Đóng quảng cáo" to false, "Skip ads" to false, "Skip ad" to false,
+            "Bỏ qua" to true, "Skip" to true,
         )
+
+        private fun isExactly(node: AccessibilityNodeInfo, keyword: String): Boolean =
+            listOf(node.text, node.contentDescription).any { it?.toString()?.trim().equals(keyword, ignoreCase = true) }
     }
 }

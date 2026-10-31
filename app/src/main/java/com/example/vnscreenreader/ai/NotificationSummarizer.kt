@@ -35,10 +35,12 @@ class NotificationSummarizer(
             previous.timeMs = nowMs
             return null
         }
+        lastByPackage.remove(info.packageName) // đặt lại cuối hàng => loại theo LRU, ứng dụng đang hoạt động không bị đẩy ra
         lastByPackage[info.packageName] = Seen(body, nowMs)
         if (lastByPackage.size > MAX_TRACKED_APPS) lastByPackage.remove(lastByPackage.keys.first())
 
-        val times = burstByPackage.getOrPut(info.packageName) { ArrayDeque() }
+        val times = burstByPackage.remove(info.packageName) ?: ArrayDeque()
+        burstByPackage[info.packageName] = times
         times.addLast(nowMs)
         while (times.isNotEmpty() && nowMs - times.first() > burstWindowMs) times.removeFirst()
         if (burstByPackage.size > MAX_TRACKED_APPS) burstByPackage.remove(burstByPackage.keys.first())
@@ -67,7 +69,7 @@ class NotificationSummarizer(
     }
 
     companion object {
-        const val DEFAULT_MAX_CHARS = 160
+        const val DEFAULT_MAX_CHARS = 240
         const val DEFAULT_DUPLICATE_WINDOW_MS = 3_000L
         const val DEFAULT_BURST_WINDOW_MS = 10_000L
         const val DEFAULT_BURST_THRESHOLD = 3

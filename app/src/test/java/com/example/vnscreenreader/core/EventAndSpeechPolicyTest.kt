@@ -63,7 +63,8 @@ class SpeechQueuePolicyTest {
 
     @Test
     fun longQueue_flushesToDropStaleSpeech() {
-        assertEquals(SpeechQueuePolicy.Mode.FLUSH, SpeechQueuePolicy.modeFor(false, SpeechQueuePolicy.MAX_PENDING))
+        assertEquals(SpeechQueuePolicy.Mode.DROP, SpeechQueuePolicy.modeFor(false, SpeechQueuePolicy.MAX_PENDING))
+        assertEquals(SpeechQueuePolicy.Mode.FLUSH, SpeechQueuePolicy.modeFor(true, SpeechQueuePolicy.MAX_PENDING))
     }
 }
 
@@ -108,5 +109,20 @@ class PasswordAndHintsTest {
         org.junit.Assert.assertTrue(state.describeCurrent(hints = true).contains("1 trên"))
         org.junit.Assert.assertEquals(state.current!!.label, state.describeCurrent(hints = false))
         org.junit.Assert.assertEquals("Trình đơn chung, ${state.items.size} mục.", state.opening())
+    }
+}
+
+class AuditV20Test {
+    @org.junit.Test
+    fun fullQueue_dropsLowPriority_neverFlushesIt() {
+        org.junit.Assert.assertEquals(SpeechQueuePolicy.Mode.DROP, SpeechQueuePolicy.modeFor(false, SpeechQueuePolicy.MAX_PENDING + 5))
+    }
+
+    @org.junit.Test
+    fun tidy_stillCleansCommasAfterRegexConstants() {
+        val out = EmojiText.forSpeech("Xin chào 😀 tên", VietnameseDictionary)
+        org.junit.Assert.assertTrue(out, out.startsWith("Xin chào, "))
+        org.junit.Assert.assertTrue(out, out.endsWith(", tên"))
+        org.junit.Assert.assertFalse(out, out.contains(" ,") || out.contains(",,") || out.contains("  "))
     }
 }

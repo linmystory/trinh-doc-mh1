@@ -12,4 +12,5 @@
     <string name="gs_multi_note">Multi-finger gestures need touch exploration (already on). If the phone doesn\'t recognise them, try again placing all fingers at the same time.</string>
     <string name="gt_unknown">Unrecognised gesture, code %1$d</string>
     <string name="rd_autoocr_title">Auto-read text in unlabelled images</string>
+    <string name="msg_detailed_on">Detailed focus on. Controls the app hides from accessibility, such as an unlabelled checkbox, can now be reached.</string>
 </resources>

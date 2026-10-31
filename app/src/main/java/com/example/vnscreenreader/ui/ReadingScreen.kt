@@ -17,7 +17,9 @@ fun ReadingScreen() {
     var notifications by remember { mutableStateOf(settings.readNotifications) }
     var passwords by remember { mutableStateOf(settings.speakPasswords) }
     var hints by remember { mutableStateOf(settings.speakHints) }
+    var emoji by remember { mutableStateOf(settings.speakEmoji) }
     var autoOcr by remember { mutableStateOf(settings.autoOcrUnlabeled) }
+    var detailed by remember { mutableStateOf(settings.detailedFocus) }
 
     ScreenColumn(stringResource(R.string.rd_title)) {
         SettingSwitch(
@@ -50,12 +52,31 @@ fun ReadingScreen() {
         )
 
         SettingSwitch(
+            title = stringResource(R.string.rd_emoji_title),
+            description = stringResource(R.string.rd_emoji_desc),
+            checked = emoji,
+            onCheckedChange = {
+                emoji = it
+                settings.speakEmoji = it
+            },
+        )
+        SettingSwitch(
             title = stringResource(R.string.rd_autoocr_title),
             description = stringResource(R.string.rd_autoocr_desc),
             checked = autoOcr,
             onCheckedChange = {
                 autoOcr = it
                 settings.autoOcrUnlabeled = it
+            },
+        )
+
+        SettingSwitch(
+            title = stringResource(R.string.rd_detailed_title),
+            description = stringResource(R.string.rd_detailed_desc),
+            checked = detailed,
+            onCheckedChange = {
+                detailed = it
+                settings.detailedFocus = it
             },
         )
 

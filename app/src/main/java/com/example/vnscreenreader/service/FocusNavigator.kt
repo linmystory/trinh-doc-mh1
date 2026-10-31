@@ -5,7 +5,9 @@ import android.graphics.Rect
 import android.os.SystemClock
 import android.view.accessibility.AccessibilityNodeInfo
 import com.example.vnscreenreader.core.CustomLabelStore
+import com.example.vnscreenreader.core.AutoScrollPicker
 import com.example.vnscreenreader.core.FocusIndex
+import com.example.vnscreenreader.core.FocusLocator
 import com.example.vnscreenreader.core.LabelResolver
 import com.example.vnscreenreader.core.ScreenSearch
 import com.example.vnscreenreader.core.SpeechTextBuilder
@@ -14,6 +16,8 @@ import com.example.vnscreenreader.core.TextGranularity
 import com.example.vnscreenreader.core.EditOp
 import com.example.vnscreenreader.core.EditPolicy
 import com.example.vnscreenreader.core.SelectionMath
+import com.example.vnscreenreader.core.NearbyControlPicker
+import com.example.vnscreenreader.core.TechInfo
 import com.example.vnscreenreader.core.UnitMove
 import com.example.vnscreenreader.core.freshOrNull
 import com.example.vnscreenreader.menu.CustomAction
@@ -34,6 +38,15 @@ class FocusNavigator(
     private val feedback: Feedback = Feedback.None,
     private val speak: (text: String, interrupt: Boolean) -> Unit,
 ) {
+    /** Tiêu điểm chi tiết đang bật: duyệt cả ô tích/nút không nhãn nằm trong khung bấm được. Do phiên đọc đặt. */
+    @Volatile var detailedFocus: Boolean = false
+        set(value) {
+            if (field != value) {
+                field = value
+                invalidateCache()
+            }
+        }
+
     private var currentNode: AccessibilityNodeInfo? = null
     private var cachedNodes: List<AccessibilityNodeInfo> = emptyList()
     private var cachedAtMs = 0L
@@ -108,9 +121,11 @@ class FocusNavigator(
             speak(t(S.MSG_SCREEN_EMPTY), true)
             return
         }
-        val current = currentNode?.let { cur -> nodes.indexOfFirst { it == cur } } ?: -1
+        val current = currentIndexIn(nodes)
         val target = if (forward) FocusIndex.next(current, nodes.size) else FocusIndex.previous(current, nodes.size)
         if (target == null) {
+            // Hết phần tử trong màn hình: thử cuộn rồi chọn phần tử mới thay vì dừng (giống TalkBack).
+            if (autoScrollAndSelect(nodes, forward)) return
             feedback.onBoundary()
             speak(if (forward) t(S.MSG_LAST_ELEMENT) else t(S.MSG_FIRST_ELEMENT), true)
             return
@@ -130,16 +145,48 @@ class FocusNavigator(
             return
         }
         val target = NodeCollector.findClickableAncestorOrSelf(node)
-        if (target == null) {
-            speak(t(S.MSG_CANNOT_CLICK), true)
-            return
-        }
-        if (target.performAction(AccessibilityNodeInfo.ACTION_CLICK)) {
+        if (target != null && target.performAction(AccessibilityNodeInfo.ACTION_CLICK)) {
             feedback.onActivated()
             invalidateCache()
-        } else {
-            speak(t(S.MSG_CLICK_FAILED), true)
+            return
         }
+        // Dòng chữ không bấm được (hoặc bấm không có tác dụng): thường là nhãn của một ô tích/nút nằm ngay cạnh.
+        if (activateNearby(node)) return
+        speak(if (target == null) t(S.MSG_CANNOT_CLICK) else t(S.MSG_CLICK_FAILED), true)
+    }
+
+    /** Nhấn điều khiển (ô tích/nút) cùng hàng, nằm cạnh [node]; tìm trong các con của cha và ông của nó. */
+    private fun activateNearby(node: AccessibilityNodeInfo): Boolean {
+        val anchor = Rect().also { node.getBoundsInScreen(it) }
+        val pool = ArrayList<AccessibilityNodeInfo>()
+        var level: AccessibilityNodeInfo? = node.parent
+        repeat(NEARBY_PARENT_LEVELS) {
+            val parent = level ?: return@repeat
+            for (i in 0 until minOf(parent.childCount, MAX_NEARBY_CHILDREN)) {
+                val child = parent.getChild(i) ?: continue
+                if (child != node && child.isVisibleToUser) pool += child
+            }
+            level = parent.parent
+        }
+        val candidates = pool.mapIndexed { index, n ->
+            val r = Rect().also { n.getBoundsInScreen(it) }
+            NearbyControlPicker.Candidate(index, NearbyControlPicker.Box(r.left, r.top, r.right, r.bottom), n.isCheckable, n.isClickable)
+        }
+        val pick = NearbyControlPicker.pick(NearbyControlPicker.Box(anchor.left, anchor.top, anchor.right, anchor.bottom), candidates)
+            ?: return false
+        val target = pool[pick]
+        if (!target.performAction(AccessibilityNodeInfo.ACTION_CLICK)) return false
+        feedback.onActivated()
+        invalidateCache()
+        speak(t(S.MSG_NEARBY_CLICKED), true)
+        return true
+    }
+
+    /** Thông tin kỹ thuật của phần tử đang chọn; null nếu chưa chọn hoặc nút đã cũ. */
+    fun technicalInfo(): String? {
+        if (currentNode == null) return null
+        val node = currentFresh() ?: return null
+        return TechInfo.describe(node.className, node.isClickable, node.isCheckable, node.isImportantForAccessibility, node.viewIdResourceName)
     }
 
     fun scroll(forward: Boolean) {
@@ -150,7 +197,7 @@ class FocusNavigator(
         }
         // Thử lần lượt từng vùng cuộn (tổ tiên trước, rồi vùng lớn nhất) và từng loại hành động cho tới khi một
         // vùng thật sự cuộn; chỉ khi không vùng nào cuộn được mới báo đã tới cuối.
-        val targets = NodeCollector.scrollTargets(currentNode, root, forward)
+        val targets = NodeCollector.scrollTargets(currentQuiet(), root, forward)
         if (targets.isEmpty()) {
             val any = NodeCollector.traverse(root).any { it.isScrollable }
             speak(if (any) t(S.MSG_CANNOT_SCROLL_MORE) else t(S.MSG_NO_SCROLL_AREA), true)
@@ -290,8 +337,83 @@ class FocusNavigator(
         return NodeCollector.findAncestorOrSelf(node) { EditPolicy.isEditField(it.isEditable, it.className) } != null
     }
 
-    private fun currentIndexIn(nodes: List<AccessibilityNodeInfo>): Int =
-        currentNode?.let { cur -> nodes.indexOfFirst { it == cur } } ?: -1
+    /**
+     * Chỉ số điểm dừng ứng với phần tử đang chọn: khớp chính nó, rồi tổ tiên là điểm dừng, rồi điểm dừng nhỏ nhất
+     * chứa nó theo tọa độ. -1 chỉ khi thật sự không xác định được.
+     */
+    private fun currentIndexIn(nodes: List<AccessibilityNodeInfo>): Int {
+        val cur = currentNode ?: return -1
+        nodes.indexOfFirst { it == cur }.let { if (it >= 0) return it }
+        var parent = cur.parent
+        var depth = 0
+        while (parent != null && depth < MAX_PARENT_LOOKUP) {
+            val p = parent
+            nodes.indexOfFirst { it == p }.let { if (it >= 0) return it }
+            parent = p.parent
+            depth++
+        }
+        val bounds = Rect().also { cur.getBoundsInScreen(it) }
+        if (bounds.isEmpty) return -1
+        val boxes = nodes.map { n -> Rect().also { n.getBoundsInScreen(it) }.let { intArrayOf(it.left, it.top, it.right, it.bottom) } }
+        return FocusLocator.nearestContaining(boxes, bounds.centerX(), bounds.centerY())
+    }
+
+    private fun labelKey(node: AccessibilityNodeInfo): String =
+        if (node.isPassword) "" else (node.text ?: node.contentDescription)?.toString()?.trim().orEmpty()
+
+    /** Phần tử đang chọn sau `refresh()` nhưng KHÔNG báo gì nếu đã cũ (dùng cho cuộn, không muốn ngắt người dùng). */
+    private fun currentQuiet(): AccessibilityNodeInfo? = currentNode?.takeIf { it.refresh() }
+
+    /**
+     * Đã tới phần tử cuối/đầu của màn hình: cuộn một lần rồi chọn phần tử mới đầu tiên (tiến) hoặc cuối cùng (lùi).
+     * Trả về true nếu đã chọn được; false nếu không có vùng cuộn, cuộn không được hoặc không có phần tử mới.
+     * Chờ ngắn để giao diện ổn định (chạy trên luồng xử lý nền duy nhất).
+     */
+    private fun autoScrollAndSelect(oldNodes: List<AccessibilityNodeInfo>, forward: Boolean): Boolean {
+        val root = activeRoot() ?: return false
+        val targets = NodeCollector.scrollTargets(currentQuiet(), root, forward)
+        if (targets.isEmpty()) return false
+        val oldLabels = oldNodes.map { labelKey(it) }
+        val scrolled = targets.any { target -> NodeCollector.scrollActions(forward).any { target.performAction(it) } }
+        if (!scrolled) return false
+        SystemClock.sleep(AUTO_SCROLL_SETTLE_MS)
+        invalidateCache()
+        val fresh = visibleNodes() ?: return false
+        val index = AutoScrollPicker.pick(oldLabels, fresh.map { labelKey(it) }, forward) ?: return false
+        focusOn(fresh[index])
+        return true
+    }
+
+    /** Chuyển trang NGANG (ViewPager, tab vuốt ngang). */
+    fun scrollPage(forward: Boolean) {
+        val root = service.rootInActiveWindow
+        if (root == null) {
+            speak(t(S.MSG_CANNOT_READ_SCREEN), true)
+            return
+        }
+        val targets = NodeCollector.pageTargets(currentQuiet(), root)
+        if (targets.isEmpty()) {
+            speak(t(S.MSG_NO_PAGE_AREA), true)
+            return
+        }
+        val actions = NodeCollector.pageActions(forward)
+        val done = targets.any { target -> actions.any { target.performAction(it) } }
+        if (done) {
+            invalidateCache()
+            reset()
+            speak(if (forward) t(S.MSG_PAGE_NEXT) else t(S.MSG_PAGE_PREV), true)
+        } else {
+            speak(t(S.MSG_NO_MORE_PAGES), true)
+        }
+    }
+
+    /** Vùng (toạ độ màn hình) của mọi ô mật khẩu đang hiển thị: che đi trước khi chụp để OCR không đọc mật khẩu đang hiện. */
+    fun passwordBounds(): List<Rect> {
+        val root = activeRoot() ?: return emptyList()
+        return NodeCollector.traverse(root)
+            .filter { it.isPassword }
+            .map { Rect().also { r -> it.getBoundsInScreen(r) } }
+    }
 
     private fun activeRoot(): AccessibilityNodeInfo? =
         // Nạp trước cả cây con trong MỘT lần gọi IPC thay vì mỗi nút một lần: giảm mạnh độ trễ trên cây lớn.
@@ -301,13 +423,17 @@ class FocusNavigator(
         val now = SystemClock.uptimeMillis()
         if (cachedNodes.isNotEmpty() && now - cachedAtMs < CACHE_TTL_MS) return cachedNodes
         val root = activeRoot() ?: return null
-        cachedNodes = NodeCollector.collect(root)
+        cachedNodes = NodeCollector.collect(root, detailed = detailedFocus)
         cachedAtMs = now
         return cachedNodes
     }
 
     private companion object {
         const val CACHE_TTL_MS = 800L
+        const val MAX_PARENT_LOOKUP = 12
+        const val AUTO_SCROLL_SETTLE_MS = 350L
         const val MAX_READ_ALL = 300
+        const val NEARBY_PARENT_LEVELS = 2
+        const val MAX_NEARBY_CHILDREN = 30
     }
 }

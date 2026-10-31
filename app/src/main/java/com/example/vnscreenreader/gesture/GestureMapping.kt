@@ -16,8 +16,18 @@ class GestureMapping(initial: Map<Gesture, GestureAction> = defaults()) {
     /** Các cử chỉ đang gán cho [action], theo thứ tự khai báo (dùng cho màn hình trợ giúp). */
     fun gesturesFor(action: GestureAction): List<Gesture> = Gesture.entries.filter { map.getValue(it) == action }
 
-    /** Dạng chuỗi lưu trữ: "SWIPE_UP=SCROLL_FORWARD;SWIPE_DOWN=...". */
+    /** Dạng chuỗi lưu trữ ĐẦY ĐỦ: "SWIPE_UP=SCROLL_FORWARD;SWIPE_DOWN=...". */
     fun serialize(): String = map.entries.joinToString(";") { "${it.key.name}=${it.value.name}" }
+
+    /**
+     * Chỉ lưu các cử chỉ KHÁC mặc định hiện tại. Nhờ vậy khi bản sau đổi mặc định, người chỉ chỉnh vài cử chỉ vẫn
+     * nhận mặc định mới ở những cử chỉ họ chưa đụng tới. [parse] đọc được cả dạng đầy đủ cũ lẫn dạng này.
+     */
+    fun serializeOverrides(): String {
+        val base = defaults()
+        return map.entries.filter { it.value != (base[it.key] ?: GestureAction.NONE) }
+            .joinToString(";") { "${it.key.name}=${it.value.name}" }
+    }
 
     companion object {
 
@@ -30,33 +40,31 @@ class GestureMapping(initial: Map<Gesture, GestureAction> = defaults()) {
             Gesture.SWIPE_UP to GestureAction.SCROLL_FORWARD,
             Gesture.SWIPE_DOWN to GestureAction.SCROLL_BACKWARD,
             // Xuống-rồi-phải = trình đơn chung, lên-rồi-phải = trình đơn của phần tử. Chỉ áp dụng khi người dùng
-            // chưa từng lưu cử chỉ riêng (bản đã lưu giữ nguyên, xem GestureMappingStore).
-            // Thông báo, màn hình chính... vẫn dùng được qua trình đơn chung.
+            // chưa từng chỉnh cử chỉ đó (xem GestureMappingStore).
             Gesture.DOWN_THEN_RIGHT to GestureAction.OPEN_GLOBAL_MENU,
             Gesture.UP_THEN_RIGHT to GestureAction.OPEN_LOCAL_MENU,
-            Gesture.DOWN_THEN_LEFT to GestureAction.QUICK_SETTINGS,
+            Gesture.DOWN_THEN_LEFT to GestureAction.HOME,
             Gesture.UP_THEN_LEFT to GestureAction.BACK,
-            Gesture.RIGHT_THEN_DOWN to GestureAction.NOTIFICATIONS,
-            Gesture.LEFT_THEN_DOWN to GestureAction.HOME,
+            // CỐ Ý không gán cử chỉ hai bước BẮT ĐẦU bằng trái/phải (phải-rồi-xuống, trái-rồi-lên...): một cú vuốt
+            // trái/phải hơi cong rất dễ bị hệ thống nhận nhầm thành chúng và mở Màn hình chính/Thông báo.
+            // Các chức năng đó vẫn có trong trình đơn chung.
             Gesture.TWO_FINGER_TAP to GestureAction.STOP_SPEECH,
             Gesture.TWO_FINGER_DOUBLE_TAP to GestureAction.REPEAT_LAST,
             Gesture.TWO_FINGER_SWIPE_UP to GestureAction.SCROLL_FORWARD,
             Gesture.TWO_FINGER_SWIPE_DOWN to GestureAction.SCROLL_BACKWARD,
-            Gesture.TWO_FINGER_SWIPE_LEFT to GestureAction.BACK,
-            Gesture.TWO_FINGER_SWIPE_RIGHT to GestureAction.HOME,
+            // Hai/ba ngón vuốt trái/phải = chuyển trang ngang (ViewPager, tab vuốt ngang).
+            Gesture.TWO_FINGER_SWIPE_LEFT to GestureAction.PAGE_NEXT,
+            Gesture.TWO_FINGER_SWIPE_RIGHT to GestureAction.PAGE_PREVIOUS,
             Gesture.THREE_FINGER_TAP to GestureAction.OPEN_GLOBAL_MENU,
             Gesture.THREE_FINGER_DOUBLE_TAP to GestureAction.OPEN_LOCAL_MENU,
-            Gesture.THREE_FINGER_SWIPE_UP to GestureAction.READ_FROM_TOP,
-            Gesture.THREE_FINGER_SWIPE_DOWN to GestureAction.READ_FROM_CURRENT,
-            Gesture.THREE_FINGER_SWIPE_LEFT to GestureAction.NOTIFICATIONS,
-            Gesture.THREE_FINGER_SWIPE_RIGHT to GestureAction.QUICK_SETTINGS,
+            Gesture.THREE_FINGER_TRIPLE_TAP to GestureAction.READ_FROM_TOP,
+            Gesture.THREE_FINGER_SWIPE_UP to GestureAction.UNIT_PREVIOUS,
+            Gesture.THREE_FINGER_SWIPE_DOWN to GestureAction.UNIT_NEXT,
+            Gesture.THREE_FINGER_SWIPE_LEFT to GestureAction.PAGE_NEXT,
+            Gesture.THREE_FINGER_SWIPE_RIGHT to GestureAction.PAGE_PREVIOUS,
             Gesture.FOUR_FINGER_TAP to GestureAction.CYCLE_FEEDBACK,
             Gesture.FOUR_FINGER_DOUBLE_TAP to GestureAction.SPEAK_STATUS,
-            Gesture.RIGHT_THEN_LEFT to GestureAction.RECENTS,
-            Gesture.LEFT_THEN_RIGHT to GestureAction.STOP_SPEECH,
             Gesture.DOWN_THEN_UP to GestureAction.RUN_PLUGINS,
-            Gesture.RIGHT_THEN_UP to GestureAction.UNIT_NEXT,
-            Gesture.LEFT_THEN_UP to GestureAction.UNIT_PREVIOUS,
             Gesture.UP_THEN_DOWN to GestureAction.COPY_UNIT,
             Gesture.TWO_FINGER_TRIPLE_TAP to GestureAction.CYCLE_GRANULARITY,
         )

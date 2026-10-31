@@ -8,7 +8,7 @@ import android.util.Log
 /**
  * Phát âm báo ngắn với độ trễ thấp: mỗi loại âm được tổng hợp một lần vào `AudioTrack` chế độ STATIC, lần sau chỉ
  * tua về đầu và phát (không cấp phát, không ghi lại dữ liệu). Dùng luồng USAGE_ASSISTANCE_ACCESSIBILITY nên đi theo
- * âm lượng "Hỗ trợ tiếp cận" của hệ thống. Không thread-safe: gọi trên một luồng.
+ * âm lượng "Hỗ trợ tiếp cận" của hệ thống. Các hàm công khai được đồng bộ hóa (đóng dịch vụ ở luồng chính, phát ở luồng xử lý).
  */
 class EarconPlayer {
 
@@ -21,11 +21,13 @@ class EarconPlayer {
     private val tracks = HashMap<Kind, AudioTrack>()
     private var volume = DEFAULT_VOLUME
 
+    @Synchronized
     fun setVolume(value: Float) {
         volume = value.coerceIn(0f, 1f)
         tracks.values.forEach { it.setVolume(volume) }
     }
 
+    @Synchronized
     fun play(kind: Kind) {
         val track = tracks[kind] ?: create(kind)?.also { tracks[kind] = it } ?: return
         try {
@@ -38,6 +40,7 @@ class EarconPlayer {
     }
 
     /** Idempotent. */
+    @Synchronized
     fun release() {
         tracks.values.forEach { it.release() }
         tracks.clear()

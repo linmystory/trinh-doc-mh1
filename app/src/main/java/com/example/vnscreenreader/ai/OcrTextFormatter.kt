@@ -18,7 +18,11 @@ object OcrTextFormatter {
         val lines = ArrayList<MutableList<OcrBlock>>()
         for (block in usable.sortedWith(compareBy({ it.centerY }, { it.left }))) {
             val line = lines.lastOrNull()
-            if (line != null && kotlin.math.abs(line.first().centerY - block.centerY) <= line.first().height / 2) {
+            // Cùng hàng khi tâm dọc gần nhau VÀ khoảng cách ngang không quá lớn: hai cột xa nhau không bị dính thành một câu.
+            if (line != null &&
+                kotlin.math.abs(line.first().centerY - block.centerY) <= line.first().height / 2 &&
+                block.left - line.maxOf { it.right } <= maxOf(line.first().height, block.height) * MAX_GAP_IN_HEIGHTS
+            ) {
                 line.add(block)
             } else {
                 lines.add(mutableListOf(block))
@@ -28,15 +32,23 @@ object OcrTextFormatter {
         val text = lines.joinToString("\n") { line ->
             line.sortedBy { it.left }.joinToString(" ") { it.text.trim().replace(WHITESPACE, " ") }
         }
-        return if (text.length <= maxChars) text else text.substring(0, maxChars).trimEnd()
+        if (text.length <= maxChars) return text
+        // Không cắt giữa cặp surrogate (emoji/chữ Hán hiếm).
+        var end = maxChars
+        if (end > 0 && Character.isHighSurrogate(text[end - 1])) end--
+        return text.substring(0, end).trimEnd()
     }
 
     /** Loại nhiễu: khối rỗng hoặc chỉ một ký tự không phải chữ/số (vết bẩn, đường kẻ bị nhận nhầm). */
     private fun isMeaningful(text: String): Boolean {
         val trimmed = text.trim()
         if (trimmed.isEmpty()) return false
-        return trimmed.length > 1 || trimmed[0].isLetterOrDigit()
+        // Một ký tự: giữ chữ/số và ký hiệu có nghĩa (%, ?, !, tiền tệ...), bỏ dấu gạch/chấm do vết bẩn hoặc đường kẻ.
+        return trimmed.length > 1 || trimmed[0].isLetterOrDigit() || trimmed[0] in MEANINGFUL_SYMBOLS ||
+            Character.getType(trimmed[0]) == Character.CURRENCY_SYMBOL.toInt()
     }
 
+    private const val MAX_GAP_IN_HEIGHTS = 3
+    private const val MEANINGFUL_SYMBOLS = "%?!+=&@#"
     private val WHITESPACE = Regex("\\s+")
 }

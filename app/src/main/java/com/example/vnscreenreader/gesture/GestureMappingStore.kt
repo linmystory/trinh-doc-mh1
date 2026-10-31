@@ -11,7 +11,7 @@ class GestureMappingStore(context: Context) {
 
     fun load(): GestureMapping = GestureMapping.parse(prefs.getString(KEY_MAPPING, null))
 
-    fun save(mapping: GestureMapping) = prefs.edit { putString(KEY_MAPPING, mapping.serialize()) }
+    fun save(mapping: GestureMapping) = prefs.edit { putString(KEY_MAPPING, mapping.serializeOverrides()) }
 
     fun reset() = prefs.edit { remove(KEY_MAPPING) }
 

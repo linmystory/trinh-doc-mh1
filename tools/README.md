@@ -22,3 +22,10 @@ chuyển đổi riêng; bản dịch là dịch máy, cần người bản ngữ
 1. Thêm dòng vào `table_d.py` (hoặc sửa dòng sẵn có). Chuỗi cần số nhiều: thêm vào `table_plurals.py`.
 2. Chạy lệnh trên, rồi `./gradlew :app:testDebugUnitTest`.
 3. Các test `TextsTest`, `FallbackSyncTest` sẽ đỏ nếu quên chạy bộ sinh hoặc thiếu khóa/dạng số nhiều.
+
+## Từ điển emoji (`tools/emoji/`)
+`python3 tools/emoji/build_emoji.py` sinh `core/EmojiData.kt` (thuộc tính Unicode) và `core/EmojiNames.kt` (tên Việt/Anh).
+Sửa tên ở `names_curated.tsv` (ưu tiên) hoặc `names_vi_extra.txt` (`MÃ_HEX tên`), rồi chạy lại. Thêm `--check` để chỉ kiểm tra
+độ phủ và trùng tên. Không sửa tay hai tệp Kotlin được sinh. Cập nhật Unicode: thay `emoji-data.txt` và bổ sung tên cho
+emoji mới (trình sinh sẽ liệt kê những mã còn thiếu).
+

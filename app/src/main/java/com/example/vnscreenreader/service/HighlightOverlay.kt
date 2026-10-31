@@ -15,6 +15,7 @@ import com.example.vnscreenreader.core.withOverlayHidden
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.coroutines.resume
 import com.example.vnscreenreader.core.t
 
@@ -57,7 +58,8 @@ class HighlightOverlay(private val context: Context) {
         hide = {
             if (attached) withContext(Dispatchers.Main) {
                 view.visibility = View.INVISIBLE
-                awaitFrames(FRAMES_TO_WAIT)
+                // Màn hình tắt/không có vsync thì Choreographer không gọi lại: quá hạn thì chụp luôn, không treo tác vụ.
+                withTimeoutOrNull(HIDE_TIMEOUT_MS) { awaitFrames(FRAMES_TO_WAIT) }
             }
         },
         show = { if (attached) withContext(Dispatchers.Main) { view.visibility = View.VISIBLE } },
@@ -122,5 +124,6 @@ class HighlightOverlay(private val context: Context) {
     private companion object {
         const val TAG = "HighlightOverlay"
         const val FRAMES_TO_WAIT = 2
+        const val HIDE_TIMEOUT_MS = 300L
     }
 }

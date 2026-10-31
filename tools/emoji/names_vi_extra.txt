@@ -1,0 +1,1069 @@
+2049 dấu chấm than hỏi
+2122 dấu thương hiệu
+2139 thông tin
+2194 mũi tên trái phải
+2195 mũi tên lên xuống
+2196 mũi tên chéo lên trái
+2197 mũi tên chéo lên phải
+2198 mũi tên chéo xuống phải
+2199 mũi tên chéo xuống trái
+21A9 mũi tên quay lại bên trái
+21AA mũi tên quay lại bên phải
+231A đồng hồ đeo tay
+2328 bàn phím
+23CF nút đẩy ra
+23E9 nút tua nhanh tới
+23EA nút tua nhanh lùi
+23EB nút lên nhanh
+23EC nút xuống nhanh
+23ED nút bài kế tiếp
+23EE nút bài trước
+23EF nút phát hoặc tạm dừng
+23F1 đồng hồ bấm giờ
+23F2 đồng hồ hẹn giờ
+23FA nút ghi âm
+24C2 chữ M trong vòng tròn
+25AA hình vuông đen nhỏ
+25AB hình vuông trắng nhỏ
+25C0 nút phát ngược
+25FB hình vuông trắng vừa
+25FC hình vuông đen vừa
+25FD hình vuông trắng vừa nhỏ
+25FE hình vuông đen vừa nhỏ
+2602 cái ô
+2603 người tuyết có tuyết
+2604 sao chổi
+2611 ô vuông đã đánh dấu
+2618 cỏ ba lá
+2620 đầu lâu xương chéo
+2622 ký hiệu phóng xạ
+2623 ký hiệu nguy hại sinh học
+2626 thánh giá chính thống giáo
+262A ngôi sao và trăng lưỡi liềm
+262E biểu tượng hòa bình
+262F âm dương
+2638 bánh xe pháp luân
+263A mặt cười đường nét
+2640 giới tính nữ
+2642 giới tính nam
+265F quân tốt cờ vua
+2660 quân bích
+2663 quân chuồn
+2665 quân cơ
+2666 quân rô
+2668 suối nước nóng
+267E biểu tượng vô cực
+267F biểu tượng xe lăn
+2692 búa và cuốc chim
+2693 mỏ neo
+2694 hai thanh kiếm bắt chéo
+2695 gậy y tế
+2696 cân thăng bằng
+2697 bình chưng cất
+2699 bánh răng
+269B ký hiệu nguyên tử
+269C hoa huệ cách điệu
+26A7 biểu tượng chuyển giới
+26AA vòng tròn trắng vừa
+26AB vòng tròn đen vừa
+26B0 quan tài
+26B1 bình tro cốt
+26BE bóng chày
+26C4 người tuyết không tuyết
+26C8 mây giông có mưa
+26CE chòm sao Xà Phu
+26CF cái cuốc chim
+26D1 mũ bảo hộ chữ thập trắng
+26D3 dây xích
+26E9 đền thờ Thần đạo
+26EA nhà thờ
+26F0 ngọn núi
+26F1 ô cắm trên đất
+26F2 đài phun nước
+26F3 cờ trên lỗ golf
+26F4 phà
+26F5 thuyền buồm
+26F7 người trượt tuyết
+26F8 giày trượt băng
+26F9 người đập bóng
+26FA lều
+26FD trạm xăng
+2702 cái kéo
+2709 phong bì
+270F bút chì
+2712 ngòi bút đen
+2716 dấu nhân đậm
+271D thánh giá Latinh
+2721 ngôi sao David
+2733 dấu sao tám cánh
+2734 ngôi sao đen tám cánh
+2747 tia lấp lánh
+2754 dấu hỏi trắng
+2755 dấu chấm than trắng
+2763 dấu chấm than hình tim
+2797 dấu chia đậm
+27B0 vòng xoắn
+27BF hai vòng xoắn
+2934 mũi tên quẹo lên
+2935 mũi tên quẹo xuống
+2B1B hình vuông đen lớn
+2B1C hình vuông trắng lớn
+3030 dấu gạch lượn sóng
+303D ký hiệu luân phiên
+3297 chữ Hán chúc mừng trong vòng tròn
+3299 chữ Hán bí mật trong vòng tròn
+1F004 quân mạt chược rồng đỏ
+1F0CF lá bài joker đen
+1F170 chữ A đỏ khung vuông
+1F171 chữ B đỏ khung vuông
+1F17E chữ O đỏ khung vuông
+1F17F chữ P đỏ khung vuông
+1F18E nhóm máu AB
+1F191 nút CL
+1F192 nút COOL
+1F193 nút FREE
+1F194 nút ID
+1F196 nút NG
+1F198 nút SOS
+1F199 nút UP chấm than
+1F19A nút VS
+1F201 chữ katakana koko
+1F202 chữ katakana sa
+1F21A chữ Hán không có
+1F22F chữ Hán chỉ định
+1F232 chữ Hán cấm
+1F233 chữ Hán còn trống
+1F234 chữ Hán đạt
+1F235 chữ Hán hết chỗ
+1F236 chữ Hán có
+1F237 chữ Hán theo tháng
+1F238 chữ Hán đăng ký
+1F239 chữ Hán giảm giá
+1F23A chữ Hán đang mở cửa
+1F250 chữ Hán lợi thế
+1F251 chữ Hán chấp nhận
+1F300 cơn lốc xoáy
+1F301 sương mù
+1F302 ô đã gấp
+1F303 đêm đầy sao
+1F304 bình minh trên núi
+1F305 bình minh
+1F306 thành phố lúc chạng vạng
+1F307 hoàng hôn trên các tòa nhà
+1F309 cầu về đêm
+1F30B núi lửa
+1F30C dải ngân hà
+1F30D địa cầu châu Âu châu Phi
+1F30E địa cầu châu Mỹ
+1F30F địa cầu châu Á châu Úc
+1F310 địa cầu có kinh tuyến
+1F311 trăng non
+1F312 trăng lưỡi liềm đầu tháng
+1F313 trăng bán nguyệt đầu tháng
+1F314 trăng khuyết đầu tháng
+1F315 trăng tròn
+1F316 trăng khuyết cuối tháng
+1F317 trăng bán nguyệt cuối tháng
+1F318 trăng lưỡi liềm cuối tháng
+1F31A mặt trăng non có mặt
+1F31B trăng bán nguyệt đầu tháng có mặt
+1F31C trăng bán nguyệt cuối tháng có mặt
+1F31D mặt trăng tròn có mặt
+1F31E mặt trời có mặt
+1F320 sao băng
+1F321 nhiệt kế
+1F324 mặt trời sau mây nhỏ
+1F325 mặt trời sau mây lớn
+1F326 mặt trời sau mây có mưa
+1F328 mây có tuyết
+1F329 mây có sấm sét
+1F32A mây lốc xoáy
+1F32B sương mù dày
+1F32C mặt thổi gió
+1F32D bánh mì xúc xích
+1F32E bánh taco
+1F32F bánh burrito
+1F330 hạt dẻ
+1F331 cây non
+1F333 cây rụng lá
+1F335 xương rồng
+1F336 ớt cay
+1F33A hoa dâm bụt
+1F33C hoa nở
+1F33D bắp ngô
+1F33E bông lúa
+1F33F thảo mộc
+1F341 lá phong
+1F342 lá rụng
+1F344 nấm
+1F345 cà chua
+1F346 cà tím
+1F347 chùm nho
+1F348 dưa lê
+1F34B quả chanh
+1F34D quả dứa
+1F34F táo xanh
+1F350 quả lê
+1F351 quả đào
+1F352 quả anh đào
+1F356 thịt có xương
+1F357 đùi gà
+1F358 bánh gạo giòn
+1F359 cơm nắm
+1F35B cơm cà ri
+1F35D mì spaghetti
+1F35E bánh mì
+1F360 khoai lang nướng
+1F361 bánh dango
+1F362 món oden
+1F363 sushi
+1F364 tôm chiên
+1F365 chả cá xoáy
+1F366 kem ốc quế
+1F367 đá bào
+1F368 kem
+1F369 bánh donut
+1F36A bánh quy
+1F36B thanh sô cô la
+1F36C viên kẹo
+1F36D kẹo mút
+1F36E bánh flan
+1F36F hũ mật ong
+1F371 hộp cơm bento
+1F372 nồi thức ăn
+1F373 chiên trứng
+1F374 dao và nĩa
+1F376 bình rượu sake
+1F377 ly rượu vang
+1F378 ly cocktail
+1F379 đồ uống nhiệt đới
+1F37C bình sữa em bé
+1F37D dao nĩa và đĩa
+1F37E chai sâm panh nổ nút
+1F37F bắp rang bơ
+1F380 nơ ruy băng
+1F383 đèn bí ngô
+1F384 cây thông Noel
+1F385 ông già Noel
+1F386 pháo hoa
+1F387 pháo hoa cầm tay
+1F38B cây Tanabata
+1F38C cờ chéo
+1F38D trang trí cây thông
+1F38E búp bê Nhật
+1F38F cờ cá chép
+1F390 chuông gió
+1F391 lễ ngắm trăng
+1F392 cặp sách
+1F393 mũ tốt nghiệp
+1F396 huân chương quân đội
+1F397 ruy băng nhắc nhở
+1F399 micro phòng thu
+1F39A thanh trượt mức âm
+1F39B núm điều khiển
+1F39E khung phim
+1F39F vé vào cửa
+1F3A0 ngựa vòng quay
+1F3A1 vòng quay đu quay
+1F3A2 tàu lượn siêu tốc
+1F3A3 cần câu và cá
+1F3A5 máy quay phim
+1F3A6 rạp chiếu phim
+1F3A8 bảng màu họa sĩ
+1F3A9 mũ chóp cao
+1F3AA lều xiếc
+1F3AB tấm vé
+1F3AC bảng clapper
+1F3AD nghệ thuật biểu diễn
+1F3AF trúng hồng tâm
+1F3B0 máy đánh bạc
+1F3B1 bi-a
+1F3B2 con xúc xắc
+1F3B3 bowling
+1F3B4 bài hoa Nhật
+1F3B7 kèn saxophone
+1F3B8 đàn guitar
+1F3B9 đàn phím
+1F3BA kèn trumpet
+1F3BB đàn violin
+1F3BC bản nhạc
+1F3BD áo chạy bộ có dải
+1F3BE vợt và bóng tennis
+1F3BF ván trượt tuyết và giày trượt
+1F3C1 cờ ca rô
+1F3C2 người trượt ván tuyết
+1F3C3 người chạy bộ
+1F3C4 người lướt sóng
+1F3C5 huy chương thể thao
+1F3C7 đua ngựa
+1F3C8 bóng bầu dục Mỹ
+1F3C9 bóng bầu dục
+1F3CA người bơi
+1F3CB người cử tạ
+1F3CC người đánh golf
+1F3CE xe đua
+1F3CF gậy và bóng cricket
+1F3D0 bóng chuyền
+1F3D1 gậy và bóng khúc côn cầu trên cỏ
+1F3D2 gậy và bóng khúc côn cầu trên băng
+1F3D3 vợt và bóng bóng bàn
+1F3D4 núi phủ tuyết
+1F3D5 cắm trại
+1F3D6 bãi biển có ô
+1F3D7 công trình đang xây
+1F3D8 dãy nhà
+1F3D9 toàn cảnh thành phố
+1F3DA ngôi nhà hoang
+1F3DB tòa nhà cổ điển
+1F3DC sa mạc
+1F3DD đảo hoang
+1F3DE công viên quốc gia
+1F3DF sân vận động
+1F3E1 nhà có vườn
+1F3E3 bưu điện Nhật
+1F3E4 bưu điện châu Âu
+1F3E6 ngân hàng
+1F3E7 cây ATM
+1F3E8 khách sạn
+1F3E9 khách sạn tình yêu
+1F3EA cửa hàng tiện lợi
+1F3EB trường học
+1F3EC cửa hàng bách hóa
+1F3ED nhà máy
+1F3EE đèn lồng quán nhậu
+1F3EF lâu đài Nhật
+1F3F0 lâu đài châu Âu
+1F3F3 cờ trắng vẫy
+1F3F4 cờ đen vẫy
+1F3F5 hoa hồng trang trí
+1F3F7 nhãn
+1F3F8 vợt và quả cầu cầu lông
+1F3F9 cung tên
+1F3FA bình cổ hai quai
+1F400 con chuột cống
+1F401 con chuột
+1F402 con bò đực
+1F403 con trâu
+1F404 con bò sữa
+1F405 con hổ
+1F406 con báo
+1F407 con thỏ
+1F408 con mèo
+1F409 con rồng
+1F40A con cá sấu
+1F40B con cá voi
+1F40C con ốc sên
+1F40E con ngựa
+1F40F con cừu đực
+1F410 con dê
+1F411 con cừu
+1F412 con khỉ
+1F413 con gà trống
+1F415 con chó
+1F416 con lợn
+1F417 con lợn rừng
+1F418 con voi
+1F419 con bạch tuộc
+1F41A vỏ ốc xoắn
+1F41B con sâu bọ
+1F41C con kiến
+1F41E con bọ rùa
+1F420 cá nhiệt đới
+1F421 cá nóc
+1F423 gà con đang nở
+1F424 gà con
+1F425 gà con nhìn thẳng
+1F428 gấu koala
+1F429 chó poodle
+1F42A lạc đà một bướu
+1F42B lạc đà hai bướu
+1F42C cá heo
+1F432 mặt rồng
+1F434 mặt ngựa
+1F438 mặt ếch
+1F439 mặt chuột hamster
+1F43A mặt sói
+1F43D mũi lợn
+1F43E dấu chân thú
+1F43F con sóc chuột
+1F450 hai bàn tay mở
+1F451 vương miện
+1F452 mũ phụ nữ
+1F453 kính mắt
+1F454 cà vạt
+1F455 áo thun
+1F456 quần jean
+1F457 váy
+1F458 áo kimono
+1F459 bộ bikini
+1F45A quần áo phụ nữ
+1F45B ví cầm tay
+1F45C túi xách
+1F45D túi rút
+1F45E giày nam
+1F45F giày thể thao
+1F460 giày cao gót
+1F461 dép xăng đan nữ
+1F462 ủng nữ
+1F463 dấu chân người
+1F464 bóng người
+1F465 hai bóng người
+1F46A gia đình
+1F46B nam nữ nắm tay
+1F46C hai người nam nắm tay
+1F46D hai người nữ nắm tay
+1F46E cảnh sát
+1F46F cô gái tai thỏ
+1F470 cô dâu đội voan
+1F471 người tóc vàng
+1F472 người đội mũ Trung Hoa
+1F473 người đội khăn xếp
+1F477 công nhân xây dựng
+1F478 công chúa
+1F479 yêu quái Nhật
+1F47A thiên cẩu Nhật
+1F47C em bé thiên thần
+1F47E quái vật ngoài hành tinh
+1F481 nhân viên quầy hướng dẫn
+1F482 lính gác
+1F483 người nhảy múa
+1F484 son môi
+1F485 sơn móng tay
+1F486 mát xa mặt
+1F487 cắt tóc
+1F488 cột đèn tiệm cắt tóc
+1F489 ống tiêm
+1F48A viên thuốc
+1F48B dấu môi hôn
+1F48C thư tình
+1F48D chiếc nhẫn
+1F48E viên đá quý
+1F48F nụ hôn
+1F490 bó hoa
+1F491 cặp đôi với trái tim
+1F492 đám cưới
+1F493 trái tim đang đập
+1F49D trái tim thắt nơ
+1F49F trang trí hình tim
+1F4A0 hình thoi có chấm
+1F4A3 quả bom
+1F4A7 giọt nước
+1F4A8 vệt gió
+1F4AC bong bóng thoại
+1F4AD bong bóng suy nghĩ
+1F4AE hoa trắng
+1F4B1 đổi tiền
+1F4B2 ký hiệu đô la đậm
+1F4B4 tờ tiền yên
+1F4B6 tờ tiền euro
+1F4B7 tờ tiền bảng Anh
+1F4B8 tiền có cánh
+1F4B9 biểu đồ tăng và ký hiệu yên
+1F4BA ghế ngồi
+1F4BC cặp tài liệu
+1F4BD đĩa mini
+1F4BE đĩa mềm
+1F4BF đĩa quang
+1F4C0 đĩa DVD
+1F4C1 thư mục
+1F4C2 thư mục đang mở
+1F4C3 trang giấy cuộn
+1F4C4 trang giấy ngửa
+1F4C6 tờ lịch xé
+1F4C7 thẻ chỉ mục
+1F4C8 biểu đồ tăng
+1F4C9 biểu đồ giảm
+1F4CA biểu đồ cột
+1F4CB bìa kẹp giấy
+1F4CD đinh ghim tròn
+1F4CF thước thẳng
+1F4D0 thước tam giác
+1F4D1 các tab đánh dấu
+1F4D2 sổ cái
+1F4D3 quyển vở
+1F4D4 sổ bìa trang trí
+1F4D5 sách bìa đỏ
+1F4D7 sách xanh lá
+1F4D8 sách xanh dương
+1F4D9 sách cam
+1F4DB bảng tên
+1F4DC cuộn giấy
+1F4DE ống nghe điện thoại
+1F4DF máy nhắn tin
+1F4E0 máy fax
+1F4E1 ăng ten vệ tinh
+1F4E3 loa cổ vũ
+1F4E4 khay thư đi
+1F4E5 khay thư đến
+1F4E6 gói hàng
+1F4E7 ký hiệu thư điện tử
+1F4E8 thư đang đến
+1F4E9 phong bì có mũi tên xuống
+1F4EA hộp thư đóng cờ hạ
+1F4EB hộp thư đóng cờ giương
+1F4EC hộp thư mở cờ giương
+1F4ED hộp thư mở cờ hạ
+1F4EE hòm thư
+1F4EF kèn bưu điện
+1F4F0 tờ báo
+1F4F2 điện thoại có mũi tên
+1F4F3 chế độ rung
+1F4F4 điện thoại tắt
+1F4F5 cấm điện thoại
+1F4F6 thanh sóng
+1F4F8 máy ảnh có đèn flash
+1F4FB đài radio
+1F4FC băng video
+1F4FD máy chiếu phim
+1F4FF chuỗi tràng hạt
+1F500 mũi tên xáo trộn
+1F501 mũi tên lặp lại
+1F502 mũi tên lặp lại một bài
+1F503 mũi tên xoay xuống lên theo chiều kim đồng hồ
+1F504 mũi tên xoay ngược chiều kim đồng hồ
+1F505 độ sáng thấp
+1F506 độ sáng cao
+1F508 loa
+1F509 loa một sóng âm
+1F50B pin
+1F50C phích cắm điện
+1F50E kính lúp nghiêng phải
+1F50F ổ khóa với bút mực
+1F510 ổ khóa đóng có chìa
+1F516 dấu trang
+1F517 biểu tượng liên kết
+1F518 nút chọn tròn
+1F51A nút END
+1F51B nút ON
+1F51C nút SOON
+1F51D nút TOP
+1F51E cấm dưới mười tám tuổi
+1F51F phím số mười
+1F520 chữ Latinh hoa
+1F521 chữ Latinh thường
+1F522 các con số
+1F523 các ký hiệu
+1F524 các chữ cái Latinh
+1F526 đèn pin
+1F527 cờ lê
+1F528 cái búa
+1F529 ốc vít
+1F52A dao bếp
+1F52B súng lục
+1F52C kính hiển vi
+1F52D kính thiên văn
+1F52E quả cầu pha lê
+1F52F ngôi sao sáu cánh có chấm giữa
+1F530 biểu tượng người mới Nhật
+1F531 cây đinh ba
+1F532 nút vuông đen
+1F533 nút vuông trắng
+1F536 hình thoi cam lớn
+1F537 hình thoi xanh lớn
+1F538 hình thoi cam nhỏ
+1F539 hình thoi xanh nhỏ
+1F53A tam giác đỏ hướng lên
+1F53B tam giác đỏ hướng xuống
+1F53C tam giác đỏ nhỏ hướng lên
+1F53D tam giác đỏ nhỏ hướng xuống
+1F549 ký hiệu Om
+1F54A chim bồ câu hòa bình
+1F54B đền Kaaba
+1F54C nhà thờ Hồi giáo
+1F54D giáo đường Do Thái
+1F54E chân đèn chín nhánh
+1F56F ngọn nến
+1F570 đồng hồ để lò sưởi
+1F573 cái lỗ
+1F574 người mặc vest lơ lửng
+1F575 thám tử
+1F576 kính râm
+1F577 con nhện
+1F578 mạng nhện
+1F579 cần điều khiển trò chơi
+1F57A người đàn ông nhảy múa
+1F587 hai chiếc kẹp giấy nối nhau
+1F58A bút bi
+1F58B bút máy
+1F58C cọ vẽ
+1F58D bút sáp màu
+1F595 ngón giữa
+1F596 chào kiểu Vulcan
+1F5A5 máy tính để bàn
+1F5A8 máy in
+1F5B1 con chuột máy tính
+1F5B2 bi xoay
+1F5BC khung tranh
+1F5C2 ngăn chia thẻ
+1F5C3 hộp phiếu hồ sơ
+1F5C4 tủ hồ sơ
+1F5D1 thùng rác
+1F5D2 sổ lò xo
+1F5D3 lịch lò xo
+1F5DC kẹp nén
+1F5DD chìa khóa cổ
+1F5DE tờ báo cuộn
+1F5E1 con dao găm
+1F5E3 đầu người đang nói
+1F5E8 bong bóng thoại bên trái
+1F5EF bong bóng giận dữ bên phải
+1F5F3 hòm phiếu bầu
+1F5FA bản đồ thế giới
+1F5FB núi Phú Sĩ
+1F5FC tháp Tokyo
+1F5FD tượng Nữ thần Tự do
+1F5FE hình bản đồ Nhật Bản
+1F5FF tượng đá moai
+1F619 mặt hôn mắt cười
+1F61D mặt lè lưỡi nhắm chặt mắt
+1F623 mặt cố chịu đựng
+1F625 mặt thất vọng nhưng nhẹ nhõm
+1F626 mặt cau mày há miệng
+1F627 mặt đau khổ
+1F628 mặt sợ hãi
+1F630 mặt há miệng toát mồ hôi lạnh
+1F638 mặt mèo cười tươi
+1F639 mặt mèo cười ra nước mắt
+1F63A mặt mèo cười há miệng
+1F63B mặt mèo mắt trái tim
+1F63C mặt mèo cười khẩy
+1F63D mặt mèo hôn
+1F63E mặt mèo bĩu môi
+1F63F mặt mèo khóc
+1F640 mặt mèo mệt mỏi
+1F645 người ra dấu không
+1F646 người ra dấu đồng ý
+1F647 người cúi chào
+1F64B người giơ tay
+1F64D người cau mày
+1F64E người bĩu môi
+1F681 máy bay trực thăng
+1F682 đầu máy hơi nước
+1F683 toa tàu
+1F684 tàu cao tốc
+1F685 tàu cao tốc đầu đạn
+1F686 tàu hỏa
+1F687 tàu điện ngầm
+1F688 tàu điện nhẹ
+1F689 nhà ga
+1F68A tàu điện mặt đất
+1F68B toa tàu điện
+1F68D xe buýt đang tới
+1F68E xe buýt điện
+1F68F trạm xe buýt
+1F690 xe buýt nhỏ
+1F691 xe cứu thương
+1F692 xe cứu hỏa
+1F693 xe cảnh sát
+1F694 xe cảnh sát đang tới
+1F696 xe taxi đang tới
+1F698 ô tô đang tới
+1F699 xe du lịch
+1F69A xe tải giao hàng
+1F69B xe đầu kéo
+1F69C máy kéo
+1F69D tàu một ray
+1F69E đường sắt leo núi
+1F69F đường sắt treo
+1F6A0 cáp treo lên núi
+1F6A1 cáp treo
+1F6A2 con tàu
+1F6A3 thuyền chèo
+1F6A4 xuồng máy
+1F6A5 đèn giao thông ngang
+1F6A6 đèn giao thông dọc
+1F6A7 biển báo công trình
+1F6A8 đèn xoay xe cảnh sát
+1F6A9 cờ tam giác trên cột
+1F6AA cánh cửa
+1F6AC điếu thuốc
+1F6AD cấm hút thuốc
+1F6AE bỏ rác đúng chỗ
+1F6AF cấm xả rác
+1F6B0 nước uống được
+1F6B1 nước không uống được
+1F6B3 cấm xe đạp
+1F6B4 người đi xe đạp
+1F6B5 người đạp xe leo núi
+1F6B6 người đi bộ
+1F6B7 cấm người đi bộ
+1F6B8 trẻ em qua đường
+1F6B9 ký hiệu nhà vệ sinh nam
+1F6BA ký hiệu nhà vệ sinh nữ
+1F6BB nhà vệ sinh
+1F6BC ký hiệu em bé
+1F6BD bồn cầu
+1F6BE phòng vệ sinh
+1F6BF vòi sen
+1F6C0 người tắm
+1F6C1 bồn tắm
+1F6C2 kiểm soát hộ chiếu
+1F6C3 hải quan
+1F6C4 nhận hành lý
+1F6C5 gửi hành lý
+1F6CB ghế sofa và đèn
+1F6CC người đang nằm ngủ
+1F6CD túi mua sắm
+1F6CE chuông khách sạn
+1F6CF cái giường
+1F6D0 nơi thờ cúng
+1F6D1 biển báo dừng
+1F6D2 xe đẩy mua sắm
+1F6D5 đền Hindu
+1F6D6 túp lều
+1F6D7 thang máy
+1F6DC mạng không dây
+1F6DD cầu trượt sân chơi
+1F6DE bánh xe
+1F6DF phao cứu sinh
+1F6E0 búa và cờ lê
+1F6E1 cái khiên
+1F6E2 thùng dầu
+1F6E3 đường cao tốc
+1F6E4 đường ray
+1F6E5 thuyền máy
+1F6E9 máy bay nhỏ
+1F6EB máy bay cất cánh
+1F6EC máy bay hạ cánh
+1F6F0 vệ tinh
+1F6F3 tàu chở khách
+1F6F4 xe trượt scooter
+1F6F5 xe tay ga
+1F6F6 ca nô
+1F6F7 xe trượt tuyết
+1F6F8 đĩa bay
+1F6F9 ván trượt
+1F6FA xe lam
+1F6FB xe bán tải
+1F6FC giày trượt patin
+1F7E0 vòng tròn cam
+1F7E1 vòng tròn vàng
+1F7E3 vòng tròn tím
+1F7E4 vòng tròn nâu
+1F7E5 hình vuông đỏ
+1F7E6 hình vuông xanh dương
+1F7E7 hình vuông cam
+1F7E8 hình vuông vàng
+1F7E9 hình vuông xanh lá
+1F7EA hình vuông tím
+1F7EB hình vuông nâu
+1F7F0 dấu bằng đậm
+1F90C các ngón tay chụm lại
+1F90E trái tim nâu
+1F90F bàn tay chụm nhỏ
+1F911 mặt ham tiền
+1F919 gọi cho tôi
+1F91B nắm đấm hướng trái
+1F91C nắm đấm hướng phải
+1F920 mặt đội mũ cao bồi
+1F924 mặt chảy nước dãi
+1F925 mặt nói dối
+1F926 người ôm mặt ngán ngẩm
+1F927 mặt hắt hơi
+1F928 mặt nhướn một bên lông mày
+1F92B mặt suỵt
+1F92D mặt cười che miệng
+1F92E mặt nôn mửa
+1F930 phụ nữ mang thai
+1F931 cho con bú
+1F932 hai lòng bàn tay ngửa
+1F933 chụp ảnh tự sướng
+1F934 hoàng tử
+1F935 người mặc lễ phục
+1F936 bà già Noel
+1F937 người nhún vai
+1F938 người lộn nhào
+1F939 người tung hứng
+1F93A người đấu kiếm
+1F93C các đô vật
+1F93D bóng nước
+1F93E bóng ném
+1F93F kính lặn
+1F940 bông hoa héo
+1F941 trống và dùi
+1F943 ly thủy tinh
+1F944 cái muỗng
+1F945 lưới khung thành
+1F948 huy chương bạc
+1F949 huy chương đồng
+1F94A găng tay đấm bốc
+1F94B võ phục
+1F94C đá curling
+1F94D gậy và bóng lacrosse
+1F94E bóng mềm
+1F94F đĩa bay thể thao
+1F950 bánh sừng bò
+1F951 quả bơ
+1F952 quả dưa chuột
+1F953 thịt xông khói
+1F954 củ khoai tây
+1F955 củ cà rốt
+1F956 bánh mì baguette
+1F957 salad rau xanh
+1F958 chảo thức ăn
+1F959 bánh mì nhồi
+1F95A quả trứng
+1F95B ly sữa
+1F95C đậu phộng
+1F95D quả kiwi
+1F95E bánh kếp
+1F95F bánh bao há cảo
+1F960 bánh quy may mắn
+1F961 hộp đồ ăn mang đi
+1F962 đôi đũa
+1F963 bát có thìa
+1F964 cốc có ống hút
+1F965 quả dừa
+1F966 bông cải xanh
+1F967 bánh nướng
+1F968 bánh quy xoắn
+1F969 miếng thịt
+1F96A bánh sandwich
+1F96B đồ hộp
+1F96C rau lá xanh
+1F96D quả xoài
+1F96E bánh trung thu
+1F96F bánh bagel
+1F971 mặt ngáp
+1F972 mặt cười có giọt nước mắt
+1F973 mặt đội mũ tiệc
+1F974 mặt choáng váng
+1F977 ninja
+1F978 mặt cải trang
+1F979 mặt cố nén nước mắt
+1F97B áo sari
+1F97C áo choàng phòng thí nghiệm
+1F97D kính bảo hộ
+1F97E giày đi bộ đường dài
+1F97F giày bệt
+1F980 con cua
+1F982 con bọ cạp
+1F983 con gà tây
+1F984 mặt kỳ lân
+1F985 chim đại bàng
+1F986 con vịt
+1F987 con dơi
+1F988 cá mập
+1F989 con cú
+1F98A mặt cáo
+1F98C con hươu
+1F98D con khỉ đột
+1F98E con thằn lằn
+1F98F con tê giác
+1F990 con tôm
+1F991 con mực
+1F992 mặt hươu cao cổ
+1F993 mặt ngựa vằn
+1F994 con nhím
+1F995 khủng long cổ dài
+1F996 khủng long bạo chúa
+1F997 con dế
+1F998 con kangaroo
+1F999 con lạc đà không bướu
+1F99A con công
+1F99B con hà mã
+1F99C con vẹt
+1F99D con gấu mèo
+1F99E con tôm hùm
+1F99F con muỗi
+1F9A0 vi khuẩn
+1F9A1 con lửng
+1F9A2 thiên nga
+1F9A3 voi ma mút
+1F9A4 chim dodo
+1F9A5 con lười
+1F9A6 con rái cá
+1F9A7 con đười ươi
+1F9A8 con chồn hôi
+1F9A9 chim hồng hạc
+1F9AA con hàu
+1F9AB con hải ly
+1F9AC con bò rừng bison
+1F9AD con hải cẩu
+1F9AE chó dẫn đường
+1F9AF gậy dò đường
+1F9B0 tóc đỏ
+1F9B1 tóc xoăn
+1F9B2 đầu hói
+1F9B3 tóc bạc
+1F9B4 khúc xương
+1F9B5 cái chân
+1F9B6 bàn chân
+1F9B7 cái răng
+1F9B8 siêu anh hùng
+1F9B9 siêu phản diện
+1F9BA áo phản quang
+1F9BB tai đeo máy trợ thính
+1F9BC xe lăn điện
+1F9BD xe lăn tay
+1F9BE cánh tay cơ khí
+1F9BF cái chân cơ khí
+1F9C0 miếng phô mai
+1F9C1 bánh cupcake
+1F9C2 lọ muối
+1F9C3 hộp nước giải khát
+1F9C4 củ tỏi
+1F9C5 củ hành
+1F9C6 viên falafel
+1F9C7 bánh waffle
+1F9C8 bơ
+1F9C9 trà mate
+1F9CA viên đá
+1F9CB trà sữa trân châu
+1F9CC quỷ khổng lồ
+1F9CD người đang đứng
+1F9CE người đang quỳ
+1F9CF người khiếm thính
+1F9D0 mặt đeo kính một mắt
+1F9D1 người lớn
+1F9D2 đứa trẻ
+1F9D3 người cao tuổi
+1F9D4 người có râu
+1F9D5 người trùm khăn
+1F9D6 người trong phòng xông hơi
+1F9D7 người leo núi
+1F9D8 người ngồi thiền
+1F9D9 pháp sư
+1F9DA tiên nữ
+1F9DB ma cà rồng
+1F9DC người cá
+1F9DD yêu tinh
+1F9DE thần đèn
+1F9DF xác sống
+1F9E2 mũ lưỡi trai
+1F9E3 khăn quàng cổ
+1F9E4 găng tay len
+1F9E5 áo khoác
+1F9E6 đôi tất
+1F9E7 bao lì xì đỏ
+1F9E8 pháo nổ
+1F9E9 mảnh ghép hình
+1F9EA ống nghiệm
+1F9EB đĩa petri
+1F9EC chuỗi xoắn ADN
+1F9ED la bàn
+1F9EE bàn tính
+1F9EF bình chữa cháy
+1F9F0 hộp đồ nghề
+1F9F1 viên gạch
+1F9F2 nam châm
+1F9F3 hành lý
+1F9F4 chai kem dưỡng
+1F9F5 cuộn chỉ
+1F9F6 cuộn len
+1F9F7 kim băng
+1F9F8 gấu bông
+1F9F9 cây chổi
+1F9FA cái giỏ
+1F9FB cuộn giấy vệ sinh
+1F9FC cục xà phòng
+1F9FD miếng bọt biển
+1F9FE hóa đơn
+1F9FF bùa mắt xanh
+1FA70 giày múa ba lê
+1FA71 áo bơi một mảnh
+1FA72 quần lót
+1FA73 quần short
+1FA74 dép xỏ ngón
+1FA75 trái tim xanh nhạt
+1FA76 trái tim xám
+1FA77 trái tim hồng
+1FA78 giọt máu
+1FA79 băng cá nhân
+1FA7A ống nghe y tế
+1FA7B tia X
+1FA7C cái nạng
+1FA80 yo-yo
+1FA81 con diều
+1FA82 dù nhảy
+1FA83 boomerang
+1FA84 đũa phép
+1FA85 piñata
+1FA86 búp bê lồng nhau
+1FA87 xúc xắc maracas
+1FA88 cây sáo
+1FA90 hành tinh có vành đai
+1FA91 cái ghế
+1FA92 dao cạo
+1FA93 cái rìu
+1FA94 đèn dầu diya
+1FA95 đàn banjo
+1FA96 mũ quân đội
+1FA97 đàn accordion
+1FA98 trống dài
+1FA99 đồng xu
+1FA9A cưa thợ mộc
+1FA9B tua vít
+1FA9C cái thang
+1FA9D cái móc
+1FA9E tấm gương
+1FA9F cửa sổ
+1FAA0 cây thông bồn cầu
+1FAA1 kim khâu
+1FAA2 cái nút thắt
+1FAA3 cái xô
+1FAA4 bẫy chuột
+1FAA5 bàn chải đánh răng
+1FAA6 bia mộ
+1FAA7 tấm biển giơ tay
+1FAA8 tảng đá
+1FAA9 quả cầu disco
+1FAAA thẻ căn cước
+1FAAB pin yếu
+1FAAC bàn tay Hamsa
+1FAAD quạt gấp
+1FAAE lược chải tóc
+1FAAF kiếm Khanda
+1FAB0 con ruồi
+1FAB1 con giun
+1FAB2 con bọ cánh cứng
+1FAB3 con gián
+1FAB4 chậu cây
+1FAB5 khúc gỗ
+1FAB6 chiếc lông vũ
+1FAB7 hoa sen
+1FAB8 san hô
+1FAB9 tổ chim trống
+1FABA tổ chim có trứng
+1FABB hoa lan dạ hương
+1FABC con sứa
+1FABD cái cánh
+1FABF con ngỗng
+1FAC0 trái tim giải phẫu
+1FAC1 lá phổi
+1FAC2 hai người ôm nhau
+1FAC3 người đàn ông mang thai
+1FAC4 người mang thai
+1FAC5 người đội vương miện
+1FACE con nai sừng tấm
+1FACF con lừa
+1FAD0 quả việt quất
+1FAD1 ớt chuông
+1FAD2 quả ô liu
+1FAD3 bánh mì dẹt
+1FAD4 bánh tamale
+1FAD5 nồi fondue
+1FAD6 ấm trà
+1FAD7 rót chất lỏng
+1FAD8 hạt đậu
+1FAD9 cái lọ
+1FADA củ gừng
+1FADB vỏ đậu Hà Lan
+1FAE0 mặt tan chảy
+1FAE1 mặt chào quân đội
+1FAE2 mặt mở to mắt che miệng
+1FAE3 mặt lén nhìn
+1FAE4 mặt miệng méo
+1FAE5 mặt nét đứt
+1FAE6 cắn môi
+1FAE7 bong bóng xà phòng
+1FAE8 mặt rung lắc
+1FAF0 bàn tay chéo ngón trỏ và ngón cái
+1FAF1 bàn tay hướng phải
+1FAF2 bàn tay hướng trái
+1FAF3 bàn tay úp xuống
+1FAF4 bàn tay ngửa lên
+1FAF5 ngón trỏ chỉ vào người xem
+1FAF6 hai tay hình trái tim
+1FAF7 bàn tay đẩy sang trái
+1FAF8 bàn tay đẩy sang phải

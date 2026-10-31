@@ -37,6 +37,7 @@ class TextsTest {
                 .recoverCatching { FallbackTexts.get(key, arrayOf<Any>("a", "b", "c")) }
                 .recoverCatching { FallbackTexts.get(key, arrayOf<Any>("a", 2, "c")) }
                 .recoverCatching { FallbackTexts.get(key, arrayOf<Any>(1, "b", 3)) }
+                .recoverCatching { FallbackTexts.get(key, arrayOf<Any>("a", "b", "c", "d", "e")) }
                 .getOrThrow()
             assertTrue("empty text for $key", text.isNotBlank())
         }

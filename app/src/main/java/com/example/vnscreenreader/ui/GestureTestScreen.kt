@@ -3,6 +3,8 @@ package com.example.vnscreenreader.ui
 import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import kotlinx.coroutines.delay
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -37,6 +39,13 @@ fun GestureTestScreen() {
     BackHandler(enabled = active) { dispatch(GestureTestEvent.BACK) }
     LifecycleEventEffect(Lifecycle.Event.ON_STOP) { dispatch(GestureTestEvent.SCREEN_LEFT) }
     DisposableEffect(Unit) { onDispose { GestureTestMode.dispatch(GestureTestEvent.SCREEN_LEFT) } }
+    // Chế độ tự tắt khi không hoạt động: đồng bộ lại hiển thị.
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(1000)
+            active = GestureTestMode.active
+        }
+    }
 
     ScreenColumn(stringResource(R.string.sec_gesttest)) {
         BodyText(stringResource(R.string.gt_intro))

@@ -31,7 +31,23 @@ class SettingsRepository(context: Context) {
         get() = prefs.getBoolean(KEY_AUTO_OCR, false)
         set(value) = prefs.edit { putBoolean(KEY_AUTO_OCR, value) }
 
-    /** Đọc ký tự đang gõ trong ô mật khẩu. Mặc định TẮT (chỉ báo "đã nhập ký tự") để không lộ mật khẩu khi có người nghe. */
+    /** Đọc tên biểu tượng cảm xúc (emoji) thay vì để giọng đọc bỏ qua. Mặc định BẬT. */
+    var speakEmoji: Boolean
+        get() = prefs.getBoolean(KEY_SPEAK_EMOJI, true)
+        set(value) = prefs.edit { putBoolean(KEY_SPEAK_EMOJI, value) }
+
+    /**
+     * Đọc ký tự đang gõ trong ô mật khẩu và KHÔNG che ô mật khẩu khỏi OCR/mô tả ảnh. Mặc định TẮT (chỉ báo
+     * "đã nhập ký tự") để không lộ mật khẩu khi có người nghe.
+     */
+    /**
+     * Tiêu điểm chi tiết: đưa cả các view mà ứng dụng đánh dấu "không quan trọng với trợ năng" vào cây (ví dụ ô tích
+     * không gắn nhãn cạnh dòng điều khoản). Mặc định TẮT vì thêm nhiều điểm dừng và chậm hơn.
+     */
+    var detailedFocus: Boolean
+        get() = prefs.getBoolean(KEY_DETAILED_FOCUS, false)
+        set(value) = prefs.edit { putBoolean(KEY_DETAILED_FOCUS, value) }
+
     var speakPasswords: Boolean
         get() = prefs.getBoolean(KEY_SPEAK_PASSWORDS, false)
         set(value) = prefs.edit { putBoolean(KEY_SPEAK_PASSWORDS, value) }
@@ -84,6 +100,8 @@ class SettingsRepository(context: Context) {
         private const val KEY_NOTIFICATIONS = "read_notifications"
         private const val KEY_SPEAK_PASSWORDS = "speak_passwords"
         private const val KEY_SPEAK_HINTS = "speak_hints"
+        private const val KEY_SPEAK_EMOJI = "speak_emoji"
+        private const val KEY_DETAILED_FOCUS = "detailed_focus"
         private const val KEY_AUTO_OCR = "auto_ocr_unlabeled"
         private const val KEY_HAPTIC = "haptic_enabled"
         private const val KEY_SOUND = "sound_enabled"

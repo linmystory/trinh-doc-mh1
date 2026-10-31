@@ -24,11 +24,30 @@ object GestureTestLogic {
  * không lịch sử; màn hình luôn tắt cờ khi bị đóng/ẩn nên cử chỉ sau khi thoát hoạt động như bình thường.
  */
 object GestureTestMode {
-    @Volatile
-    var active: Boolean = false
-        private set
+    /** Quá thời gian này không có cử chỉ nào thì chế độ tự tắt (phòng khi không bấm được nút thoát). */
+    const val IDLE_TIMEOUT_MS = 30_000L
 
-    fun dispatch(event: GestureTestEvent) {
-        active = GestureTestLogic.reduce(active, event)
+    @Volatile
+    private var on: Boolean = false
+
+    @Volatile
+    private var lastActivityMs: Long = 0L
+
+    /** Đang bật? Hết [IDLE_TIMEOUT_MS] không hoạt động thì tự tắt. */
+    val active: Boolean get() = isActive(System.nanoTime() / 1_000_000)
+
+    fun isActive(nowMs: Long): Boolean {
+        if (on && nowMs - lastActivityMs > IDLE_TIMEOUT_MS) on = false
+        return on
+    }
+
+    /** Ghi nhận một cử chỉ vừa tới (làm mới bộ đếm không hoạt động). */
+    fun touch(nowMs: Long = System.nanoTime() / 1_000_000) {
+        lastActivityMs = nowMs
+    }
+
+    fun dispatch(event: GestureTestEvent, nowMs: Long = System.nanoTime() / 1_000_000) {
+        on = GestureTestLogic.reduce(on, event)
+        if (on) lastActivityMs = nowMs
     }
 }

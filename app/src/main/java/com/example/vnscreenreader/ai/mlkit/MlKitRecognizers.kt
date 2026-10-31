@@ -15,13 +15,22 @@ import com.google.mlkit.vision.text.chinese.ChineseTextRecognizerOptions
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
-import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlin.coroutines.suspendCoroutine
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.withContext
 
 /** Chuyển `Task` của Google Play services thành hàm suspend (không cần thêm thư viện kotlinx-coroutines-play-services). */
-private suspend fun <T> Task<T>.awaitResult(): T = suspendCancellableCoroutine { cont ->
-    addOnSuccessListener { cont.resume(it) }
-    addOnFailureListener { cont.resumeWithException(it) }
-    addOnCanceledListener { cont.cancel() }
+private suspend fun <T> Task<T>.awaitResult(): T = withContext(NonCancellable) {
+    // KHÔNG hủy giữa chừng: tác vụ ML Kit không hủy được và vẫn đọc bitmap; nếu trả về sớm thì `finally { recycle() }`
+    // của người gọi sẽ giải phóng bitmap khi ML Kit còn đang dùng. Tác vụ ngắn (< vài giây); hủy được xử lý ngay sau khi xong.
+    suspendCoroutine { cont ->
+        addOnSuccessListener { cont.resume(it) }
+        addOnFailureListener { cont.resumeWithException(it) }
+        addOnCanceledListener { cont.resumeWithException(CancellationException("ML Kit task canceled")) }
+    }
 }
 
 /**
@@ -39,6 +48,7 @@ class MlKitTextRecognizer(script: OcrScript) : TextRecognizerPort {
 
     override suspend fun recognize(image: Bitmap): List<OcrBlock> {
         val result = client.process(InputImage.fromBitmap(image, 0)).awaitResult()
+        currentCoroutineContext().ensureActive()
         return result.textBlocks.flatMap { block ->
             block.lines.mapNotNull { line ->
                 line.boundingBox?.let { OcrBlock(line.text, it.left, it.top, it.right, it.bottom, line.confidence) }
@@ -53,8 +63,11 @@ class MlKitTextRecognizer(script: OcrScript) : TextRecognizerPort {
 class MlKitImageLabeler : ImageLabelerPort {
     private val client = ImageLabeling.getClient(ImageLabelerOptions.DEFAULT_OPTIONS)
 
-    override suspend fun label(image: Bitmap): List<LabelScore> =
-        client.process(InputImage.fromBitmap(image, 0)).awaitResult().map { LabelScore(it.text, it.confidence) }
+    override suspend fun label(image: Bitmap): List<LabelScore> {
+        val labels = client.process(InputImage.fromBitmap(image, 0)).awaitResult()
+        currentCoroutineContext().ensureActive()
+        return labels.map { LabelScore(it.text, it.confidence) }
+    }
 
     override fun close() = client.close()
 }

@@ -413,6 +413,30 @@ class ResourceTexts(private val context: Context) : TextProvider {
         S.RD_AUTOOCR_DESC -> R.string.rd_autoocr_desc
         S.G_DOUBLE_HOLD -> R.string.g_double_hold
         S.MSG_LONG_CLICKED -> R.string.msg_long_clicked
+        S.GA_PAGE_NEXT -> R.string.ga_page_next
+        S.GA_PAGE_PREV -> R.string.ga_page_prev
+        S.MSG_PAGE_NEXT -> R.string.msg_page_next
+        S.MSG_PAGE_PREV -> R.string.msg_page_prev
+        S.MSG_NO_PAGE_AREA -> R.string.msg_no_page_area
+        S.MSG_NO_MORE_PAGES -> R.string.msg_no_more_pages
+        S.GS_LOST_TITLE -> R.string.gs_lost_title
+        S.GS_LOST_MSG -> R.string.gs_lost_msg
+        S.GS_LOST_CONFIRM -> R.string.gs_lost_confirm
+        S.RD_EMOJI_TITLE -> R.string.rd_emoji_title
+        S.RD_EMOJI_DESC -> R.string.rd_emoji_desc
+        S.GA_TOGGLE_DETAILED_FOCUS -> R.string.ga_toggle_detailed_focus
+        S.MENU_DETAILED_FOCUS -> R.string.menu_detailed_focus
+        S.MSG_DETAILED_ON -> R.string.msg_detailed_on
+        S.MSG_DETAILED_OFF -> R.string.msg_detailed_off
+        S.RD_DETAILED_TITLE -> R.string.rd_detailed_title
+        S.RD_DETAILED_DESC -> R.string.rd_detailed_desc
+        S.GA_TECH_INFO -> R.string.ga_tech_info
+        S.MENU_TECH_INFO -> R.string.menu_tech_info
+        S.MSG_TECH_INFO -> R.string.msg_tech_info
+        S.TECH_YES -> R.string.tech_yes
+        S.TECH_NO -> R.string.tech_no
+        S.TECH_NONE -> R.string.tech_none
+        S.MSG_NEARBY_CLICKED -> R.string.msg_nearby_clicked
         else -> error("Khóa plurals đã xử lý ở get(): $key")
     }
 }

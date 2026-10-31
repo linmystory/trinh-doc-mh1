@@ -103,7 +103,11 @@ enum class GestureAction(private val labelKey: S) {
     CURSOR_START(S.GA_CURSOR_START),
     CURSOR_END(S.GA_CURSOR_END),
     SELECT_TO_START(S.GA_SELECT_TO_START),
-    SELECT_TO_END(S.GA_SELECT_TO_END);
+    SELECT_TO_END(S.GA_SELECT_TO_END),
+    PAGE_NEXT(S.GA_PAGE_NEXT),
+    PAGE_PREVIOUS(S.GA_PAGE_PREV),
+    TOGGLE_DETAILED_FOCUS(S.GA_TOGGLE_DETAILED_FOCUS),
+    DESCRIBE_TECHNICAL(S.GA_TECH_INFO);
 
     /** Tên hiển thị theo ngôn ngữ hiện hành. */
     val label: String get() = t(labelKey)

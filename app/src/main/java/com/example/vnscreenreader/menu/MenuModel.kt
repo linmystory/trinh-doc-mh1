@@ -60,6 +60,7 @@ object Menus {
         MenuItem(t(S.GA_CYCLE_FEEDBACK), GestureAction.CYCLE_FEEDBACK),
         MenuItem(t(S.GA_SPEAK_STATUS), GestureAction.SPEAK_STATUS),
         MenuItem(t(S.GA_RUN_PLUGINS), GestureAction.RUN_PLUGINS),
+        MenuItem(t(S.MENU_DETAILED_FOCUS), GestureAction.TOGGLE_DETAILED_FOCUS),
         MenuItem(t(S.GA_OPEN_SETTINGS), GestureAction.OPEN_SETTINGS),
         back(),
     )
@@ -80,6 +81,7 @@ object Menus {
         add(MenuItem(t(S.MENU_LABEL), GestureAction.LABEL_FOCUSED))
         add(MenuItem(t(S.MENU_DESCRIBE), GestureAction.DESCRIBE_FOCUSED))
         add(MenuItem(t(S.MENU_OCR_FOCUSED), GestureAction.OCR_FOCUSED))
+        add(MenuItem(t(S.MENU_TECH_INFO), GestureAction.DESCRIBE_TECHNICAL))
         if (editable) add(MenuItem(t(S.MENU_EDIT_TITLE), submenu = MenuKind.LOCAL_EDIT))
         custom.take(MAX_CUSTOM_ACTIONS).forEach { add(MenuItem(it.label, customActionId = it.id)) }
     }
