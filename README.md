@@ -59,6 +59,10 @@ Cử chỉ mở trình đơn hiển thị ở mục **Trình đơn** trong ứng
   "Tên, N mục."; cử chỉ không dùng được trong trình đơn chỉ nhắc ngắn một lần.
 - Cài đặt **Đọc hướng dẫn thao tác** (Đọc, mặc định bật): tắt thì trình đơn chỉ đọc tên mục, không đọc vị trí và lời nhắc.
 
+## Bản 2.7.1
+
+Sửa lỗi lint `LocalContextGetResourceValueCall` ở `PluginManagerScreen` (lấy chuỗi bằng `stringResource` thay vì `context.getString` trong Composable).
+
 ## Bản 2.7.0: nút bị ứng dụng giấu khỏi trợ năng
 
 Một số ứng dụng (ví dụ ô tích "Tôi đồng ý với điều khoản") đánh dấu nút là "không quan trọng với trợ năng" nên trình đọc

@@ -58,6 +58,8 @@ import com.example.vnscreenreader.R
 fun PluginManagerScreen() {
     val context = LocalContext.current
     val registry = remember { PluginRegistry(context) }
+    // Lint (LocalContextGetResourceValueCall): chuỗi phải lấy bằng stringResource trong thân Composable để theo kịp đổi ngôn ngữ.
+    val readFailedText = stringResource(R.string.pl_read_failed)
     var plugins by remember { mutableStateOf<List<PluginInfo>>(emptyList()) }
     var status by remember { mutableStateOf<String?>(null) }
     var pendingDelete by remember { mutableStateOf<PluginInfo?>(null) }
@@ -76,7 +78,7 @@ fun PluginManagerScreen() {
             scope.launch {
                 val json = withContext(Dispatchers.IO) { readScript(context, uri) }
                 if (json == null) {
-                    status = context.getString(R.string.pl_read_failed)
+                    status = readFailedText
                 } else if (ScriptParser.parse(json).getOrNull()?.packages?.isEmpty() == true) {
                     pendingAllApps = json
                 } else {
