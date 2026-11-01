@@ -4,10 +4,17 @@ import android.accessibilityservice.AccessibilityService
 import android.graphics.Rect
 import android.os.SystemClock
 import android.view.accessibility.AccessibilityNodeInfo
+import com.example.vnscreenreader.core.AutoOcrPolicy
+import com.example.vnscreenreader.core.BoundedNode
+import com.example.vnscreenreader.core.CaptchaFinder
+import com.example.vnscreenreader.core.CaptchaPolicy
 import com.example.vnscreenreader.core.CustomLabelStore
+import com.example.vnscreenreader.core.NodeSnapshot
 import com.example.vnscreenreader.core.AutoScrollPicker
 import com.example.vnscreenreader.core.FocusIndex
 import com.example.vnscreenreader.core.FocusLocator
+import com.example.vnscreenreader.core.FocusTracker
+import com.example.vnscreenreader.core.LongPressTiming
 import com.example.vnscreenreader.core.LabelResolver
 import com.example.vnscreenreader.core.ScreenSearch
 import com.example.vnscreenreader.core.SpeechTextBuilder
@@ -17,6 +24,7 @@ import com.example.vnscreenreader.core.EditOp
 import com.example.vnscreenreader.core.EditPolicy
 import com.example.vnscreenreader.core.SelectionMath
 import com.example.vnscreenreader.core.NearbyControlPicker
+import com.example.vnscreenreader.core.SwipeGeometry
 import com.example.vnscreenreader.core.TechInfo
 import com.example.vnscreenreader.core.UnitMove
 import com.example.vnscreenreader.core.freshOrNull
@@ -48,6 +56,10 @@ class FocusNavigator(
         }
 
     private var currentNode: AccessibilityNodeInfo? = null
+
+    /** Vết của phần tử đang chọn (hộp + nhãn) để bám lại khi nút bị tái chế sau khi giao diện vẽ lại. */
+    private var lastBox: IntArray? = null
+    private var lastLabel: String = ""
     private var cachedNodes: List<AccessibilityNodeInfo> = emptyList()
     private var cachedAtMs = 0L
     private val cursor = TextCursor()
@@ -72,6 +84,8 @@ class FocusNavigator(
 
     fun reset() {
         currentNode = null
+        lastBox = null
+        lastLabel = ""
         invalidateCache()
         overlay.clear()
     }
@@ -83,12 +97,19 @@ class FocusNavigator(
 
     fun focusOn(node: AccessibilityNodeInfo) {
         currentNode = node
+        rememberTrace(node)
         cursor.bind(nodeText(node))
         node.performAction(AccessibilityNodeInfo.ACTION_ACCESSIBILITY_FOCUS)
         highlight(node)
         feedback.onFocusChanged()
         speak(describe(node), true)
         onFocused(node)
+    }
+
+    private fun rememberTrace(node: AccessibilityNodeInfo) {
+        val r = Rect().also { node.getBoundsInScreen(it) }
+        if (!r.isEmpty) lastBox = intArrayOf(r.left, r.top, r.right, r.bottom)
+        lastLabel = labelKey(node)
     }
 
     fun highlight(node: AccessibilityNodeInfo) {
@@ -121,7 +142,8 @@ class FocusNavigator(
             speak(t(S.MSG_SCREEN_EMPTY), true)
             return
         }
-        val current = currentIndexIn(nodes)
+        var current = currentIndexIn(nodes)
+        if (current < 0) current = trackedIndex(nodes, forward) ?: current
         val target = if (forward) FocusIndex.next(current, nodes.size) else FocusIndex.previous(current, nodes.size)
         if (target == null) {
             // Hết phần tử trong màn hình: thử cuộn rồi chọn phần tử mới thay vì dừng (giống TalkBack).
@@ -256,14 +278,41 @@ class FocusNavigator(
             return
         }
         val node = currentFresh() ?: return
+        // 1) Hành động nhấn giữ của khung (hoặc cha). 2) Context click (menu ngữ cảnh chuột phải). 3) Giả lập chạm giữ.
         val target = NodeCollector.findAncestorOrSelf(node) { it.isLongClickable }
-        if (target != null && target.performAction(AccessibilityNodeInfo.ACTION_LONG_CLICK)) {
+        val done = (target != null && target.performAction(AccessibilityNodeInfo.ACTION_LONG_CLICK)) ||
+            NodeCollector.findAncestorOrSelf(node) { n ->
+                n.actionList.any { it.id == AccessibilityNodeInfo.AccessibilityAction.ACTION_CONTEXT_CLICK.id }
+            }?.performAction(AccessibilityNodeInfo.AccessibilityAction.ACTION_CONTEXT_CLICK.id) == true
+        if (done) {
             feedback.onActivated()
             invalidateCache()
             speak(t(S.MSG_LONG_CLICKED), true)
-        } else {
-            speak(t(S.MSG_CANNOT_LONG_CLICK), true)
+            return
         }
+        if (!holdAt(node)) speak(t(S.MSG_CANNOT_LONG_CLICK), true)
+    }
+
+    /** Chạm giữ giả lập tại giữa phần tử, lâu hơn ngưỡng nhấn giữ của hệ thống. */
+    private fun holdAt(node: AccessibilityNodeInfo): Boolean {
+        val r = Rect().also { node.getBoundsInScreen(it) }
+        if (r.isEmpty) return false
+        val path = android.graphics.Path().apply { moveTo(r.exactCenterX(), r.exactCenterY()) }
+        val duration = LongPressTiming.durationMs(android.view.ViewConfiguration.getLongPressTimeout())
+        val gesture = android.accessibilityservice.GestureDescription.Builder()
+            .addStroke(android.accessibilityservice.GestureDescription.StrokeDescription(path, 0, duration))
+            .build()
+        val message = t(S.MSG_LONG_CLICKED)
+        return service.dispatchGesture(
+            gesture,
+            object : AccessibilityService.GestureResultCallback() {
+                override fun onCompleted(g: android.accessibilityservice.GestureDescription?) {
+                    invalidateCache()
+                    speak(message, true)
+                }
+            },
+            null,
+        )
     }
 
     /** Chữ của phần tử đang chọn; null nếu chưa chọn, rỗng hoặc là ô mật khẩu (không bao giờ lộ mật khẩu). */
@@ -358,6 +407,14 @@ class FocusNavigator(
         return FocusLocator.nearestContaining(boxes, bounds.centerX(), bounds.centerY())
     }
 
+    /** Phần tử đang chọn không còn trong danh sách: bám theo vết cũ (nhãn/vị trí) thay vì nhảy về đầu. */
+    private fun trackedIndex(nodes: List<AccessibilityNodeInfo>, forward: Boolean): Int? {
+        val last = lastBox ?: return null
+        val boxes = nodes.map { n -> Rect().also { n.getBoundsInScreen(it) }.let { intArrayOf(it.left, it.top, it.right, it.bottom) } }
+        val i = FocusTracker.virtualCurrent(boxes, nodes.map { labelKey(it) }, last, lastLabel, forward)
+        return i.takeIf { it >= 0 }
+    }
+
     private fun labelKey(node: AccessibilityNodeInfo): String =
         if (node.isPassword) "" else (node.text ?: node.contentDescription)?.toString()?.trim().orEmpty()
 
@@ -372,16 +429,68 @@ class FocusNavigator(
     private fun autoScrollAndSelect(oldNodes: List<AccessibilityNodeInfo>, forward: Boolean): Boolean {
         val root = activeRoot() ?: return false
         val targets = NodeCollector.scrollTargets(currentQuiet(), root, forward)
-        if (targets.isEmpty()) return false
         val oldLabels = oldNodes.map { labelKey(it) }
-        val scrolled = targets.any { target -> NodeCollector.scrollActions(forward).any { target.performAction(it) } }
-        if (!scrolled) return false
-        SystemClock.sleep(AUTO_SCROLL_SETTLE_MS)
-        invalidateCache()
-        val fresh = visibleNodes() ?: return false
-        val index = AutoScrollPicker.pick(oldLabels, fresh.map { labelKey(it) }, forward) ?: return false
-        focusOn(fresh[index])
-        return true
+        val anchor = currentQuiet()?.let { labelKey(it) }.orEmpty()
+        val area = Rect()
+        // Chiến lược 1: hành động cuộn của chính khung.
+        val scrolledTarget = targets.firstOrNull { target ->
+            NodeCollector.scrollActions(forward).any { target.performAction(it) }
+        }
+        if (scrolledTarget != null) {
+            scrolledTarget.getBoundsInScreen(area)
+            if (pickAfterScroll(area, oldLabels, anchor, forward, attempts = 2)) return true
+        }
+        // Chiến lược 2 (dự phòng): hành động báo thành công nhưng không đổi gì (view tự vẽ, lúc được lúc không), hoặc khung
+        // "cuộn được" mà không có hành động nào: giả lập cú vuốt dọc. Ở cuối danh sách thật, khung không còn hành động
+        // tiến nên không rơi vào đây.
+        val stuck = if (scrolledTarget != null) area else NodeCollector.stuckScrollableBounds(root)
+        if (stuck == null || stuck.isEmpty) return false
+        val line = SwipeGeometry.vertical(stuck.left, stuck.top, stuck.right, stuck.bottom, forward) ?: return false
+        if (!swipeBlocking(line)) return false
+        return pickAfterScroll(stuck, oldLabels, anchor, forward, attempts = 2)
+    }
+
+    /** Chờ giao diện ổn định rồi chọn phần tử kế trong vùng vừa cuộn; thử lại nếu danh sách tải dần. */
+    private fun pickAfterScroll(area: Rect, oldLabels: List<String>, anchor: String, forward: Boolean, attempts: Int): Boolean {
+        repeat(attempts) { attempt ->
+            SystemClock.sleep(if (attempt == 0) AUTO_SCROLL_SETTLE_MS else AUTO_SCROLL_RETRY_MS)
+            invalidateCache()
+            val fresh = visibleNodes() ?: return false
+            val inside = fresh.map { n ->
+                val r = Rect().also { n.getBoundsInScreen(it) }
+                !area.isEmpty && Rect.intersects(area, r) && area.contains(r.centerX(), r.centerY())
+            }
+            val index = AutoScrollPicker.pickWithin(oldLabels, fresh.map { labelKey(it) }, inside, anchor, forward)
+            if (index != null) {
+                focusOn(fresh[index])
+                return true
+            }
+        }
+        return false
+    }
+
+    /** Phát cú vuốt và CHỜ nó kết thúc (chỉ gọi từ luồng xử lý nền, không phải luồng chính). */
+    private fun swipeBlocking(line: SwipeGeometry.Line): Boolean {
+        val path = android.graphics.Path().apply {
+            moveTo(line.startX.toFloat(), line.startY.toFloat())
+            lineTo(line.endX.toFloat(), line.endY.toFloat())
+        }
+        val gesture = android.accessibilityservice.GestureDescription.Builder()
+            .addStroke(android.accessibilityservice.GestureDescription.StrokeDescription(path, 0, SWIPE_DURATION_MS))
+            .build()
+        val latch = java.util.concurrent.CountDownLatch(1)
+        var ok = false
+        val dispatched = service.dispatchGesture(
+            gesture,
+            object : AccessibilityService.GestureResultCallback() {
+                override fun onCompleted(g: android.accessibilityservice.GestureDescription?) { ok = true; latch.countDown() }
+                override fun onCancelled(g: android.accessibilityservice.GestureDescription?) { latch.countDown() }
+            },
+            null,
+        )
+        if (!dispatched) return false
+        latch.await(GESTURE_WAIT_MS, java.util.concurrent.TimeUnit.MILLISECONDS)
+        return ok
     }
 
     /** Chuyển trang NGANG (ViewPager, tab vuốt ngang). */
@@ -391,9 +500,12 @@ class FocusNavigator(
             speak(t(S.MSG_CANNOT_READ_SCREEN), true)
             return
         }
-        val targets = NodeCollector.pageTargets(currentQuiet(), root)
+        val from = currentQuiet()
+        var targets = NodeCollector.pageTargets(from, root)
+        if (targets.isEmpty()) targets = NodeCollector.pageTargetsByHint(from, root)
         if (targets.isEmpty()) {
-            speak(t(S.MSG_NO_PAGE_AREA), true)
+            // Không khung nào nhận hành động chuyển trang (ví dụ màn hình chính của launcher): giả lập cú vuốt ngang.
+            if (!swipePage(root, forward)) speak(t(S.MSG_NO_PAGE_AREA), true)
             return
         }
         val actions = NodeCollector.pageActions(forward)
@@ -407,6 +519,39 @@ class FocusNavigator(
         }
     }
 
+    /**
+     * Giả lập cú vuốt ngang bằng dispatchGesture (cần canPerformGestures). Không xác nhận được trang có đổi thật hay
+     * không, nên câu báo chỉ nói "đã vuốt". @return false nếu không thể phát cử chỉ.
+     */
+    private fun swipePage(root: AccessibilityNodeInfo, forward: Boolean): Boolean {
+        val bounds = Rect().also { root.getBoundsInScreen(it) }
+        val rtl = service.resources.configuration.layoutDirection == android.view.View.LAYOUT_DIRECTION_RTL
+        val line = SwipeGeometry.horizontal(bounds.left, bounds.top, bounds.right, bounds.bottom, forward, rtl) ?: return false
+        val path = android.graphics.Path().apply {
+            moveTo(line.startX.toFloat(), line.startY.toFloat())
+            lineTo(line.endX.toFloat(), line.endY.toFloat())
+        }
+        val gesture = android.accessibilityservice.GestureDescription.Builder()
+            .addStroke(android.accessibilityservice.GestureDescription.StrokeDescription(path, 0, SWIPE_DURATION_MS))
+            .build()
+        // Đặt lại lựa chọn NGAY (trang mới có phần tử khác); câu báo nói sau khi cử chỉ kết thúc.
+        reset()
+        val message = if (forward) t(S.MSG_SWIPED_NEXT) else t(S.MSG_SWIPED_PREV)
+        return service.dispatchGesture(
+            gesture,
+            object : AccessibilityService.GestureResultCallback() {
+                override fun onCompleted(gestureDescription: android.accessibilityservice.GestureDescription?) {
+                    speak(message, true)
+                }
+
+                override fun onCancelled(gestureDescription: android.accessibilityservice.GestureDescription?) {
+                    speak(t(S.MSG_NO_MORE_PAGES), true)
+                }
+            },
+            null,
+        )
+    }
+
     /** Vùng (toạ độ màn hình) của mọi ô mật khẩu đang hiển thị: che đi trước khi chụp để OCR không đọc mật khẩu đang hiện. */
     fun passwordBounds(): List<Rect> {
         val root = activeRoot() ?: return emptyList()
@@ -414,6 +559,47 @@ class FocusNavigator(
             .filter { it.isPassword }
             .map { Rect().also { r -> it.getBoundsInScreen(r) } }
     }
+
+    /**
+     * (là ảnh, giống ảnh xác thực) của phần tử đang chọn: quyết định trình đơn phần tử đặt các mục đọc ảnh và
+     * "Đọc mã xác thực" ở đâu (xem [Menus.local]).
+     */
+    fun currentImageKind(): Pair<Boolean, Boolean> {
+        val node = currentNode ?: return false to false
+        val snapshot = node.toSnapshot()
+        val image = AutoOcrPolicy.isImageLike(snapshot.className) || CaptchaPolicy.isPlainImage(snapshot.className)
+        return image to CaptchaPolicy.looksLikeCaptchaImage(snapshot)
+    }
+
+    /**
+     * Ảnh xác thực cần đọc (xem [CaptchaFinder]): ảnh đang chọn; không có thì ảnh tự khai báo là ảnh xác thực;
+     * không có nữa thì ảnh sát ô/dòng nhắc "nhập mã xác thực". Duyệt MỌI nút đang hiển thị chứ không chỉ các điểm
+     * dừng khi vuốt, vì ảnh xác thực không nhãn thường không phải điểm dừng. Chỉ gọi từ luồng nền; null nếu không có.
+     */
+    fun captchaTarget(): AccessibilityNodeInfo? {
+        val root = activeRoot() ?: return null
+        val nodes = NodeCollector.traverse(root)
+        val bounded = nodes.map { n ->
+            val r = Rect().also { n.getBoundsInScreen(it) }
+            BoundedNode(lightSnapshot(n), r.left, r.top, r.right, r.bottom)
+        }
+        val focused = currentQuiet()
+        val focusedIndex = focused?.let { f -> nodes.indexOfFirst { it == f }.takeIf { it >= 0 } }
+        val maxDistancePx = (CaptchaFinder.ANCHOR_MAX_DISTANCE_DP * service.resources.displayMetrics.density).toInt()
+        return CaptchaFinder.pick(bounded, focusedIndex, maxDistancePx)?.let { nodes[it] }
+    }
+
+    /** Ảnh chụp nhẹ của nút (không hỏi nhãn liên kết: tránh một lần IPC cho mỗi nút trên cây lớn). */
+    private fun lightSnapshot(n: AccessibilityNodeInfo) = NodeSnapshot(
+        text = n.text?.toString(),
+        contentDescription = n.contentDescription?.toString(),
+        hintText = n.hintText?.toString(),
+        className = n.className?.toString(),
+        isPassword = n.isPassword,
+        isEditable = n.isEditable,
+        tooltip = n.tooltipText?.toString(),
+        viewId = n.viewIdResourceName,
+    )
 
     private fun activeRoot(): AccessibilityNodeInfo? =
         // Nạp trước cả cây con trong MỘT lần gọi IPC thay vì mỗi nút một lần: giảm mạnh độ trễ trên cây lớn.
@@ -432,7 +618,10 @@ class FocusNavigator(
         const val CACHE_TTL_MS = 800L
         const val MAX_PARENT_LOOKUP = 12
         const val AUTO_SCROLL_SETTLE_MS = 350L
+        const val AUTO_SCROLL_RETRY_MS = 700L
         const val MAX_READ_ALL = 300
+        const val SWIPE_DURATION_MS = 250L
+        const val GESTURE_WAIT_MS = 1500L
         const val NEARBY_PARENT_LEVELS = 2
         const val MAX_NEARBY_CHILDREN = 30
     }

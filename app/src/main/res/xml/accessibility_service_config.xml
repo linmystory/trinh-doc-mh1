@@ -5,6 +5,7 @@
     android:accessibilityFlags="flagDefault|flagReportViewIds|flagRetrieveInteractiveWindows|flagRequestTouchExplorationMode|flagRequestMultiFingerGestures|flagServiceHandlesDoubleTap"
     android:canRetrieveWindowContent="true"
     android:canRequestTouchExplorationMode="true"
+    android:canPerformGestures="true"
     android:canTakeScreenshot="true"
     android:description="@string/service_description"
     android:isAccessibilityTool="true"

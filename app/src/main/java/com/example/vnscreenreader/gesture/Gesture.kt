@@ -107,7 +107,8 @@ enum class GestureAction(private val labelKey: S) {
     PAGE_NEXT(S.GA_PAGE_NEXT),
     PAGE_PREVIOUS(S.GA_PAGE_PREV),
     TOGGLE_DETAILED_FOCUS(S.GA_TOGGLE_DETAILED_FOCUS),
-    DESCRIBE_TECHNICAL(S.GA_TECH_INFO);
+    DESCRIBE_TECHNICAL(S.GA_TECH_INFO),
+    READ_CAPTCHA(S.GA_READ_CAPTCHA);
 
     /** Tên hiển thị theo ngôn ngữ hiện hành. */
     val label: String get() = t(labelKey)

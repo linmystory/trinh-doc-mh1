@@ -50,6 +50,7 @@ internal class ActionDispatcher(
             GestureAction.OCR_SCREEN -> ai.ocrScreen()
             GestureAction.DESCRIBE_FOCUSED -> ai.describeFocused()
             GestureAction.OCR_FOCUSED -> ai.ocrFocused()
+            GestureAction.READ_CAPTCHA -> ai.readCaptcha(navigator.captchaTarget())
             GestureAction.LABEL_FOCUSED -> editLabel()
             GestureAction.OPEN_GLOBAL_MENU -> openMenu(MenuKind.GLOBAL)
             GestureAction.OPEN_LOCAL_MENU -> openMenu(MenuKind.LOCAL)

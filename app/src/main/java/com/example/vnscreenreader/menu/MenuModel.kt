@@ -41,6 +41,8 @@ object Menus {
 
     private fun back() = MenuItem(t(S.MENU_BACK), isBack = true)
 
+    private fun captchaItem() = MenuItem(t(S.MENU_CAPTCHA), GestureAction.READ_CAPTCHA)
+
     /** Trình đơn chung, cấp đầu: 7 mục dùng nhiều nhất + "Khác". Phần còn lại nằm trong [globalMore]. */
     fun global(): List<MenuItem> = listOf(
         MenuItem(t(S.GA_READ_FROM_TOP), GestureAction.READ_FROM_TOP),
@@ -55,6 +57,7 @@ object Menus {
 
     /** Trình đơn con "Khác" của trình đơn chung; mục cuối là "Quay lại". */
     fun globalMore(): List<MenuItem> = listOf(
+        MenuItem(t(S.MENU_CAPTCHA), GestureAction.READ_CAPTCHA),
         MenuItem(t(S.MSG_QUICK_SETTINGS), GestureAction.QUICK_SETTINGS),
         MenuItem(t(S.MSG_RECENTS), GestureAction.RECENTS),
         MenuItem(t(S.GA_CYCLE_FEEDBACK), GestureAction.CYCLE_FEEDBACK),
@@ -68,8 +71,24 @@ object Menus {
     /**
      * Trình đơn của phần tử đang chọn. Mục chỉnh sửa văn bản chỉ nằm trong trình đơn con [localEdit] và chỉ hiện
      * khi [editable]; cuối danh sách là các hành động tùy chỉnh của chính phần tử đó.
+     *
+     * Với ảnh ([imageLike]) các mục đọc ảnh (mô tả, đọc chữ, đọc mã xác thực) lên ĐẦU danh sách để mở trình đơn rồi
+     * chạm hai lần là xong; ảnh xác thực ([captchaLike]) thì "Đọc mã xác thực" đứng trên cùng. Phần tử không phải
+     * ảnh giữ nguyên thứ tự cũ.
      */
-    fun local(custom: List<CustomAction>, editable: Boolean = false): List<MenuItem> = buildList {
+    fun local(
+        custom: List<CustomAction>,
+        editable: Boolean = false,
+        imageLike: Boolean = false,
+        captchaLike: Boolean = false,
+    ): List<MenuItem> = buildList {
+        val isImage = imageLike || captchaLike
+        if (isImage) {
+            if (captchaLike) add(captchaItem())
+            add(MenuItem(t(S.MENU_DESCRIBE), GestureAction.DESCRIBE_FOCUSED))
+            add(MenuItem(t(S.MENU_OCR_FOCUSED), GestureAction.OCR_FOCUSED))
+            if (!captchaLike) add(captchaItem())
+        }
         add(MenuItem(t(S.MENU_ACTIVATE), GestureAction.ACTIVATE))
         add(MenuItem(t(S.MENU_LONG_CLICK), GestureAction.LONG_CLICK_FOCUSED))
         add(MenuItem(t(S.MENU_UNIT_NEXT), GestureAction.UNIT_NEXT))
@@ -79,8 +98,10 @@ object Menus {
         add(MenuItem(t(S.MENU_COPY), GestureAction.COPY_FOCUSED))
         add(MenuItem(t(S.MENU_SPELL), GestureAction.SPELL_FOCUSED))
         add(MenuItem(t(S.MENU_LABEL), GestureAction.LABEL_FOCUSED))
-        add(MenuItem(t(S.MENU_DESCRIBE), GestureAction.DESCRIBE_FOCUSED))
-        add(MenuItem(t(S.MENU_OCR_FOCUSED), GestureAction.OCR_FOCUSED))
+        if (!isImage) {
+            add(MenuItem(t(S.MENU_DESCRIBE), GestureAction.DESCRIBE_FOCUSED))
+            add(MenuItem(t(S.MENU_OCR_FOCUSED), GestureAction.OCR_FOCUSED))
+        }
         add(MenuItem(t(S.MENU_TECH_INFO), GestureAction.DESCRIBE_TECHNICAL))
         if (editable) add(MenuItem(t(S.MENU_EDIT_TITLE), submenu = MenuKind.LOCAL_EDIT))
         custom.take(MAX_CUSTOM_ACTIONS).forEach { add(MenuItem(it.label, customActionId = it.id)) }

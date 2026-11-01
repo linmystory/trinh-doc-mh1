@@ -113,6 +113,7 @@ object SpeechTextBuilder {
     private fun roleOf(node: NodeSnapshot): String? {
         val cls = node.className.orEmpty()
         return when {
+            CaptchaPolicy.looksLikeCaptchaImage(node) -> t(S.SP_ROLE_CAPTCHA)
             node.isHeading -> t(S.SP_ROLE_HEADING)
             node.isEditable || cls.contains("EditText") -> t(S.SP_ROLE_EDITABLE)
             cls.contains("CheckBox") -> t(S.SP_ROLE_CHECKBOX)

@@ -1,6 +1,7 @@
 package com.example.vnscreenreader.node
 
 import android.graphics.Rect
+import com.example.vnscreenreader.core.PagerHints
 import android.os.Build
 import android.view.accessibility.AccessibilityNodeInfo
 import com.example.vnscreenreader.core.CheckedState
@@ -225,6 +226,37 @@ object NodeCollector {
      */
     fun pageTargets(from: AccessibilityNodeInfo?, root: AccessibilityNodeInfo): List<AccessibilityNodeInfo> =
         scrollTargetsBy(from, root) { node -> node.actionList.any { a -> a.id in HORIZONTAL_ACTION_IDS } }
+
+    /**
+     * Vùng của khung tự nhận "cuộn được" nhưng KHÔNG báo bất kỳ hành động cuộn nào (view tự vẽ): cuộn bằng hành động
+     * không thể, phải giả lập cú vuốt. Lấy khung lớn nhất đang hiện; null nếu không có.
+     */
+    fun stuckScrollableBounds(root: AccessibilityNodeInfo): Rect? {
+        val ids = setOf(
+            AccessibilityNodeInfo.ACTION_SCROLL_FORWARD, AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD,
+            AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_UP.id, AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_DOWN.id,
+        )
+        var best: Rect? = null
+        for (node in traverse(root)) {
+            if (!node.isScrollable || !node.isVisibleToUser) continue
+            if (node.actionList.any { it.id in ids }) continue
+            val r = Rect().also { node.getBoundsInScreen(it) }
+            if (r.isEmpty) continue
+            val b = best
+            if (b == null || r.width().toLong() * r.height() > b.width().toLong() * b.height()) best = r
+        }
+        return best
+    }
+
+    /**
+     * Dự phòng khi không nút nào báo hành động ngang: khung cuộn được, có FORWARD/BACKWARD chung và TÊN LỚP giống bộ
+     * chuyển trang ngang (ViewPager, Workspace, HorizontalScrollView...). Cùng thứ tự ưu tiên như [pageTargets].
+     */
+    fun pageTargetsByHint(from: AccessibilityNodeInfo?, root: AccessibilityNodeInfo): List<AccessibilityNodeInfo> =
+        scrollTargetsBy(from, root) { node ->
+            PagerHints.looksHorizontalPager(node.className) &&
+                node.actionList.any { a -> a.id == AccessibilityNodeInfo.ACTION_SCROLL_FORWARD || a.id == AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD }
+        }
 
     /** Thứ tự thử hành động chuyển trang: FORWARD/BACKWARD (tự xử lý RTL) trước, rồi trang, rồi cuộn trái/phải. */
     fun pageActions(forward: Boolean): IntArray =

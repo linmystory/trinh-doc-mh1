@@ -20,6 +20,9 @@ import com.example.vnscreenreader.gesture.GestureAction
 import com.example.vnscreenreader.gesture.GestureAnalyzer
 import com.example.vnscreenreader.gesture.GestureMappingStore
 import com.example.vnscreenreader.core.AutoOcrPolicy
+import com.example.vnscreenreader.core.CaptchaPolicy
+import com.example.vnscreenreader.core.LabelResolver
+import com.example.vnscreenreader.core.NodeSnapshot
 import com.example.vnscreenreader.core.EmojiText
 import com.example.vnscreenreader.core.SpeechPlan
 import com.example.vnscreenreader.core.GestureTestLogic
@@ -140,12 +143,14 @@ internal class ReaderSession(private val service: AccessibilityService) {
      * hủy tác vụ cũ khi chọn phần tử khác nằm ở [AiAssistant.onFocusChanged].
      */
     private fun onElementFocused(node: AccessibilityNodeInfo) {
+        val snapshot = node.toSnapshot()
+        announceImageHint(snapshot)
         val enabled = settings.autoOcrUnlabeled
-        if (!enabled) {
+        // Ảnh xác thực chỉ được đọc khi người dùng YÊU CẦU (cử chỉ hoặc trình đơn), không bao giờ tự động.
+        if (!enabled || CaptchaPolicy.looksLikeCaptchaImage(snapshot)) {
             ai.cancelAuto()
             return
         }
-        val snapshot = node.toSnapshot()
         val eligible = AutoOcrPolicy.eligible(
             enabled = true,
             node = snapshot,
@@ -159,6 +164,22 @@ internal class ReaderSession(private val service: AccessibilityService) {
             windowKey = "${snapshot.packageName}#${node.windowId}",
             elementKey = "${snapshot.viewId}|$bounds",
         )
+    }
+
+    /**
+     * Gợi ý ngắn (CHỈ khi bật đọc hướng dẫn) cho ảnh xác thực hoặc ảnh không nhãn: dùng trình đơn phần tử để đọc mã,
+     * mô tả ảnh hay đọc chữ trong ảnh. Xếp hàng SAU lời mô tả phần tử (không ngắt), người dùng thành thạo tắt công
+     * tắc là không nghe thấy gì thêm.
+     */
+    private fun announceImageHint(snapshot: NodeSnapshot) {
+        if (!settings.speakHints || snapshot.isPassword || snapshot.isEditable) return
+        val hint = when {
+            CaptchaPolicy.looksLikeCaptchaImage(snapshot) -> S.CAPTCHA_HINT
+            (AutoOcrPolicy.isImageLike(snapshot.className) || CaptchaPolicy.isPlainImage(snapshot.className)) &&
+                !LabelResolver.hasAppLabel(snapshot) -> S.IMG_HINT
+            else -> return
+        }
+        speech.speak(t(hint), false)
     }
 
     /** Gọi trên luồng chính. */
@@ -257,7 +278,13 @@ internal class ReaderSession(private val service: AccessibilityService) {
                 }
                 // Làm mới phần tử trước khi dựng trình đơn: nút cũ có thể cho hành động của phần tử đã biến mất.
                 if (navigator.currentFresh() == null) return
-                Menus.local(navigator.customActions(), editable = navigator.isCurrentEditable())
+                val (imageLike, captchaLike) = navigator.currentImageKind()
+                Menus.local(
+                    navigator.customActions(),
+                    editable = navigator.isCurrentEditable(),
+                    imageLike = imageLike,
+                    captchaLike = captchaLike,
+                )
             }
             else -> return // trình đơn con chỉ mở từ trình đơn cha
         }

@@ -414,6 +414,20 @@
     <string name="tech_no">không</string>
     <string name="tech_none">không có</string>
     <string name="msg_nearby_clicked">Đã nhấn điều khiển ở ngay bên cạnh</string>
+    <string name="msg_swiped_next">Đã vuốt sang trang kế</string>
+    <string name="msg_swiped_prev">Đã vuốt về trang trước</string>
+    <string name="captcha_result">Mã xác thực: %1$s</string>
+    <string name="captcha_all_upper">toàn chữ hoa</string>
+    <string name="captcha_all_lower">toàn chữ thường</string>
+    <string name="captcha_upper_mark">hoa %1$s</string>
+    <string name="captcha_not_found">Không tìm thấy ảnh xác thực dạng chữ. Hãy chọn ảnh rồi thử lại.</string>
+    <string name="captcha_unreadable">Không đọc được mã. Hãy thử lại, hoặc dùng mã âm thanh nếu trang có.</string>
+    <string name="captcha_reading">Đang đọc mã</string>
+    <string name="captcha_hint">Mở trình đơn phần tử để đọc mã.</string>
+    <string name="img_hint">Mở trình đơn phần tử để mô tả ảnh hoặc đọc chữ trong ảnh.</string>
+    <string name="sp_role_captcha">ảnh xác thực</string>
+    <string name="ga_read_captcha">Đọc mã xác thực trong ảnh</string>
+    <string name="menu_captcha">Đọc mã xác thực</string>
     <plurals name="notif_burst">
         <item quantity="other">%2$d thông báo mới từ %1$s, mới nhất: %3$s</item>
     </plurals>

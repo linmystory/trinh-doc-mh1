@@ -437,6 +437,20 @@ class ResourceTexts(private val context: Context) : TextProvider {
         S.TECH_NO -> R.string.tech_no
         S.TECH_NONE -> R.string.tech_none
         S.MSG_NEARBY_CLICKED -> R.string.msg_nearby_clicked
+        S.MSG_SWIPED_NEXT -> R.string.msg_swiped_next
+        S.MSG_SWIPED_PREV -> R.string.msg_swiped_prev
+        S.CAPTCHA_RESULT -> R.string.captcha_result
+        S.CAPTCHA_ALL_UPPER -> R.string.captcha_all_upper
+        S.CAPTCHA_ALL_LOWER -> R.string.captcha_all_lower
+        S.CAPTCHA_UPPER_MARK -> R.string.captcha_upper_mark
+        S.CAPTCHA_NOT_FOUND -> R.string.captcha_not_found
+        S.CAPTCHA_UNREADABLE -> R.string.captcha_unreadable
+        S.CAPTCHA_READING -> R.string.captcha_reading
+        S.CAPTCHA_HINT -> R.string.captcha_hint
+        S.IMG_HINT -> R.string.img_hint
+        S.SP_ROLE_CAPTCHA -> R.string.sp_role_captcha
+        S.GA_READ_CAPTCHA -> R.string.ga_read_captcha
+        S.MENU_CAPTCHA -> R.string.menu_captcha
         else -> error("Khóa plurals đã xử lý ở get(): $key")
     }
 }

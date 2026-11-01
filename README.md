@@ -50,10 +50,11 @@ Trình đọc màn hình (screen reader) cho Android dành cho người khiếm 
 ## Trình đơn nhanh
 Cử chỉ mở trình đơn hiển thị ở mục **Trình đơn** trong ứng dụng, lấy từ cấu hình thật của bạn.
 - **Chung** (7 mục + "Khác"): đọc từ đầu, đọc từ phần tử hiện tại, lặp lại, tìm chữ, đọc chữ trên màn hình (OCR),
-  thông báo, màn hình chính. Trình đơn con **Khác**: cài đặt nhanh, ứng dụng gần đây, đổi chế độ rung/âm báo,
+  thông báo, màn hình chính. Trình đơn con **Khác**: **đọc mã xác thực**, cài đặt nhanh, ứng dụng gần đây, đổi chế độ rung/âm báo,
   giờ và pin, chạy tiện ích, cài đặt ứng dụng, **Quay lại**.
 - **Phần tử**: nhấn, nhấn giữ, đơn vị kế/trước, đổi đơn vị đọc, sao chép đơn vị, sao chép, đọc từng ký tự,
-  gắn nhãn, mô tả hình ảnh, đọc chữ trong ảnh, cộng các hành động tùy chỉnh của ứng dụng. Riêng **ô nhập liệu**
+  gắn nhãn, mô tả hình ảnh, đọc chữ trong ảnh, cộng các hành động tùy chỉnh của ứng dụng. Riêng **ảnh**: các mục đọc ảnh
+  (mô tả, đọc chữ, **đọc mã xác thực**) lên đầu danh sách; **ảnh xác thực** thì "Đọc mã xác thực" đứng trên cùng. Riêng **ô nhập liệu**
   có thêm trình đơn con **Chỉnh sửa văn bản**: dán, cắt, chọn tất cả, đưa con trỏ về đầu/cuối, chọn đến đầu/cuối, **Quay lại**.
 - Khi trình đơn mở: vuốt phải/trái chọn mục, chạm hai lần thực hiện, quay lại để lùi một cấp. Mở trình đơn đọc
   "Tên, N mục."; cử chỉ không dùng được trong trình đơn chỉ nhắc ngắn một lần.
@@ -136,6 +137,25 @@ Cài đặt → Đọc → **Đọc biểu tượng cảm xúc** (mặc định 
 - Khoảng lặng dùng `playSilentUtterance`; hành vi thật phụ thuộc engine TTS và **chưa được thử trên máy**.
 - Chưa có kiểm thử trên thiết bị thật; chưa chạy được `assembleDebug`, `testDebugUnitTest`, `lintDebug`.
 
+## Đọc mã xác thực (CAPTCHA dạng chữ)
+Giúp bạn **tự đọc rồi tự nhập** mã trong ảnh xác thực khi duyệt web hoặc dùng ứng dụng. Chạy hoàn toàn trên máy, không dùng mạng.
+- **Kích hoạt (luôn do bạn yêu cầu, không bao giờ tự động):** (1) mục **Đọc mã xác thực** trong trình đơn phần tử của một ảnh
+  (đứng đầu nếu ảnh có nhãn kiểu "captcha", "mã xác thực", "mã bảo mật"...); (2) mục đầu của trình đơn con **Khác** trong trình
+  đơn chung; (3) gán hành động **Đọc mã xác thực trong ảnh** vào một cử chỉ bất kỳ (mặc định chưa gán).
+- **Tìm đúng ảnh:** ưu tiên ảnh bạn đang chọn; không có thì ảnh tự khai báo là ảnh xác thực (gần phần tử đang chọn nhất); không
+  có nữa thì ảnh nằm sát ô hay dòng chữ nhắc "nhập mã xác thực" (trong khoảng 220dp). Duyệt cả những ảnh không nhãn mà vuốt
+  không dừng lại được. Ảnh trong trang web (Chrome báo `android.widget.Image`) cũng được nhận.
+- **Đọc:** phóng to ảnh nhỏ, thử ảnh gốc trước, chưa đủ tin cậy thì thử thêm bản đen trắng (ngưỡng Otsu), chọn kết quả tốt
+  nhất. Luôn dùng bộ nhận dạng **Latin** (mã thường gồm chữ và số) kể cả khi ngôn ngữ ứng dụng là Nga hay Ả Rập.
+- **Lời đọc:** từng ký tự cách nhau một nhịp, ví dụ "Mã xác thực: toàn chữ hoa, A, K, 7, 9"; lẫn chữ hoa thường thì chỉ đánh
+  dấu chữ hoa ("a, hoa K, 7, 9"). Độ tin cậy thấp hoặc độ dài lạ thì thêm "có thể sai". Nghe lại bằng *Lặp lại*.
+- **Khi đang chọn một ảnh xác thực:** vai trò đọc là "ảnh xác thực"; nếu bật *Đọc hướng dẫn thao tác* thì thêm một gợi ý
+  ngắn về trình đơn phần tử. Tự đọc chữ trong ảnh không nhãn **bỏ qua** ảnh xác thực.
+- **An toàn:** không điền vào ô nhập, không sao chép vào clipboard, không lưu, không gửi đi đâu; ô mật khẩu bị che trước khi
+  chụp; màn hình bảo mật (FLAG_SECURE) báo thay vì đọc; mỗi lần chỉ một tác vụ; ảnh chỉ nằm trong RAM và được giải phóng ngay.
+- **Chưa kiểm chứng trên máy thật:** độ chính xác với từng kiểu CAPTCHA, ảnh `android.widget.Image` trong Chrome và các trình
+  duyệt khác, ảnh vẽ bằng canvas (không có nút ảnh nên không tìm được), và mã chỉ được biên dịch/kiểm thử trên GitHub Actions.
+
 ## Kiểm tra cử chỉ
 Mục **Kiểm tra cử chỉ** trong cài đặt: khi bật, mọi cử chỉ hệ thống gửi tới ứng dụng chỉ được **đọc tên** (ví dụ
 "Vuốt hai ngón lên"), không chạy chức năng đã gán. Cử chỉ nào không được đọc tên nghĩa là hệ thống không gửi tới
@@ -200,9 +220,10 @@ Script là JSON khai báo, không chứa mã thực thi. Xem mẫu trong `sample
   báo "chưa hỗ trợ" thay vì đọc ra kết quả sai.** Chữ Việt đọc được ở mức cơ bản, dấu thanh có thể sai với chữ nhỏ/mờ.
   Kết quả có độ tin cậy thấp được thêm "có thể sai". Mô hình Trung làm APK nặng thêm khoảng 4 MB mỗi kiến trúc CPU (theo
   tài liệu ML Kit; chưa đo trên bản build thật).
-- **Ảnh xác minh/CAPTCHA:** OCR thông thường **không đáng tin** với chữ méo, nhiễu, gạch chéo, và ứng dụng **không có chức
-  năng giải hay vượt xác minh**. Nếu gặp ảnh xác minh, hãy dùng lựa chọn âm thanh của dịch vụ đó, kênh hỗ trợ dành cho
-  người khiếm thị của họ, hoặc nhờ người nhìn giúp.
+- **Ảnh xác minh/CAPTCHA:** ứng dụng chỉ **đọc to mã trong ảnh dạng chữ để bạn tự nhập tay** (xem mục "Đọc mã xác thực"),
+  **không tự điền, không tự gửi, không vượt xác minh**. OCR **không đáng tin** với chữ méo nhiều, nhiễu, gạch chéo; khi đó
+  hãy dùng lựa chọn âm thanh của dịch vụ, kênh hỗ trợ dành cho người khiếm thị của họ, hoặc nhờ người nhìn giúp. Thử
+  thách dạng lưới hình hay ô đánh dấu (reCAPTCHA, hCaptcha, Turnstile) **không** được hỗ trợ.
 - **Tự đọc chữ trong ảnh không nhãn** (Cài đặt → Đọc, **mặc định tắt**): chỉ khi bạn chọn một ảnh không có chữ/mô tả/nhãn,
   mỗi lần một tác vụ, hủy khi chọn phần tử khác, không đọc lại cùng phần tử trong cùng cửa sổ, bỏ qua ô mật khẩu và
   cửa sổ bảo mật, không ghi gì ra đĩa. Cách này chụp màn hình mỗi lần chọn nên tốn pin hơn.

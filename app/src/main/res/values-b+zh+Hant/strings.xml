@@ -387,7 +387,7 @@
     <string name="ocr_maybe_wrong">%1$s。可能有誤。</string>
     <string name="ocr_auto_text">圖片中的文字：%1$s</string>
     <string name="rd_autoocr_title">自動朗讀無標籤圖片中的文字</string>
-    <string name="rd_autoocr_desc">預設關閉。僅在選中無標籤圖片時，才在本機朗讀其中的文字。結果可能有誤，验证圖片也無法可靠識別。</string>
+    <string name="rd_autoocr_desc">預設關閉。僅在選中無標籤圖片時，才在本機朗讀其中的文字。結果可能有誤，驗證圖片也無法可靠識別。</string>
     <string name="g_double_hold">雙擊並按住</string>
     <string name="msg_long_clicked">已長按</string>
     <string name="ga_page_next">下一頁</string>
@@ -414,6 +414,20 @@
     <string name="tech_no">否</string>
     <string name="tech_none">無</string>
     <string name="msg_nearby_clicked">已點擊旁邊的控件</string>
+    <string name="msg_swiped_next">已滑動到下一頁</string>
+    <string name="msg_swiped_prev">已滑動到上一頁</string>
+    <string name="captcha_result">驗證碼：%1$s</string>
+    <string name="captcha_all_upper">全部大寫</string>
+    <string name="captcha_all_lower">全部小寫</string>
+    <string name="captcha_upper_mark">大寫%1$s</string>
+    <string name="captcha_not_found">未找到文字驗證圖片。請先選中圖片再試。</string>
+    <string name="captcha_unreadable">無法讀取驗證碼。請重試，或在頁面提供時使用語音驗證碼。</string>
+    <string name="captcha_reading">正在讀取驗證碼</string>
+    <string name="captcha_hint">開啟元素選單以讀取驗證碼。</string>
+    <string name="img_hint">開啟元素選單以描述圖片或朗讀圖片中的文字。</string>
+    <string name="sp_role_captcha">驗證圖片</string>
+    <string name="ga_read_captcha">朗讀圖片中的驗證碼</string>
+    <string name="menu_captcha">朗讀驗證碼</string>
     <plurals name="notif_burst">
         <item quantity="other">%1$s的新通知：%2$d 條。最新：%3$s</item>
     </plurals>

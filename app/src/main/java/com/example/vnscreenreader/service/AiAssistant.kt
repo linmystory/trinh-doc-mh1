@@ -6,6 +6,9 @@ import android.graphics.Color
 import android.graphics.Rect
 import android.util.Log
 import android.view.accessibility.AccessibilityNodeInfo
+import com.example.vnscreenreader.ai.CaptchaImagePrep
+import com.example.vnscreenreader.ai.CaptchaReader
+import com.example.vnscreenreader.ai.CaptchaReading
 import com.example.vnscreenreader.ai.ImageDescriptionBuilder
 import com.example.vnscreenreader.ai.ImageLabelerPort
 import com.example.vnscreenreader.ai.OcrTextFormatter
@@ -53,6 +56,8 @@ internal class AiAssistant(
     private var recognizer: TextRecognizerPort? = null
     private var recognizerScript: OcrScript? = null
     private var labeler: ImageLabelerPort? = null
+    /** Bộ nhận dạng LATIN riêng cho mã xác thực (chữ và số), dùng được cả khi ngôn ngữ ứng dụng chưa có OCR (ru, ar...). */
+    private var latin: TextRecognizerPort? = null
     /** Bộ nhận dạng cũ (đã đổi bộ chữ) có thể còn đang chạy trong tác vụ khác: chỉ đóng ở [close], không đóng ngay. */
     private val retired = ArrayList<TextRecognizerPort>()
     private var closed = false
@@ -153,6 +158,64 @@ internal class AiAssistant(
         }
     }
 
+    /**
+     * Đọc mã trong ảnh xác thực dạng chữ ([target] do [FocusNavigator.captchaTarget] chọn) rồi đọc TỪNG KÝ TỰ để
+     * người dùng TỰ nhập tay. Không tự điền vào ô nhập, không sao chép vào clipboard, không lưu, không gửi đi đâu;
+     * chỉ chạy khi người dùng yêu cầu (cử chỉ hoặc trình đơn). Dùng cùng đường chụp có che ô mật khẩu và ẩn khung
+     * đánh dấu; cửa sổ bảo mật (FLAG_SECURE) cấm chụp thì báo lỗi chụp như các tính năng khác.
+     */
+    @Synchronized
+    fun readCaptcha(target: AccessibilityNodeInfo?) {
+        if (target == null) {
+            speech.speak(t(S.CAPTCHA_NOT_FOUND), true)
+            return
+        }
+        if (target.isPassword && maskPasswords()) {
+            speech.speak(t(S.AI_PASSWORD_NO_DESCRIBE), true)
+            return
+        }
+        launchTask("captcha", S.CAPTCHA_UNREADABLE) {
+            val recognizer = latinRecognizer() ?: return@launchTask speech.speak(t(S.OCR_UNSUPPORTED), true)
+            speech.speak(t(S.CAPTCHA_READING), true)
+            val screenshot = captureMasked().getOrElse { return@launchTask speech.speak(it.message ?: t(S.SHOT_FAILED), true) }
+            var crop: Bitmap? = null
+            try {
+                // Bounds lấy SAU khi chụp: trang web có thể đã cuộn hoặc đổi mã trong lúc chờ.
+                val bounds = boundsNow(target) ?: return@launchTask speech.speak(t(S.CAPTCHA_NOT_FOUND), true)
+                crop = cropOrNull(screenshot, bounds)
+                if (crop == null) return@launchTask speech.speak(t(S.AI_TOO_SMALL), true)
+                val reading = recognizeCaptcha(recognizer, crop)
+                speech.speak(reading?.let { CaptchaReader.speak(it) } ?: t(S.CAPTCHA_UNREADABLE), true)
+            } finally {
+                crop?.takeIf { it !== screenshot }?.recycle()
+                screenshot.recycle()
+            }
+        }
+    }
+
+    /**
+     * Thử ảnh gốc (phóng to nếu nhỏ); chưa đủ tin cậy thì thử thêm bản đen trắng, rồi chọn kết quả tốt nhất. Một
+     * lần nhận dạng lỗi không làm mất lần kia. Mọi bitmap tạm được giải phóng ngay.
+     */
+    private suspend fun recognizeCaptcha(recognizer: TextRecognizerPort, crop: Bitmap): CaptchaReading? {
+        val readings = ArrayList<CaptchaReading>(2)
+        val scaled = CaptchaImagePrep.upscaled(crop)
+        try {
+            attempt { CaptchaReader.clean(recognizer.recognize(scaled)) }?.let { readings.add(it) }
+        } finally {
+            if (scaled !== crop) scaled.recycle()
+        }
+        if (readings.none { CaptchaReader.isGoodEnough(it) }) {
+            val binary = CaptchaImagePrep.binarized(crop)
+            try {
+                attempt { CaptchaReader.clean(recognizer.recognize(binary)) }?.let { readings.add(it) }
+            } finally {
+                binary.recycle()
+            }
+        }
+        return CaptchaReader.best(readings)
+    }
+
     /** Chạy [block]; lỗi thường → null (nguồn này bị bỏ), nhưng HỦY vẫn được ném lại. */
     private suspend fun <T> attempt(block: suspend () -> T): T? = try {
         block()
@@ -190,6 +253,8 @@ internal class AiAssistant(
         retired.forEach { r -> runCatching { r.close() } }
         retired.clear()
         runCatching { labeler?.close() }
+        runCatching { latin?.close() }
+        latin = null
         recognizer = null
         recognizerScript = null
         labeler = null
@@ -207,6 +272,13 @@ internal class AiAssistant(
             recognizerScript = script
         }
         return recognizer
+    }
+
+    /** Bộ nhận dạng Latin dùng riêng cho mã xác thực; null nếu đã đóng. Đóng ở [close]. */
+    @Synchronized
+    private fun latinRecognizer(): TextRecognizerPort? {
+        if (closed) return null
+        return latin ?: recognizerFactory(OcrScript.LATIN).also { latin = it }
     }
 
     @Synchronized

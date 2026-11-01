@@ -414,6 +414,20 @@
     <string name="tech_no">否</string>
     <string name="tech_none">无</string>
     <string name="msg_nearby_clicked">已点击旁边的控件</string>
+    <string name="msg_swiped_next">已滑动到下一页</string>
+    <string name="msg_swiped_prev">已滑动到上一页</string>
+    <string name="captcha_result">验证码：%1$s</string>
+    <string name="captcha_all_upper">全部大写</string>
+    <string name="captcha_all_lower">全部小写</string>
+    <string name="captcha_upper_mark">大写%1$s</string>
+    <string name="captcha_not_found">未找到文字验证图片。请先选中图片再试。</string>
+    <string name="captcha_unreadable">无法读取验证码。请重试，或在页面提供时使用语音验证码。</string>
+    <string name="captcha_reading">正在读取验证码</string>
+    <string name="captcha_hint">打开元素菜单以读取验证码。</string>
+    <string name="img_hint">打开元素菜单以描述图片或朗读图片中的文字。</string>
+    <string name="sp_role_captcha">验证图片</string>
+    <string name="ga_read_captcha">朗读图片中的验证码</string>
+    <string name="menu_captcha">朗读验证码</string>
     <plurals name="notif_burst">
         <item quantity="other">%1$s的新通知：%2$d 条。最新：%3$s</item>
     </plurals>
