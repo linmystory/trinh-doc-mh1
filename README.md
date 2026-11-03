@@ -59,6 +59,11 @@ Cử chỉ mở trình đơn hiển thị ở mục **Trình đơn** trong ứng
   mục đầu tiên (không đọc tên và số mục trước); cử chỉ không dùng được trong trình đơn chỉ nhắc ngắn một lần.
 - Cài đặt **Đọc hướng dẫn thao tác** (Đọc, mặc định bật): tắt thì trình đơn chỉ đọc tên mục, không đọc vị trí và lời nhắc.
 
+## Bản 2.17.1: sửa lỗi build trên CI
+
+- **Lỗi từ log CI:** thiếu `import androidx.compose.foundation.layout.padding` trong `GestureSettingsScreen.kt` (không báo ở bản kiểm tra offline vì không biên dịch Compose); đã thêm. Đã quét mọi tệp Compose khác tìm import thiếu tương tự: không còn.
+- **Tệp cũ còn sót trong kho mã:** tải zip lên chỉ thêm/ghi đè tệp, KHÔNG xóa tệp đã bỏ, nên `ai/CaptchaReader.kt` cũ vẫn nằm đó và làm lỗi biên dịch. 9 tệp đã bỏ nay có mặt trong zip dưới dạng tệp RỖNG (chỉ có dòng `package`) để ghi đè bản cũ: `CaptchaImageMath`, `CaptchaImagePrep`, `CaptchaReader`, `CaptchaPolicy`, `NodeVerbosity` và 4 tệp test `Captcha*Test`. Có thể xóa hẳn chúng sau.
+
 ## Bản 2.17.0: chọn ngôn ngữ cho cả hai công cụ, thêm Pháp/Tây Ban Nha/Đức/Ý/Bồ Đào Nha
 
 - **Công cụ thứ nhất chọn được ngôn ngữ** (Cài đặt → Giọng đọc): mặc định "Theo ngôn ngữ ứng dụng"; cũng áp dụng ở chế độ một công cụ.
