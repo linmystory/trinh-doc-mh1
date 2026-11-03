@@ -1,14 +1,12 @@
 package com.example.vnscreenreader.service
 
+import com.example.vnscreenreader.CoroutineGuard
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Rect
 import android.util.Log
 import android.view.accessibility.AccessibilityNodeInfo
-import com.example.vnscreenreader.ai.CaptchaImagePrep
-import com.example.vnscreenreader.ai.CaptchaReader
-import com.example.vnscreenreader.ai.CaptchaReading
 import com.example.vnscreenreader.ai.ImageDescriptionBuilder
 import com.example.vnscreenreader.ai.ImageLabelerPort
 import com.example.vnscreenreader.ai.OcrTextFormatter
@@ -51,13 +49,11 @@ internal class AiAssistant(
     /** true (mặc định) = che ô mật khẩu khỏi OCR/mô tả; false khi người dùng đã bật "đọc mật khẩu". */
     private val maskPasswords: () -> Boolean = { true },
 ) {
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default + CoroutineGuard.handler("ai"))
     private var job: Job? = null
     private var recognizer: TextRecognizerPort? = null
     private var recognizerScript: OcrScript? = null
     private var labeler: ImageLabelerPort? = null
-    /** Bộ nhận dạng LATIN riêng cho mã xác thực (chữ và số), dùng được cả khi ngôn ngữ ứng dụng chưa có OCR (ru, ar...). */
-    private var latin: TextRecognizerPort? = null
     /** Bộ nhận dạng cũ (đã đổi bộ chữ) có thể còn đang chạy trong tác vụ khác: chỉ đóng ở [close], không đóng ngay. */
     private val retired = ArrayList<TextRecognizerPort>()
     private var closed = false
@@ -158,64 +154,6 @@ internal class AiAssistant(
         }
     }
 
-    /**
-     * Đọc mã trong ảnh xác thực dạng chữ ([target] do [FocusNavigator.captchaTarget] chọn) rồi đọc TỪNG KÝ TỰ để
-     * người dùng TỰ nhập tay. Không tự điền vào ô nhập, không sao chép vào clipboard, không lưu, không gửi đi đâu;
-     * chỉ chạy khi người dùng yêu cầu (cử chỉ hoặc trình đơn). Dùng cùng đường chụp có che ô mật khẩu và ẩn khung
-     * đánh dấu; cửa sổ bảo mật (FLAG_SECURE) cấm chụp thì báo lỗi chụp như các tính năng khác.
-     */
-    @Synchronized
-    fun readCaptcha(target: AccessibilityNodeInfo?) {
-        if (target == null) {
-            speech.speak(t(S.CAPTCHA_NOT_FOUND), true)
-            return
-        }
-        if (target.isPassword && maskPasswords()) {
-            speech.speak(t(S.AI_PASSWORD_NO_DESCRIBE), true)
-            return
-        }
-        launchTask("captcha", S.CAPTCHA_UNREADABLE) {
-            val recognizer = latinRecognizer() ?: return@launchTask speech.speak(t(S.OCR_UNSUPPORTED), true)
-            speech.speak(t(S.CAPTCHA_READING), true)
-            val screenshot = captureMasked().getOrElse { return@launchTask speech.speak(it.message ?: t(S.SHOT_FAILED), true) }
-            var crop: Bitmap? = null
-            try {
-                // Bounds lấy SAU khi chụp: trang web có thể đã cuộn hoặc đổi mã trong lúc chờ.
-                val bounds = boundsNow(target) ?: return@launchTask speech.speak(t(S.CAPTCHA_NOT_FOUND), true)
-                crop = cropOrNull(screenshot, bounds)
-                if (crop == null) return@launchTask speech.speak(t(S.AI_TOO_SMALL), true)
-                val reading = recognizeCaptcha(recognizer, crop)
-                speech.speak(reading?.let { CaptchaReader.speak(it) } ?: t(S.CAPTCHA_UNREADABLE), true)
-            } finally {
-                crop?.takeIf { it !== screenshot }?.recycle()
-                screenshot.recycle()
-            }
-        }
-    }
-
-    /**
-     * Thử ảnh gốc (phóng to nếu nhỏ); chưa đủ tin cậy thì thử thêm bản đen trắng, rồi chọn kết quả tốt nhất. Một
-     * lần nhận dạng lỗi không làm mất lần kia. Mọi bitmap tạm được giải phóng ngay.
-     */
-    private suspend fun recognizeCaptcha(recognizer: TextRecognizerPort, crop: Bitmap): CaptchaReading? {
-        val readings = ArrayList<CaptchaReading>(2)
-        val scaled = CaptchaImagePrep.upscaled(crop)
-        try {
-            attempt { CaptchaReader.clean(recognizer.recognize(scaled)) }?.let { readings.add(it) }
-        } finally {
-            if (scaled !== crop) scaled.recycle()
-        }
-        if (readings.none { CaptchaReader.isGoodEnough(it) }) {
-            val binary = CaptchaImagePrep.binarized(crop)
-            try {
-                attempt { CaptchaReader.clean(recognizer.recognize(binary)) }?.let { readings.add(it) }
-            } finally {
-                binary.recycle()
-            }
-        }
-        return CaptchaReader.best(readings)
-    }
-
     /** Chạy [block]; lỗi thường → null (nguồn này bị bỏ), nhưng HỦY vẫn được ném lại. */
     private suspend fun <T> attempt(block: suspend () -> T): T? = try {
         block()
@@ -223,6 +161,9 @@ internal class AiAssistant(
         throw e
     } catch (e: Exception) {
         Log.w(TAG, "Một nguồn AI lỗi", e)
+        null
+    } catch (e: OutOfMemoryError) {
+        Log.w(TAG, "Hết bộ nhớ khi xử lý ảnh", e) // ảnh chụp màn hình lớn: bỏ nguồn này, ứng dụng vẫn sống
         null
     }
 
@@ -253,8 +194,6 @@ internal class AiAssistant(
         retired.forEach { r -> runCatching { r.close() } }
         retired.clear()
         runCatching { labeler?.close() }
-        runCatching { latin?.close() }
-        latin = null
         recognizer = null
         recognizerScript = null
         labeler = null
@@ -272,13 +211,6 @@ internal class AiAssistant(
             recognizerScript = script
         }
         return recognizer
-    }
-
-    /** Bộ nhận dạng Latin dùng riêng cho mã xác thực; null nếu đã đóng. Đóng ở [close]. */
-    @Synchronized
-    private fun latinRecognizer(): TextRecognizerPort? {
-        if (closed) return null
-        return latin ?: recognizerFactory(OcrScript.LATIN).also { latin = it }
     }
 
     @Synchronized
@@ -305,6 +237,12 @@ internal class AiAssistant(
         job?.cancel()
     }
 
+    /** Cửa sổ/màn hình đổi: quên các phần tử đã tự đọc để màn hình mới (kể cả cùng id) được đọc lại. */
+    @Synchronized
+    fun onWindowChanged() {
+        autoTracker.clear()
+    }
+
     /** Hủy tác vụ tự đọc đang chạy (khi chọn phần tử khác hoặc người dùng tự yêu cầu đọc). */
     @Synchronized
     fun cancelAuto() {
@@ -321,13 +259,16 @@ internal class AiAssistant(
     fun onFocusChanged(node: AccessibilityNodeInfo, eligible: Boolean, windowKey: String, elementKey: String) {
         cancelAuto()
         if (jobFocusBound) job?.cancel() // người dùng đã sang phần tử khác: không đọc kết quả của phần tử cũ
-        if (!eligible || !autoTracker.tryStart(windowKey, elementKey)) return
+        if (!eligible || autoTracker.isDone(windowKey, elementKey)) return
         val recognizer = ocr() ?: return
         autoJob = scope.launch {
             try {
                 delay(AUTO_OCR_DELAY_MS) // vuốt nhanh qua nhiều phần tử thì các lần chọn trước bị hủy, không chụp
                 if (!node.refresh()) return@launch
-                val screenshot = captureMasked().getOrNull() ?: return@launch
+                val captured = captureMasked()
+                // Ghi nhận "đã đọc" chỉ SAU khi đã chờ và đã thử chụp: bị hủy khi vuốt nhanh thì chưa tính là đã đọc.
+                autoTracker.markDone(windowKey, elementKey)
+                val screenshot = captured.getOrNull() ?: return@launch
                 var crop: Bitmap? = null
                 try {
                     val bounds = boundsNow(node) ?: return@launch
@@ -342,6 +283,8 @@ internal class AiAssistant(
                 throw e
             } catch (e: Exception) {
                 Log.w(TAG, "Tự đọc chữ trong ảnh lỗi", e)
+            } catch (e: OutOfMemoryError) {
+                Log.w(TAG, "Hết bộ nhớ khi tự đọc chữ trong ảnh", e)
             }
         }
     }
@@ -357,6 +300,9 @@ internal class AiAssistant(
                 throw e
             } catch (e: Exception) {
                 Log.w(TAG, "Task failed: $what", e)
+                speech.speak(t(failureMessage), true)
+            } catch (e: OutOfMemoryError) {
+                Log.w(TAG, "Hết bộ nhớ: $what", e)
                 speech.speak(t(failureMessage), true)
             }
         }

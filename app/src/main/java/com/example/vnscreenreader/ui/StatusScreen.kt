@@ -88,7 +88,7 @@ fun StatusScreen() {
 
         SectionHeading(stringResource(R.string.st_restricted_head))
         BodyText(stringResource(R.string.st_restricted_body, stringResource(R.string.app_name)))
-        BodyText(stringResource(R.string.st_talkback))
+        BodyText(stringResource(R.string.st_other_reader))
 
         SectionHeading(stringResource(R.string.st_stable_head))
         BodyText(stringResource(R.string.st_stable_body))

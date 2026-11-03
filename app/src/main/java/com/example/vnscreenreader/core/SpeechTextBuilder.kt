@@ -32,28 +32,41 @@ data class NodeSnapshot(
     /** `viewIdResourceName` (cần flagReportViewIds); dùng để tra nhãn tùy chỉnh và đoán nhãn. */
     val viewId: String? = null,
     val packageName: String? = null,
+    /** Thẻ liên kết (nội dung web): đọc vai trò "liên kết" và gợi ý "để mở liên kết". */
+    val isLink: Boolean = false,
 )
 
 object SpeechTextBuilder {
 
     private const val MASK_CHARS = "•*●·∗"
 
-    /** Tạo câu đọc cho một phần tử: nhãn, vai trò và trạng thái. */
-    fun buildNodeDescription(node: NodeSnapshot): String {
+    /**
+     * Tạo câu đọc cho một phần tử: nhãn, vai trò và trạng thái. [detail] chỉ đổi phần phụ (xem [Verbosity]);
+     * mặc định giữ đúng cách đọc cũ.
+     */
+    fun buildNodeDescription(node: NodeSnapshot, detail: SpeechDetail = SpeechDetail.DEFAULT): String {
         if (node.isPassword) return t(S.SP_PASSWORD_FIELD)
 
         val label = listOf(node.contentDescription, node.text, node.labeledByText, node.tooltip, node.hintText)
             .firstOrNull { !it.isNullOrBlank() }
             ?.trim()
-        val role = node.roleDescription?.trim()?.takeIf { it.isNotEmpty() } ?: roleOf(node)
+        val custom = node.roleDescription?.trim()?.takeIf { it.isNotEmpty() }
+        val inferred = if (custom == null) roleOf(node) else null
+        // Ngắn gọn: bỏ vai trò phổ biến (nút, ảnh, liên kết...) khi đã có nhãn; không nhãn thì vẫn cần vai trò làm chủ ngữ.
+        val dropRole = detail.verbosity == Verbosity.MINIMAL && label != null && inferred?.minor == true
+        val role = custom ?: inferred?.text
         val state = stateParts(node).joinToString(", ").ifEmpty { null }
 
-        return if (label == null) {
+        val base = if (label == null) {
             val subject = (role ?: t(S.SP_ROLE_ELEMENT)).replaceFirstChar { it.uppercaseChar() }
             listOfNotNull(t(S.SP_UNLABELED, subject), state).joinToString(", ")
         } else {
-            listOfNotNull(label, role, state).joinToString(", ")
+            listOfNotNull(label, role.takeUnless { dropRole }, state).joinToString(", ")
         }
+        val position = detail.position
+            ?.takeIf { detail.verbosity == Verbosity.DETAILED }
+            ?.let { t(S.SP_POSITION, it.index, it.total) }
+        return listOfNotNull(base, position).joinToString(", ")
     }
 
     /**
@@ -110,23 +123,27 @@ object SpeechTextBuilder {
         return parts
     }
 
-    private fun roleOf(node: NodeSnapshot): String? {
+    /** Vai trò suy ra từ tên lớp; [minor] = loại phổ biến có thể bỏ khi chọn mức "Gọn". */
+    private class RoleInfo(val text: String, val minor: Boolean)
+
+    private fun roleOf(node: NodeSnapshot): RoleInfo? {
         val cls = node.className.orEmpty()
         return when {
-            CaptchaPolicy.looksLikeCaptchaImage(node) -> t(S.SP_ROLE_CAPTCHA)
-            node.isHeading -> t(S.SP_ROLE_HEADING)
-            node.isEditable || cls.contains("EditText") -> t(S.SP_ROLE_EDITABLE)
-            cls.contains("CheckBox") -> t(S.SP_ROLE_CHECKBOX)
-            cls.contains("RadioButton") -> t(S.SP_ROLE_RADIO)
-            cls.contains("Switch") || cls.contains("ToggleButton") -> t(S.SP_ROLE_SWITCH)
-            cls.contains("SeekBar") || cls.contains("Slider") -> t(S.SP_ROLE_SLIDER)
-            cls.contains("ProgressBar") -> t(S.SP_ROLE_PROGRESS)
-            cls.contains("Spinner") -> t(S.SP_ROLE_SPINNER)
-            cls.contains("TabWidget") || cls.endsWith("Tab") -> t(S.SP_ROLE_TAB)
-            cls.contains("WebView") -> t(S.SP_ROLE_WEB)
-            cls.contains("Button") -> t(S.SP_ROLE_BUTTON)
-            cls.contains("ImageView") -> if (node.isClickable) t(S.SP_ROLE_BUTTON) else t(S.SP_ROLE_IMAGE)
-            node.isClickable -> t(S.SP_ROLE_CLICKABLE)
+            node.isHeading -> RoleInfo(t(S.SP_ROLE_HEADING), false)
+            node.isEditable || cls.contains("EditText") -> RoleInfo(t(S.SP_ROLE_EDITABLE), false)
+            node.isLink -> RoleInfo(t(S.SP_ROLE_LINK), true)
+            cls.contains("CheckBox") -> RoleInfo(t(S.SP_ROLE_CHECKBOX), false)
+            cls.contains("RadioButton") -> RoleInfo(t(S.SP_ROLE_RADIO), false)
+            cls.contains("Switch") || cls.contains("ToggleButton") -> RoleInfo(t(S.SP_ROLE_SWITCH), false)
+            cls.contains("SeekBar") || cls.contains("Slider") -> RoleInfo(t(S.SP_ROLE_SLIDER), false)
+            cls.contains("ProgressBar") -> RoleInfo(t(S.SP_ROLE_PROGRESS), false)
+            cls.contains("Spinner") -> RoleInfo(t(S.SP_ROLE_SPINNER), false)
+            cls.contains("TabWidget") || cls.endsWith("Tab") -> RoleInfo(t(S.SP_ROLE_TAB), false)
+            cls.contains("WebView") -> RoleInfo(t(S.SP_ROLE_WEB), true)
+            cls.contains("Button") -> RoleInfo(t(S.SP_ROLE_BUTTON), true)
+            cls.contains("ImageView") ->
+                if (node.isClickable) RoleInfo(t(S.SP_ROLE_BUTTON), true) else RoleInfo(t(S.SP_ROLE_IMAGE), true)
+            node.isClickable -> RoleInfo(t(S.SP_ROLE_CLICKABLE), true)
             else -> null
         }
     }

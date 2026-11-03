@@ -9,9 +9,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
@@ -33,7 +35,7 @@ import com.example.vnscreenreader.R
 
 /** Khung chuẩn của mọi màn hình cài đặt: tiêu đề (đánh dấu heading cho trình đọc màn hình) + nội dung cuộn được. */
 @Composable
-fun ScreenColumn(title: String, content: @Composable ColumnScope.() -> Unit) {
+fun ScreenColumn(title: String, showTitle: Boolean = true, content: @Composable ColumnScope.() -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -41,12 +43,14 @@ fun ScreenColumn(title: String, content: @Composable ColumnScope.() -> Unit) {
             .padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
-        Text(
-            text = title,
-            color = HighContrastYellow,
-            fontSize = 30.sp,
-            modifier = Modifier.semantics { heading() },
-        )
+        if (showTitle) {
+            Text(
+                text = title,
+                color = HighContrastYellow,
+                fontSize = 30.sp,
+                modifier = Modifier.semantics { heading() },
+            )
+        }
         content()
     }
 }
@@ -135,5 +139,36 @@ fun LabeledSlider(
                     stateDescription = display
                 },
         )
+    }
+}
+
+/**
+ * Nhóm lựa chọn một trong nhiều (nút chọn): mỗi hàng là một vùng chạm lớn, đọc ra "tên lựa chọn, đang chọn/không chọn".
+ * [title]/[description] đứng trên nhóm. Dùng cho cài đặt có vài mức (ví dụ mức độ chi tiết khi duyệt).
+ */
+@Composable
+fun SettingChoice(
+    title: String,
+    description: String?,
+    options: List<String>,
+    selectedIndex: Int,
+    onSelect: (Int) -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(text = title, fontSize = 22.sp, color = Color.White, modifier = Modifier.semantics { heading() })
+        if (description != null) Text(text = description, fontSize = 16.sp, color = Color.LightGray)
+        options.forEachIndexed { index, label ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 64.dp)
+                    .selectable(selected = index == selectedIndex, role = Role.RadioButton) { onSelect(index) },
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                RadioButton(selected = index == selectedIndex, onClick = null)
+                Text(text = label, fontSize = 20.sp, color = Color.White, modifier = Modifier.weight(1f))
+            }
+        }
     }
 }

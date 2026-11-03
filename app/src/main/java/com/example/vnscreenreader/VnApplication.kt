@@ -9,5 +9,6 @@ class VnApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         Texts.provider = ResourceTexts(this)
+        CrashLogger.install(this)
     }
 }

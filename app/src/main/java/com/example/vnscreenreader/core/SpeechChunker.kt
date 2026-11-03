@@ -31,7 +31,11 @@ object SpeechChunker {
     private const val SCORE_BAD_SPACE = 1
     private const val NO_CUT = 0
 
-    private val SENTENCE_TERMINATORS = charArrayOf('.', '!', '?', '…', ';', ':')
+    private val SENTENCE_TERMINATORS = charArrayOf('.', '!', '?', '…', ';', ':', '。', '！', '？', '；', '：', '؟', '۔')
+
+    /** Dấu toàn chiều rộng và dấu phẩy CJK: tiếng Trung không có khoảng trắng sau dấu nên luôn là điểm cắt hợp lệ. */
+    private val FULLWIDTH_TERMINATORS = charArrayOf('。', '！', '？', '；', '：')
+    private val FULLWIDTH_COMMAS = charArrayOf('，', '、')
 
     /** Viết tắt thường gặp, so khớp không phân biệt hoa/thường, không kèm dấu chấm. */
     private val ABBREVIATIONS = setOf(
@@ -98,13 +102,14 @@ object SpeechChunker {
     private fun scoreCut(text: String, start: Int, cut: Int): Int {
         val previous = text[cut - 1]
         if (previous == '\n') return SCORE_NEWLINE
-        val followedByBoundary = cut >= text.length || text[cut].isWhitespace()
+        val followedByBoundary = cut >= text.length || text[cut].isWhitespace() || previous in FULLWIDTH_TERMINATORS
         if (previous in SENTENCE_TERMINATORS) {
             if (!followedByBoundary) return NO_CUT
             if (previous == '.' && isAbbreviationDot(text, start, cut - 1)) return NO_CUT
             return SCORE_SENTENCE
         }
-        if (previous == ',') return if (followedByBoundary) SCORE_COMMA else NO_CUT
+        if (previous in FULLWIDTH_COMMAS) return SCORE_COMMA
+        if (previous == ',' || previous == '،') return if (followedByBoundary) SCORE_COMMA else NO_CUT
         if (!previous.isWhitespace()) return NO_CUT
 
         // Cắt ngay sau khoảng trắng đứng sau dấu chấm viết tắt ("TP. |Hồ Chí Minh") cũng là cắt sai.

@@ -148,7 +148,7 @@ fun PluginManagerScreen() {
                     onClick = {
                         pendingAllApps = null
                         scope.launch {
-                            status = withContext(Dispatchers.IO) { installScript(context, registry, json) }
+                            status = withContext(Dispatchers.IO) { installScript(context, registry, json, allAppsConfirmed = true) }
                             reload()
                         }
                     },
@@ -237,8 +237,8 @@ private fun readScript(context: Context, uri: Uri): String? = try {
     null
 }
 
-private fun installScript(context: Context, registry: PluginRegistry, json: String): String =
-    registry.installScript(json).fold(
+private fun installScript(context: Context, registry: PluginRegistry, json: String, allAppsConfirmed: Boolean = false): String =
+    registry.installScript(json, allAppsConfirmed).fold(
         onSuccess = { context.getString(R.string.pl_installed, it.name) },
         onFailure = { context.getString(R.string.pl_error, it.message ?: context.getString(R.string.pl_unknown)) },
     )

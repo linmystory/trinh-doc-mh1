@@ -2,7 +2,6 @@ package com.example.vnscreenreader.ui
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -19,7 +18,9 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.OutlinedButton
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -38,6 +39,9 @@ import com.example.vnscreenreader.gesture.Gesture
 import com.example.vnscreenreader.gesture.GestureAction
 import com.example.vnscreenreader.gesture.GestureMapping
 import com.example.vnscreenreader.gesture.GestureMappingStore
+import com.example.vnscreenreader.gesture.GestureAnalyzer
+import com.example.vnscreenreader.gesture.SwipeProfile
+import com.example.vnscreenreader.gesture.withSwipeProfile
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import com.example.vnscreenreader.R
@@ -58,16 +62,6 @@ fun GestureSettingsScreen() {
         contentPadding = PaddingValues(20.dp),
         verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
-        item {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(stringResource(R.string.gs_title), color = HighContrastYellow, fontSize = 28.sp)
-                Text(
-                    stringResource(R.string.gs_intro),
-                    color = Color.White,
-                    fontSize = 18.sp,
-                )
-            }
-        }
         Gesture.entries.groupBy { it.fingers }.forEach { (fingers, gestures) ->
             item(key = "heading_$fingers") {
                 Text(
@@ -77,12 +71,21 @@ fun GestureSettingsScreen() {
                     modifier = Modifier.semantics { heading() },
                 )
             }
-            if (fingers > 1 && fingers == 2) {
-                item(key = "note_multi") {
-                    Text(
-                        stringResource(R.string.gs_multi_note),
-                        color = Color.White,
-                        fontSize = 16.sp,
+            // Hai và ba ngón: chọn nhanh một bộ gán sẵn cho cả bốn hướng; từng cử chỉ vẫn chỉnh riêng được ở dưới.
+            if (fingers in GestureAnalyzer.PROFILE_FINGER_GROUPS) {
+                item(key = "profile_$fingers") {
+                    val profiles = SwipeProfile.forFingers(fingers)
+                    val current = SwipeProfile.detect(mapping, fingers)
+                    SettingChoice(
+                        title = stringResource(if (fingers == 2) R.string.gs_f2_profile_title else R.string.gs_f3_profile_title),
+                        description = stringResource(R.string.gs_swipe_profile_desc) + " " +
+                            stringResource(R.string.gs_swipe_profile_current, current?.label ?: stringResource(R.string.gs_swipe_profile_custom)),
+                        options = profiles.map { it.label },
+                        selectedIndex = current?.let { profiles.indexOf(it) } ?: -1,
+                        onSelect = { index ->
+                            mapping = mapping.withSwipeProfile(fingers, profiles[index])
+                            store.save(mapping)
+                        },
                     )
                 }
             }
@@ -155,25 +158,22 @@ private fun GestureRow(
 ) {
     var expanded by remember { mutableStateOf(false) }
     val suffix = if (gesture.isTwoStep) " " + stringResource(R.string.gs_two_step) else ""
-    val rowDescription = stringResource(R.string.gs_row_desc, gesture.label, action.label)
 
-    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+    // MỘT điểm dừng cho mỗi cử chỉ (tên + chức năng đang gán), thay vì hai điểm dừng
+    // (tên rồi nút) như trước: 45 cử chỉ không còn thành 90 lần vuốt.
+    val rowDescription = stringResource(R.string.gs_row_desc, gesture.label + suffix, action.label)
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 64.dp)
+            .border(BorderStroke(2.dp, HighContrastYellow), RoundedCornerShape(12.dp))
+            .clickable(role = Role.Button) { expanded = true }
+            .padding(horizontal = 16.dp, vertical = 12.dp)
+            .semantics(mergeDescendants = true) { contentDescription = rowDescription },
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
         Text(gesture.label + suffix, color = Color.White, fontSize = 20.sp)
-        Box {
-            OutlinedButton(
-                onClick = { expanded = true },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 64.dp)
-                    .semantics {
-                        contentDescription = rowDescription
-                    },
-                border = BorderStroke(2.dp, HighContrastYellow),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = HighContrastYellow),
-            ) {
-                Text(action.label, fontSize = 18.sp)
-            }
-        }
+        Text(action.label, color = HighContrastYellow, fontSize = 18.sp)
     }
 
     if (expanded) {

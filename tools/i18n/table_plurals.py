@@ -68,6 +68,41 @@ def mk(n):
         },
     }
 
+def mk_more(n):
+    """Danh từ bổ sung: phần trăm, cấp (độ sâu), nhãn."""
+    return {
+        "percent": {
+            "en": {"one": f"{n} percent", "other": f"{n} percent"},
+            "vi": {"other": f"{n} phần trăm"},
+            "fr": {"one": f"{n} pour cent", "many": f"{n} pour cent", "other": f"{n} pour cent"},
+            "es": {"one": f"{n} por ciento", "many": f"{n} por ciento", "other": f"{n} por ciento"},
+            "ru": {"one": f"{n} процент", "few": f"{n} процента", "many": f"{n} процентов", "other": f"{n} процента"},
+            "ar": {q: f"{n} بالمئة" for q in ["zero", "one", "two", "few", "many", "other"]},
+            "zh": {"other": f"百分之{n}"},
+        },
+        "level": {
+            "en": {"one": f"{n} level", "other": f"{n} levels"},
+            "vi": {"other": f"{n} cấp"},
+            "fr": {"one": f"{n} niveau", "many": f"{n} niveaux", "other": f"{n} niveaux"},
+            "es": {"one": f"{n} nivel", "many": f"{n} de niveles", "other": f"{n} niveles"},
+            "ru": {"one": f"{n} уровень", "few": f"{n} уровня", "many": f"{n} уровней", "other": f"{n} уровня"},
+            "ar": {"zero": f"{n} مستويات", "one": "مستوى واحد", "two": "مستويان", "few": f"{n} مستويات",
+                   "many": f"{n} مستوى", "other": f"{n} مستوى"},
+            "zh": {"other": f"{n} 层"},
+        },
+        "label": {
+            "en": {"one": f"{n} label", "other": f"{n} labels"},
+            "vi": {"other": f"{n} nhãn"},
+            "fr": {"one": f"{n} étiquette", "many": f"{n} étiquettes", "other": f"{n} étiquettes"},
+            "es": {"one": f"{n} etiqueta", "many": f"{n} de etiquetas", "other": f"{n} etiquetas"},
+            "ru": {"one": f"{n} подписи", "few": f"{n} подписей", "many": f"{n} подписей", "other": f"{n} подписи"},
+            "ar": {"zero": f"{n} تسميات", "one": "تسمية واحدة", "two": "تسميتان", "few": f"{n} تسميات",
+                   "many": f"{n} تسمية", "other": f"{n} تسمية"},
+            "zh": {"other": f"{n} 个标签"},
+        },
+    }
+
+
 def join(tpl_by_lang, noun_forms):
     """tpl_by_lang: {lang: mẫu chứa {N}}; noun_forms: kết quả mk()[loại]."""
     res = {}
@@ -76,8 +111,28 @@ def join(tpl_by_lang, noun_forms):
     return res
 
 n1, n2 = mk("%1$d"), mk("%2$d")
+m1 = mk_more("%1$d")
 
 PLURALS = {
+    "sp_state_percent": (1, join({l: "{N}" for l in QUANTITIES}, m1["percent"])),
+    "script_err_depth": (1, join({
+        "en": "JSON is nested too deeply (max {N})", "vi": "JSON lồng quá sâu (tối đa {N})",
+        "fr": "JSON imbriqué trop profondément (max. {N})", "es": "JSON anidado demasiado profundo (máx. {N})",
+        "ru": "Слишком глубокая вложенность JSON (максимум {N})", "ar": "تداخل JSON عميق جدًا (الحد الأقصى {N})",
+        "zh": "JSON 嵌套过深（最多 {N}）"}, m1["level"])),
+    "script_err_rules_count": (1, join({
+        "en": "rules must have between 1 and {N}", "vi": "rules phải có từ 1 đến {N}",
+        "fr": "rules doit contenir de 1 à {N}", "es": "rules debe tener entre 1 y {N}",
+        "ru": "rules должно содержать от 1 до {N}", "ar": "يجب أن تحتوي rules على عنصر واحد إلى {N}",
+        "zh": "rules 必须包含 1 到 {N}"}, n1["item"])),
+    "lb_limits": (1, join({
+        "en": "Only buttons with an internal identifier can be labeled. At most {N}.",
+        "vi": "Chỉ nút có mã định danh nội bộ mới gắn được. Tối đa {N}.",
+        "fr": "Seuls les boutons ayant un identifiant interne peuvent être étiquetés. {N} au maximum.",
+        "es": "Solo se pueden etiquetar botones con un identificador interno. Máximo {N}.",
+        "ru": "Подписать можно только кнопки с внутренним идентификатором. Не более {N}.",
+        "ar": "يمكن تسمية الأزرار ذات المعرّف الداخلي فقط. الحد الأقصى {N}.",
+        "zh": "只有带内部标识符的按钮才能添加标签。最多 {N}。"}, m1["label"])),
     "menu_opening": (2, join({
         "en": "%1$s, {N}.", "vi": "%1$s, {N}.", "fr": "%1$s, {N}.", "es": "%1$s, {N}.", "ru": "%1$s, {N}.",
         "ar": "%1$s، {N}.", "zh": "%1$s，共{N}。"}, n2["item"])),

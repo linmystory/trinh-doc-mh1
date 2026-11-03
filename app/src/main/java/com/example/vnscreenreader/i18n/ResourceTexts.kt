@@ -9,12 +9,16 @@ import com.example.vnscreenreader.core.TextProvider
 class ResourceTexts(private val context: Context) : TextProvider {
     override val language: String get() = context.resources.configuration.locales[0].language
     override fun get(key: S, args: Array<out Any>): String = when (key) {
+        S.SP_STATE_PERCENT -> plural(R.plurals.sp_state_percent, 1, args)
         S.NOTIF_BURST -> plural(R.plurals.notif_burst, 2, args)
         S.MENU_OPENING -> plural(R.plurals.menu_opening, 2, args)
+        S.SCRIPT_ERR_DEPTH -> plural(R.plurals.script_err_depth, 1, args)
         S.SCRIPT_ERR_NAME -> plural(R.plurals.script_err_name, 1, args)
         S.SCRIPT_ERR_PACKAGES -> plural(R.plurals.script_err_packages, 1, args)
+        S.SCRIPT_ERR_RULES_COUNT -> plural(R.plurals.script_err_rules_count, 1, args)
         S.SCRIPT_ERR_MESSAGE -> plural(R.plurals.script_err_message, 1, args)
         S.SCRIPT_ERR_PATTERN -> plural(R.plurals.script_err_pattern, 2, args)
+        S.LB_LIMITS -> plural(R.plurals.lb_limits, 1, args)
         S.GS_N_FINGERS -> plural(R.plurals.gs_n_fingers, 1, args)
         else -> if (args.isEmpty()) context.getString(idOf(key)) else context.getString(idOf(key), *args)
     }
@@ -51,7 +55,6 @@ class ResourceTexts(private val context: Context) : TextProvider {
         S.SP_STATE_PARTIAL -> R.string.sp_state_partial
         S.SP_STATE_UNCHECKED -> R.string.sp_state_unchecked
         S.SP_STATE_SELECTED -> R.string.sp_state_selected
-        S.SP_STATE_PERCENT -> R.string.sp_state_percent
         S.SP_STATE_ERROR -> R.string.sp_state_error
         S.SP_STATE_GUESS -> R.string.sp_state_guess
         S.SP_STATE_DISABLED -> R.string.sp_state_disabled
@@ -212,11 +215,9 @@ class ResourceTexts(private val context: Context) : TextProvider {
         S.PLUGIN_NO_MATCH -> R.string.plugin_no_match
         S.PLUGIN_ERROR -> R.string.plugin_error
         S.SCRIPT_ERR_RULE_NEEDS -> R.string.script_err_rule_needs
-        S.SCRIPT_ERR_DEPTH -> R.string.script_err_depth
         S.SCRIPT_ERR_JSON -> R.string.script_err_json
         S.SCRIPT_ERR_ID -> R.string.script_err_id
         S.SCRIPT_ERR_NO_RULES -> R.string.script_err_no_rules
-        S.SCRIPT_ERR_RULES_COUNT -> R.string.script_err_rules_count
         S.SCRIPT_ERR_MATCH -> R.string.script_err_match
         S.SCRIPT_ERR_ACTION -> R.string.script_err_action
         S.STORE_ERR_TOO_LARGE -> R.string.store_err_too_large
@@ -257,7 +258,7 @@ class ResourceTexts(private val context: Context) : TextProvider {
         S.ST_SERVICE_TITLE -> R.string.st_service_title
         S.ST_RESTRICTED_HEAD -> R.string.st_restricted_head
         S.ST_RESTRICTED_BODY -> R.string.st_restricted_body
-        S.ST_TALKBACK -> R.string.st_talkback
+        S.ST_OTHER_READER -> R.string.st_other_reader
         S.ST_STABLE_HEAD -> R.string.st_stable_head
         S.ST_STABLE_BODY -> R.string.st_stable_body
         S.ST_BATTERY_UNRESTRICTED -> R.string.st_battery_unrestricted
@@ -311,21 +312,15 @@ class ResourceTexts(private val context: Context) : TextProvider {
         S.HP_LIMIT_EDGE -> R.string.hp_limit_edge
         S.HP_TRANSLATION_NOTE -> R.string.hp_translation_note
         S.MN_TITLE -> R.string.mn_title
-        S.MN_INTRO -> R.string.mn_intro
-        S.MN_WHEN_OPEN -> R.string.mn_when_open
         S.MN_GLOBAL_HEAD -> R.string.mn_global_head
         S.MN_LOCAL_HEAD -> R.string.mn_local_head
         S.MN_LOCAL_EXTRA -> R.string.mn_local_extra
         S.LB_TITLE -> R.string.lb_title
         S.LB_INTRO -> R.string.lb_intro
-        S.LB_LIMITS -> R.string.lb_limits
         S.LB_EMPTY -> R.string.lb_empty
         S.LB_DELETE_DESC -> R.string.lb_delete_desc
         S.LB_DELETE_THIS -> R.string.lb_delete_this
-        S.GS_TITLE -> R.string.gs_title
-        S.GS_INTRO -> R.string.gs_intro
         S.GS_ONE_FINGER -> R.string.gs_one_finger
-        S.GS_MULTI_NOTE -> R.string.gs_multi_note
         S.GS_RESET -> R.string.gs_reset
         S.GS_TWO_STEP -> R.string.gs_two_step
         S.GS_ROW_DESC -> R.string.gs_row_desc
@@ -439,18 +434,130 @@ class ResourceTexts(private val context: Context) : TextProvider {
         S.MSG_NEARBY_CLICKED -> R.string.msg_nearby_clicked
         S.MSG_SWIPED_NEXT -> R.string.msg_swiped_next
         S.MSG_SWIPED_PREV -> R.string.msg_swiped_prev
-        S.CAPTCHA_RESULT -> R.string.captcha_result
-        S.CAPTCHA_ALL_UPPER -> R.string.captcha_all_upper
-        S.CAPTCHA_ALL_LOWER -> R.string.captcha_all_lower
-        S.CAPTCHA_UPPER_MARK -> R.string.captcha_upper_mark
-        S.CAPTCHA_NOT_FOUND -> R.string.captcha_not_found
-        S.CAPTCHA_UNREADABLE -> R.string.captcha_unreadable
-        S.CAPTCHA_READING -> R.string.captcha_reading
-        S.CAPTCHA_HINT -> R.string.captcha_hint
         S.IMG_HINT -> R.string.img_hint
-        S.SP_ROLE_CAPTCHA -> R.string.sp_role_captcha
-        S.GA_READ_CAPTCHA -> R.string.ga_read_captcha
-        S.MENU_CAPTCHA -> R.string.menu_captcha
+        S.RD_DIAG_TITLE -> R.string.rd_diag_title
+        S.RD_DIAG_DESC -> R.string.rd_diag_desc
+        S.RD_DIAG_COPY -> R.string.rd_diag_copy
+        S.RD_DIAG_CLEAR -> R.string.rd_diag_clear
+        S.RD_DIAG_COPIED -> R.string.rd_diag_copied
+        S.RD_DIAG_CLEARED -> R.string.rd_diag_cleared
+        S.RD_DIAG_LINES -> R.string.rd_diag_lines
+        S.G_F2_DOUBLE_HOLD -> R.string.g_f2_double_hold
+        S.G_F2_TRIPLE_HOLD -> R.string.g_f2_triple_hold
+        S.G_F3_HOLD -> R.string.g_f3_hold
+        S.G_F3_DOUBLE_HOLD -> R.string.g_f3_double_hold
+        S.G_F3_TRIPLE_HOLD -> R.string.g_f3_triple_hold
+        S.G_F4_TRIPLE -> R.string.g_f4_triple
+        S.G_F4_DOUBLE_HOLD -> R.string.g_f4_double_hold
+        S.G_F4_UP -> R.string.g_f4_up
+        S.G_F4_DOWN -> R.string.g_f4_down
+        S.G_F4_LEFT -> R.string.g_f4_left
+        S.G_F4_RIGHT -> R.string.g_f4_right
+        S.GA_NEXT_MODE -> R.string.ga_next_mode
+        S.GA_PREV_MODE -> R.string.ga_prev_mode
+        S.GA_NEXT_CONTAINER -> R.string.ga_next_container
+        S.GA_PREV_CONTAINER -> R.string.ga_prev_container
+        S.GA_NEXT_WINDOW -> R.string.ga_next_window
+        S.GA_PREV_WINDOW -> R.string.ga_prev_window
+        S.MODE_ELEMENT -> R.string.mode_element
+        S.MODE_HEADING -> R.string.mode_heading
+        S.MODE_LINK -> R.string.mode_link
+        S.MODE_CONTROL -> R.string.mode_control
+        S.MODE_EDIT -> R.string.mode_edit
+        S.MODE_CHECKABLE -> R.string.mode_checkable
+        S.MODE_IMAGE -> R.string.mode_image
+        S.MSG_MODE_SET -> R.string.msg_mode_set
+        S.MSG_MODE_NONE -> R.string.msg_mode_none
+        S.MSG_WINDOW_SET -> R.string.msg_window_set
+        S.MSG_WINDOW_UNNAMED -> R.string.msg_window_unnamed
+        S.MSG_WINDOW_NONE -> R.string.msg_window_none
+        S.MSG_CONTAINER_NONE -> R.string.msg_container_none
+        S.PERM_LOCATION_RATIONALE -> R.string.perm_location_rationale
+        S.PERM_CONTACTS_RATIONALE -> R.string.perm_contacts_rationale
+        S.PERM_DENIED -> R.string.perm_denied
+        S.PERM_DENIED_PERMANENTLY -> R.string.perm_denied_permanently
+        S.PERM_OPEN_SETTINGS -> R.string.perm_open_settings
+        S.PERM_SETTINGS_INTRO -> R.string.perm_settings_intro
+        S.PERM_STATUS_GRANTED -> R.string.perm_status_granted
+        S.PERM_STATUS_DENIED -> R.string.perm_status_denied
+        S.PERM_NONE -> R.string.perm_none
+        S.PERM_CONTINUE -> R.string.perm_continue
+        S.SEC_PERMS -> R.string.sec_perms
+        S.SEC_PERMS_SUM -> R.string.sec_perms_sum
+        S.SP_ROLE_LINK -> R.string.sp_role_link
+        S.SP_POSITION -> R.string.sp_position
+        S.HINT_ACTIVATE -> R.string.hint_activate
+        S.HINT_OPEN_LINK -> R.string.hint_open_link
+        S.HINT_TOGGLE -> R.string.hint_toggle
+        S.HINT_EDIT -> R.string.hint_edit
+        S.RD_ACTION_HINT_TITLE -> R.string.rd_action_hint_title
+        S.RD_ACTION_HINT_DESC -> R.string.rd_action_hint_desc
+        S.RD_VERBOSITY_TITLE -> R.string.rd_verbosity_title
+        S.RD_VERBOSITY_DESC -> R.string.rd_verbosity_desc
+        S.VERBOSITY_MINIMAL -> R.string.verbosity_minimal
+        S.VERBOSITY_STANDARD -> R.string.verbosity_standard
+        S.VERBOSITY_DETAILED -> R.string.verbosity_detailed
+        S.GA_JUMP_FIRST -> R.string.ga_jump_first
+        S.GA_JUMP_LAST -> R.string.ga_jump_last
+        S.GA_NEXT_HEADING -> R.string.ga_next_heading
+        S.GA_PREV_HEADING -> R.string.ga_prev_heading
+        S.GA_NEXT_LINK -> R.string.ga_next_link
+        S.GA_PREV_LINK -> R.string.ga_prev_link
+        S.GA_SCROLL_TOP -> R.string.ga_scroll_top
+        S.GA_SCROLL_BOTTOM -> R.string.ga_scroll_bottom
+        S.MSG_NO_HEADING -> R.string.msg_no_heading
+        S.MSG_NO_LINK -> R.string.msg_no_link
+        S.MSG_SCROLLED_TOP -> R.string.msg_scrolled_top
+        S.MSG_SCROLLED_BOTTOM -> R.string.msg_scrolled_bottom
+        S.GS_F2_PROFILE_TITLE -> R.string.gs_f2_profile_title
+        S.GS_SWIPE_PROFILE_DESC -> R.string.gs_swipe_profile_desc
+        S.GS_SWIPE_PROFILE_SCROLL -> R.string.gs_swipe_profile_scroll
+        S.GS_SWIPE_PROFILE_QUICKNAV -> R.string.gs_swipe_profile_quicknav
+        S.GS_SWIPE_PROFILE_FULLPAGE -> R.string.gs_swipe_profile_fullpage
+        S.GS_SWIPE_PROFILE_CUSTOM -> R.string.gs_swipe_profile_custom
+        S.GS_SWIPE_PROFILE_CURRENT -> R.string.gs_swipe_profile_current
+        S.GS_F3_PROFILE_TITLE -> R.string.gs_f3_profile_title
+        S.GS_SWIPE_PROFILE_TEXTUNITS -> R.string.gs_swipe_profile_textunits
+        S.SEC_LOG -> R.string.sec_log
+        S.SEC_LOG_SUM -> R.string.sec_log_sum
+        S.LOG_ENABLE_TITLE -> R.string.log_enable_title
+        S.LOG_ENABLE_DESC -> R.string.log_enable_desc
+        S.LOG_SUMMARY -> R.string.log_summary
+        S.LOG_EMPTY -> R.string.log_empty
+        S.LOG_VIEW -> R.string.log_view
+        S.LOG_HIDE -> R.string.log_hide
+        S.LOG_SHARE -> R.string.log_share
+        S.LOG_SHARE_SUBJECT -> R.string.log_share_subject
+        S.LOG_SHARE_TITLE -> R.string.log_share_title
+        S.LOG_CLEAR -> R.string.log_clear
+        S.LOG_CLEAR_TITLE -> R.string.log_clear_title
+        S.LOG_CLEAR_MSG -> R.string.log_clear_msg
+        S.LOG_CLEAR_CONFIRM -> R.string.log_clear_confirm
+        S.LOG_CLEARED -> R.string.log_cleared
+        S.LOG_PRIVACY_NOTE -> R.string.log_privacy_note
+        S.MSG_TTS_VOICE_MISSING -> R.string.msg_tts_voice_missing
+        S.VO_VOICE_MISSING_HEAD -> R.string.vo_voice_missing_head
+        S.VO_VOICE_MISSING_BODY -> R.string.vo_voice_missing_body
+        S.VO_VOICE_INSTALL -> R.string.vo_voice_install
+        S.VO_VOICE_INSTALL_UNAVAILABLE -> R.string.vo_voice_install_unavailable
+        S.GA_CYCLE_VOICE -> R.string.ga_cycle_voice
+        S.MSG_VOICE_MODE -> R.string.msg_voice_mode
+        S.VO2_MODE_SINGLE -> R.string.vo2_mode_single
+        S.VO2_MODE_BOTH -> R.string.vo2_mode_both
+        S.VO2_MODE_TITLE -> R.string.vo2_mode_title
+        S.VO2_MODE_DESC -> R.string.vo2_mode_desc
+        S.VO2_ENGINE_HEAD -> R.string.vo2_engine_head
+        S.VO2_LANG_TITLE -> R.string.vo2_lang_title
+        S.VO2_LANG_DESC -> R.string.vo2_lang_desc
+        S.VO2_NOTE -> R.string.vo2_note
+        S.VO2_SPLIT_TITLE -> R.string.vo2_split_title
+        S.VO2_SPLIT_DESC -> R.string.vo2_split_desc
+        S.VO2_SPLIT_WORD -> R.string.vo2_split_word
+        S.VO2_SPLIT_SENTENCE -> R.string.vo2_split_sentence
+        S.VO2_FIRST_HEAD -> R.string.vo2_first_head
+        S.VO2_FIRST_LANG_TITLE -> R.string.vo2_first_lang_title
+        S.VO2_FIRST_LANG_DESC -> R.string.vo2_first_lang_desc
+        S.VO2_FIRST_LANG_AUTO -> R.string.vo2_first_lang_auto
         else -> error("Khóa plurals đã xử lý ở get(): $key")
     }
 }

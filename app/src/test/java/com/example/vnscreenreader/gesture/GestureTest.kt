@@ -43,7 +43,7 @@ class GestureAnalyzerTest {
         Gesture.entries.forEach { assertEquals(it.name, it.name.contains("_THEN_"), it.isTwoStep) }
         assertEquals(12, Gesture.entries.count { it.isTwoStep })
         assertEquals(18, Gesture.entries.count { it.fingers == 1 })
-        assertEquals(34, Gesture.entries.size)
+        assertEquals(45, Gesture.entries.size)
         assertEquals(GestureAction.LONG_CLICK_FOCUSED, GestureMapping().actionFor(Gesture.DOUBLE_TAP_AND_HOLD))
     }
 

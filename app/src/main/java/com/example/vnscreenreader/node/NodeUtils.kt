@@ -5,6 +5,11 @@ import com.example.vnscreenreader.core.PagerHints
 import android.os.Build
 import android.view.accessibility.AccessibilityNodeInfo
 import com.example.vnscreenreader.core.CheckedState
+import com.example.vnscreenreader.core.ClickProbe
+import com.example.vnscreenreader.core.ClickTargetPolicy
+import com.example.vnscreenreader.core.FocusTrace
+import com.example.vnscreenreader.core.ListPosition
+import com.example.vnscreenreader.core.ListPositions
 import com.example.vnscreenreader.core.HoverPolicy
 import com.example.vnscreenreader.core.NodeSnapshot
 import com.example.vnscreenreader.core.ScrollCandidate
@@ -32,7 +37,22 @@ fun AccessibilityNodeInfo.toSnapshot(): NodeSnapshot = NodeSnapshot(
     tooltip = tooltipText?.toString(),
     viewId = viewIdResourceName,
     packageName = packageName?.toString(),
+    isLink = isLinkLike(),
 )
+
+/**
+ * Thẻ liên kết trong nội dung web: Chrome/WebView gắn vai trò và địa chỉ đích vào `extras`. Khóa là chuỗi nội bộ của
+ * Chromium (không thuộc API công khai) nên chỉ dùng để NHẬN DIỆN thêm; không có thì phần tử vẫn bấm được qua
+ * ACTION_CLICK như mọi nút khác.
+ */
+fun AccessibilityNodeInfo.isLinkLike(): Boolean {
+    val ex = extras ?: return false
+    if (ex.getString(CHROME_ROLE_KEY) == "link") return true
+    return !ex.getString(TARGET_URL_KEY).isNullOrBlank()
+}
+
+private const val CHROME_ROLE_KEY = "AccessibilityNodeInfo.chromeRole"
+private const val TARGET_URL_KEY = "AccessibilityNodeInfo.targetUrl"
 
 /** API 36 thay `getLabeledBy()` (một nhãn, deprecated) bằng `getLabeledByList()`; máy cũ dùng API cũ. */
 private fun AccessibilityNodeInfo.firstLabeledBy(): AccessibilityNodeInfo? =
@@ -82,6 +102,9 @@ object NodeCollector {
     private const val MAX_HOVER_ANCESTOR_DEPTH = 4
     private const val MERGE_MAX_PARTS = 6
     private const val MERGE_MAX_DEPTH = 4
+    private const val MAX_LIST_LOOKUP = 8
+    private const val MAX_ITEM_INDEX_LOOKUP = 4
+    private const val ITEM_INDEX_ROW_STEP = 10_000
 
     /** Tất cả phần tử đang hiển thị, theo thứ tự đọc (tiền thứ tự). */
     fun traverse(root: AccessibilityNodeInfo, maxNodes: Int = MAX_NODES): List<AccessibilityNodeInfo> {
@@ -193,8 +216,99 @@ object NodeCollector {
         return null
     }
 
+    /** Nút có hành động nhấn dù cờ `isClickable` là false (nút web, view tự khai báo hành động). */
+    fun hasClickAction(node: AccessibilityNodeInfo): Boolean =
+        node.actionList.any { it.id == AccessibilityNodeInfo.ACTION_CLICK }
+
+    /** Gốc nội dung web (WebView/GeckoView). */
+    fun isWebRoot(node: AccessibilityNodeInfo): Boolean = ClickTargetPolicy.isWebContainerClass(node.className?.toString())
+
+    fun probe(node: AccessibilityNodeInfo): ClickProbe = ClickProbe(
+        clickable = node.isClickable,
+        clickAction = hasClickAction(node),
+        scrollable = node.isScrollable,
+        webRoot = isWebRoot(node),
+        link = node.isLinkLike(),
+    )
+
+    /**
+     * Vị trí trong danh sách ("mục 3 trên 12") theo CollectionItemInfo của phần tử (hoặc tổ tiên gần nhất có) và
+     * CollectionInfo của khung chứa nó. null nếu ứng dụng không cung cấp.
+     */
+    fun listPosition(node: AccessibilityNodeInfo): ListPosition? {
+        var item: AccessibilityNodeInfo.CollectionItemInfo? = null
+        var current: AccessibilityNodeInfo? = node
+        var depth = 0
+        while (current != null && depth < MAX_LIST_LOOKUP) {
+            val found = item
+            if (found == null) {
+                item = current.collectionItemInfo
+            } else {
+                current.collectionInfo?.let { return ListPositions.of(found.rowIndex, it.rowCount, found.columnIndex, it.columnCount) }
+            }
+            current = current.parent
+            depth++
+        }
+        return null
+    }
+
+    /** Chỉ số trong danh sách của phần tử (hàng * 10000 + cột), -1 nếu không rõ. Dùng làm tiêu chí phân định khi bám vết. */
+    fun itemIndex(node: AccessibilityNodeInfo): Int {
+        var current: AccessibilityNodeInfo? = node
+        var depth = 0
+        while (current != null && depth < MAX_ITEM_INDEX_LOOKUP) {
+            current.collectionItemInfo?.let { info ->
+                val row = info.rowIndex.coerceAtLeast(0)
+                val col = info.columnIndex.coerceAtLeast(0)
+                return if (info.rowIndex < 0 && info.columnIndex < 0) FocusTrace.NO_INDEX else row * ITEM_INDEX_ROW_STEP + col
+            }
+            current = current.parent
+            depth++
+        }
+        return FocusTrace.NO_INDEX
+    }
+
     fun findClickableAncestorOrSelf(node: AccessibilityNodeInfo): AccessibilityNodeInfo? =
         findAncestorOrSelf(node) { it.isClickable }
+
+    /** Có thể kích hoạt: đánh dấu clickable HOẶC có hành động CLICK (nội dung web thường chỉ có hành động). */
+    fun isActivatable(node: AccessibilityNodeInfo): Boolean =
+        node.isEnabled && (node.isClickable || node.actionList.any { it.id == AccessibilityNodeInfo.ACTION_CLICK })
+
+    /**
+     * Đích để nhấn cho [node]: chính nó hoặc tổ tiên kích hoạt được; nếu không có, hậu duệ kích hoạt được đầu tiên đang
+     * hiện (duyệt rộng, tối đa 3 cấp) — ví dụ dòng chữ tiêu đề nằm trong khung liên kết hoặc ngược lại.
+     */
+    fun findClickTarget(node: AccessibilityNodeInfo): AccessibilityNodeInfo? {
+        findAncestorOrSelf(node) { isActivatable(it) }?.let { return it }
+        // Chỉ nhấn hậu duệ khi nó là DUY NHẤT: dòng có nhiều nút (ví dụ "Xóa", "Gửi") thì đoán sai là thao tác không hoàn tác được.
+        var found: AccessibilityNodeInfo? = null
+        var level = listOf(node)
+        repeat(MAX_CLICK_DESCENT) {
+            val next = ArrayList<AccessibilityNodeInfo>()
+            for (parent in level) {
+                for (i in 0 until minOf(parent.childCount, MAX_CLICK_CHILDREN)) {
+                    val child = parent.getChild(i) ?: continue
+                    if (!child.isVisibleToUser) continue
+                    if (isActivatable(child)) {
+                        if (found != null) return null
+                        found = child
+                    } else {
+                        next += child
+                    }
+                }
+            }
+            level = next
+        }
+        return found
+    }
+
+    /** [node] nằm trong một WebView (một trong các tổ tiên có tên lớp chứa "WebView"). */
+    fun insideWebView(node: AccessibilityNodeInfo): Boolean =
+        findAncestorOrSelf(node) { it.className?.contains("WebView") == true } != null
+
+    private const val MAX_CLICK_DESCENT = 3
+    private const val MAX_CLICK_CHILDREN = 20
 
     /** Phần tử đầu tiên thỏa [predicate] khi đi từ [node] ngược lên tối đa [MAX_ANCESTOR_DEPTH] cấp. */
     inline fun findAncestorOrSelf(
@@ -232,7 +346,7 @@ object NodeCollector {
      * không thể, phải giả lập cú vuốt. Lấy khung lớn nhất đang hiện; null nếu không có.
      */
     fun stuckScrollableBounds(root: AccessibilityNodeInfo): Rect? {
-        val ids = setOf(
+        val ids = HORIZONTAL_ACTION_IDS + setOf(
             AccessibilityNodeInfo.ACTION_SCROLL_FORWARD, AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD,
             AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_UP.id, AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_DOWN.id,
         )

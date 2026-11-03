@@ -40,7 +40,7 @@ fun LabelsScreen() {
         BodyText(
             stringResource(R.string.lb_intro),
         )
-        BodyText(stringResource(R.string.lb_limits, CustomLabels.MAX_LABELS))
+        BodyText(context.resources.getQuantityString(R.plurals.lb_limits, CustomLabels.MAX_LABELS, CustomLabels.MAX_LABELS))
         if (entries.isEmpty()) {
             BodyText(stringResource(R.string.lb_empty))
         }

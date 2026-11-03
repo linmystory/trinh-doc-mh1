@@ -23,13 +23,20 @@ class PluginScriptStore(private val dir: File) {
      * @param reservedIds id không được dùng (ví dụ id của tiện ích dựng sẵn). Trước đây script trùng id
      * được báo "cài thành công" nhưng không bao giờ hiển thị hay chạy.
      */
-    fun install(json: String, reservedIds: Set<String> = emptySet()): Result<ScriptDefinition> {
+    /**
+     * @param allAppsConfirmed script không khai báo "packages" chạy ở MỌI ứng dụng: chỉ được cài khi người dùng đã xác
+     * nhận (mặc định true để giữ hành vi cũ của lớp lưu trữ; [PluginRegistry] mặc định false).
+     */
+    fun install(json: String, reservedIds: Set<String> = emptySet(), allAppsConfirmed: Boolean = true): Result<ScriptDefinition> {
         if (json.toByteArray(Charsets.UTF_8).size > MAX_BYTES) {
             return Result.failure(IllegalArgumentException(t(S.STORE_ERR_TOO_LARGE)))
         }
         val definition = ScriptParser.parse(json).getOrElse { return Result.failure(it) }
         if (definition.id in reservedIds) {
             return Result.failure(IllegalArgumentException(t(S.STORE_ERR_BUILTIN_ID, definition.id)))
+        }
+        if (definition.packages.isEmpty() && !allAppsConfirmed) {
+            return Result.failure(AllAppsConfirmationRequired(definition.name))
         }
         return try {
             writeAtomically(File(dir, "${definition.id}.json"), json)
@@ -96,3 +103,6 @@ class PluginScriptStore(private val dir: File) {
         }
     }
 }
+
+/** Script chạy ở mọi ứng dụng nhưng người dùng chưa xác nhận. */
+class AllAppsConfirmationRequired(val scriptName: String) : Exception(t(S.PL_ALLAPPS_TITLE))

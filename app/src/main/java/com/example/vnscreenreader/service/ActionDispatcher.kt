@@ -7,6 +7,7 @@ import android.content.ClipboardManager
 import android.content.Intent
 import android.os.BatteryManager
 import com.example.vnscreenreader.core.SettingsRepository
+import com.example.vnscreenreader.core.ReadingMode
 import com.example.vnscreenreader.core.SpeechFormats
 import com.example.vnscreenreader.core.UnitMove
 import com.example.vnscreenreader.menu.MenuKind
@@ -33,7 +34,7 @@ internal class ActionDispatcher(
             GestureAction.NONE -> Unit
             GestureAction.NEXT_ELEMENT -> navigator.move(forward = true)
             GestureAction.PREVIOUS_ELEMENT -> navigator.move(forward = false)
-            GestureAction.ACTIVATE -> navigator.activate()
+            GestureAction.ACTIVATE -> activate()
             GestureAction.SCROLL_FORWARD -> navigator.scroll(forward = true)
             GestureAction.SCROLL_BACKWARD -> navigator.scroll(forward = false)
             GestureAction.PAGE_NEXT -> navigator.scrollPage(forward = true)
@@ -50,7 +51,6 @@ internal class ActionDispatcher(
             GestureAction.OCR_SCREEN -> ai.ocrScreen()
             GestureAction.DESCRIBE_FOCUSED -> ai.describeFocused()
             GestureAction.OCR_FOCUSED -> ai.ocrFocused()
-            GestureAction.READ_CAPTCHA -> ai.readCaptcha(navigator.captchaTarget())
             GestureAction.LABEL_FOCUSED -> editLabel()
             GestureAction.OPEN_GLOBAL_MENU -> openMenu(MenuKind.GLOBAL)
             GestureAction.OPEN_LOCAL_MENU -> openMenu(MenuKind.LOCAL)
@@ -79,9 +79,40 @@ internal class ActionDispatcher(
             GestureAction.SELECT_TO_START -> editText(EditOp.SELECT_TO_START)
             GestureAction.SELECT_TO_END -> editText(EditOp.SELECT_TO_END)
             GestureAction.TOGGLE_DETAILED_FOCUS -> toggleDetailedFocus()
+            GestureAction.CYCLE_VOICE_MODE -> cycleVoiceMode()
+            GestureAction.NEXT_READING_MODE -> navigator.cycleReadingMode(forward = true)
+            GestureAction.PREVIOUS_READING_MODE -> navigator.cycleReadingMode(forward = false)
+            GestureAction.NEXT_CONTAINER -> navigator.moveContainer(forward = true)
+            GestureAction.PREVIOUS_CONTAINER -> navigator.moveContainer(forward = false)
+            GestureAction.NEXT_WINDOW -> navigator.moveWindow(forward = true)
+            GestureAction.PREVIOUS_WINDOW -> navigator.moveWindow(forward = false)
             GestureAction.DESCRIBE_TECHNICAL ->
                 speech.speak(navigator.technicalInfo() ?: t(S.MSG_NOTHING_SELECTED), true)
+            GestureAction.JUMP_FIRST -> navigator.jumpEdge(first = true)
+            GestureAction.JUMP_LAST -> navigator.jumpEdge(first = false)
+            GestureAction.NEXT_HEADING -> navigator.quickMove(FocusNavigator.QuickKind.HEADING, forward = true)
+            GestureAction.PREVIOUS_HEADING -> navigator.quickMove(FocusNavigator.QuickKind.HEADING, forward = false)
+            GestureAction.NEXT_LINK -> navigator.quickMove(FocusNavigator.QuickKind.LINK, forward = true)
+            GestureAction.PREVIOUS_LINK -> navigator.quickMove(FocusNavigator.QuickKind.LINK, forward = false)
+            GestureAction.SCROLL_TO_TOP -> navigator.scrollToEdge(forward = false)
+            GestureAction.SCROLL_TO_BOTTOM -> navigator.scrollToEdge(forward = true)
         }
+    }
+
+    /**
+     * Kích hoạt phần tử đang chọn. Việc chọn mục tiêu nhấn (thẻ liên kết `<a>`/vùng tương tác trong WebView, nút chỉ
+     * khai báo hành động nhấn, con bấm được, giả lập chạm khi cần) nằm ở [FocusNavigator.activate]; ở đây chỉ đọc
+     * câu báo cho các kết quả cần báo. Thành công thì im lặng: ứng dụng tự báo qua sự kiện "đã nhấn".
+     */
+    private fun activate() {
+        val message = when (navigator.activate()) {
+            ActivateOutcome.NOTHING_SELECTED -> t(S.MSG_NOTHING_SELECTED)
+            ActivateOutcome.GONE -> t(S.MSG_ELEMENT_GONE)
+            ActivateOutcome.CANNOT_CLICK -> t(S.MSG_CANNOT_CLICK)
+            ActivateOutcome.CLICK_FAILED -> t(S.MSG_CLICK_FAILED)
+            ActivateOutcome.CLICKED, ActivateOutcome.CLICKED_NEARBY, ActivateOutcome.TAPPED -> return
+        }
+        speech.speak(message, true)
     }
 
     /**
@@ -139,6 +170,8 @@ internal class ActionDispatcher(
         val text = buildString {
             append(SpeechFormats.time(now.hour, now.minute))
             if (percent in 0..100) append(". ").append(SpeechFormats.battery(percent, battery?.isCharging == true))
+            // Chế độ đọc khác mặc định ảnh hưởng cách vuốt nên luôn nhắc ở đây.
+            if (navigator.readingMode != ReadingMode.ELEMENT) append(". ").append(t(S.MSG_MODE_SET, navigator.readingMode.label))
         }
         speech.speak(text, true)
     }
@@ -148,6 +181,7 @@ internal class ActionDispatcher(
             is UnitMove.At -> if (move.text.isBlank()) SpeechFormats.spell(move.text) else move.text
             UnitMove.End -> t(S.MSG_UNIT_END)
             UnitMove.Start -> t(S.MSG_UNIT_START)
+            UnitMove.Changed -> return // navigator đã báo "phần tử đã thay đổi"
             null -> t(S.MSG_NO_TEXT)
         }
         speech.speak(text, true)
@@ -164,6 +198,19 @@ internal class ActionDispatcher(
     }
 
     /** Bật/tắt tiêu điểm chi tiết; phiên đọc áp cờ hệ thống khi cài đặt đổi (xem ReaderSession). */
+    /** Xoay vòng: một công cụ ↔ hai công cụ. Cài đặt đổi thì dịch vụ tự áp ngay. */
+    private fun cycleVoiceMode() {
+        val next = settings.voiceMode.next()
+        settings.voiceMode = next
+        // Áp NGAY (không chờ callback cài đặt) để câu báo đọc bằng đúng công cụ của chế độ mới và không bị cắt giữa chừng.
+        speech.configure(next, settings.secondEngine, settings.secondLanguage, settings.voiceSplit, settings.firstLanguage)
+        val label = when (next) {
+            com.example.vnscreenreader.core.VoiceMode.SINGLE -> t(S.VO2_MODE_SINGLE)
+            com.example.vnscreenreader.core.VoiceMode.BOTH -> t(S.VO2_MODE_BOTH)
+        }
+        speech.speak(t(S.MSG_VOICE_MODE, label), true)
+    }
+
     private fun toggleDetailedFocus() {
         val next = !settings.detailedFocus
         settings.detailedFocus = next

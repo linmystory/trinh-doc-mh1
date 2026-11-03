@@ -1,6 +1,9 @@
 package com.example.vnscreenreader.core
 
-/** Đơn vị đọc/sao chép văn bản, giống "điều khiển đọc" của TalkBack. Thứ tự là thứ tự đổi vòng tròn. */
+import java.text.BreakIterator
+import java.util.Locale
+
+/** Đơn vị đọc/sao chép văn bản. Thứ tự là thứ tự đổi vòng tròn. */
 enum class TextGranularity(val labelKey: S) {
     PARAGRAPH(S.GRAN_PARAGRAPH),
     SENTENCE(S.GRAN_SENTENCE),
@@ -19,12 +22,16 @@ enum class TextGranularity(val labelKey: S) {
  */
 object TextUnits {
 
-    private const val SENTENCE_END = ".!?…。！？"
-    private const val CLOSERS = "\"')]}»”’"
+    /** Dấu kết câu: Latin, tiếng Ả Rập (؟ ۔) và toàn chiều rộng của tiếng Trung. */
+    private const val SENTENCE_END = ".!?…。！？؟۔"
+
+    /** Dấu kết câu toàn chiều rộng: tiếng Trung không có khoảng trắng sau dấu nên luôn là ranh giới câu. */
+    private const val FULLWIDTH_END = "。！？"
+    private const val CLOSERS = "\"')]}»”’」』）】》〉"
 
     fun ranges(text: String, granularity: TextGranularity): List<IntRange> = when (granularity) {
         TextGranularity.CHARACTER -> characters(text)
-        TextGranularity.WORD -> Regex("\\S+").findAll(text).map { it.range }.toList()
+        TextGranularity.WORD -> words(text)
         TextGranularity.PARAGRAPH -> paragraphs(text)
         TextGranularity.SENTENCE -> sentences(text)
     }
@@ -32,15 +39,75 @@ object TextUnits {
     fun split(text: String, granularity: TextGranularity): List<String> =
         ranges(text, granularity).map { text.substring(it.first, it.last + 1) }
 
-    private fun characters(text: String): List<IntRange> {
-        val out = ArrayList<IntRange>(text.length)
-        var i = 0
-        while (i < text.length) {
-            val len = Character.charCount(text.codePointAt(i))
-            out += i until i + len
-            i += len
+    /** Từng "ký tự người dùng thấy": gộp dấu thanh rời, emoji màu da/ZWJ, cờ, cặp surrogate (xem [Graphemes]). */
+    private fun characters(text: String): List<IntRange> = Graphemes.clusters(text)
+
+    private val WORD_RUN = Regex("\\S+")
+
+    /** Các hệ chữ không dùng khoảng trắng giữa các từ: một "từ" tách bằng khoảng trắng sẽ là cả cụm dài. */
+    private val UNSPACED_SCRIPTS = setOf(
+        Character.UnicodeScript.HAN, Character.UnicodeScript.HIRAGANA, Character.UnicodeScript.KATAKANA,
+        Character.UnicodeScript.THAI, Character.UnicodeScript.LAO, Character.UnicodeScript.KHMER,
+        Character.UnicodeScript.MYANMAR,
+    )
+
+    /**
+     * Từ = cụm không có khoảng trắng; riêng cụm chứa chữ Hán/Nhật/Thái... được tách tiếp bằng [BreakIterator] (trên
+     * Android chạy bằng ICU có từ điển tách từ). Dấu câu đi kèm từ liền trước nên không thành "từ" riêng.
+     */
+    private fun words(text: String): List<IntRange> {
+        val out = ArrayList<IntRange>()
+        for (match in WORD_RUN.findAll(text)) {
+            val run = match.range
+            if (hasUnspacedScript(text, run)) out += splitUnspaced(text, run) else out += run
         }
         return out
+    }
+
+    private fun hasUnspacedScript(text: String, run: IntRange): Boolean {
+        var i = run.first
+        while (i <= run.last) {
+            val codePoint = text.codePointAt(i)
+            if (Character.UnicodeScript.of(codePoint) in UNSPACED_SCRIPTS) return true
+            i += Character.charCount(codePoint)
+        }
+        return false
+    }
+
+    private fun splitUnspaced(text: String, run: IntRange): List<IntRange> {
+        val base = run.first
+        val iterator = BreakIterator.getWordInstance(Locale.ROOT)
+        iterator.setText(text.substring(run.first, run.last + 1))
+        val parts = ArrayList<IntRange>()
+        var carry = -1 // dấu mở đầu (ví dụ dấu ngoặc kép) chờ dính vào từ kế tiếp
+        var start = iterator.first()
+        var end = iterator.next()
+        while (end != BreakIterator.DONE) {
+            val from = base + start
+            val to = base + end - 1
+            when {
+                hasLetterOrDigit(text, from, to) -> {
+                    parts += (if (carry >= 0) carry else from)..to
+                    carry = -1
+                }
+                parts.isNotEmpty() -> parts[parts.lastIndex] = parts.last().first..to // dấu cuối dính vào từ trước
+                carry < 0 -> carry = from
+            }
+            start = end
+            end = iterator.next()
+        }
+        if (parts.isEmpty()) parts += run // cụm chỉ gồm dấu câu: giữ nguyên một "từ"
+        return parts
+    }
+
+    private fun hasLetterOrDigit(text: String, from: Int, toInclusive: Int): Boolean {
+        var i = from
+        while (i <= toInclusive) {
+            val codePoint = text.codePointAt(i)
+            if (Character.isLetterOrDigit(codePoint)) return true
+            i += Character.charCount(codePoint)
+        }
+        return false
     }
 
     private fun paragraphs(text: String): List<IntRange> {
@@ -82,6 +149,7 @@ object TextUnits {
         // Bỏ qua dấu lặp/dấu đóng để tìm ký tự thật sự kế tiếp.
         while (j <= paraLast && (text[j] in SENTENCE_END || text[j] in CLOSERS)) j++
         if (j > paraLast) return true
+        if (text[at] in FULLWIDTH_END) return true
         if (!text[j].isWhitespace()) return false
         var k = j
         while (k <= paraLast && text[k].isWhitespace()) k++
@@ -115,6 +183,9 @@ sealed interface UnitMove {
     data class At(val text: String) : UnitMove
     data object End : UnitMove
     data object Start : UnitMove
+
+    /** Phần tử đã thay đổi/biến mất: nơi gọi đã được báo "phần tử đã thay đổi", không đọc thêm gì. */
+    data object Changed : UnitMove
 }
 
 /**

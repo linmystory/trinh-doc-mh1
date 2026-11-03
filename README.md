@@ -1,6 +1,6 @@
 # Đọc Màn Hình Việt Pro
 
-Trình đọc màn hình (screen reader) cho Android dành cho người khiếm thị, viết bằng Kotlin và Jetpack Compose, lấy cảm hứng từ JieShuo.
+Trình đọc màn hình (screen reader) cho Android dành cho người khiếm thị, viết bằng Kotlin và Jetpack Compose.
 
 ## Tính năng
 - Đọc nội dung bằng giọng tiếng Việt (Android TextToSpeech), ngắt lời tức thì, hàng đợi thông minh.
@@ -50,15 +50,141 @@ Trình đọc màn hình (screen reader) cho Android dành cho người khiếm 
 ## Trình đơn nhanh
 Cử chỉ mở trình đơn hiển thị ở mục **Trình đơn** trong ứng dụng, lấy từ cấu hình thật của bạn.
 - **Chung** (7 mục + "Khác"): đọc từ đầu, đọc từ phần tử hiện tại, lặp lại, tìm chữ, đọc chữ trên màn hình (OCR),
-  thông báo, màn hình chính. Trình đơn con **Khác**: **đọc mã xác thực**, cài đặt nhanh, ứng dụng gần đây, đổi chế độ rung/âm báo,
+  thông báo, màn hình chính. Trình đơn con **Khác**: cài đặt nhanh, ứng dụng gần đây, đổi chế độ rung/âm báo,
   giờ và pin, chạy tiện ích, cài đặt ứng dụng, **Quay lại**.
 - **Phần tử**: nhấn, nhấn giữ, đơn vị kế/trước, đổi đơn vị đọc, sao chép đơn vị, sao chép, đọc từng ký tự,
-  gắn nhãn, mô tả hình ảnh, đọc chữ trong ảnh, cộng các hành động tùy chỉnh của ứng dụng. Riêng **ảnh**: các mục đọc ảnh
-  (mô tả, đọc chữ, **đọc mã xác thực**) lên đầu danh sách; **ảnh xác thực** thì "Đọc mã xác thực" đứng trên cùng. Riêng **ô nhập liệu**
+  gắn nhãn, mô tả hình ảnh, đọc chữ trong ảnh, cộng các hành động tùy chỉnh của ứng dụng. Riêng **ô nhập liệu**
   có thêm trình đơn con **Chỉnh sửa văn bản**: dán, cắt, chọn tất cả, đưa con trỏ về đầu/cuối, chọn đến đầu/cuối, **Quay lại**.
-- Khi trình đơn mở: vuốt phải/trái chọn mục, chạm hai lần thực hiện, quay lại để lùi một cấp. Mở trình đơn đọc
-  "Tên, N mục."; cử chỉ không dùng được trong trình đơn chỉ nhắc ngắn một lần.
+- Khi trình đơn mở: vuốt phải/trái chọn mục, chạm hai lần thực hiện, quay lại để lùi một cấp. Mở trình đơn là vào thẳng
+  mục đầu tiên (không đọc tên và số mục trước); cử chỉ không dùng được trong trình đơn chỉ nhắc ngắn một lần.
 - Cài đặt **Đọc hướng dẫn thao tác** (Đọc, mặc định bật): tắt thì trình đơn chỉ đọc tên mục, không đọc vị trí và lời nhắc.
+
+## Bản 2.17.0: chọn ngôn ngữ cho cả hai công cụ, thêm Pháp/Tây Ban Nha/Đức/Ý/Bồ Đào Nha
+
+- **Công cụ thứ nhất chọn được ngôn ngữ** (Cài đặt → Giọng đọc): mặc định "Theo ngôn ngữ ứng dụng"; cũng áp dụng ở chế độ một công cụ.
+- **Danh sách ngôn ngữ chung cho cả hai công cụ:** Anh, Việt, Pháp, Tây Ban Nha, Đức, Ý, Bồ Đào Nha, Trung, Nga, Ả Rập, Nhật, Hàn. Hai công cụ cùng một ngôn ngữ thì không tách văn bản.
+- **Nhận ngôn ngữ (heuristic, có test):** khác hệ chữ → theo hệ chữ. Việt + ngôn ngữ Latin khác: chữ có dấu/ký tự chỉ có trong tiếng Việt là Việt; từ mà bỏ hết dấu vẫn không thành âm tiết tiếng Việt hợp lệ ("café", "señor", "Straße", "Bluetooth") thuộc ngôn ngữ kia. Pháp/Tây Ban Nha/Ý/Bồ Đào Nha có dấu trùng tiếng Việt nên dấu đơn thuần chưa đủ để kết luận. Hai ngôn ngữ Latin không có tiếng Việt: dùng danh sách từ chức năng thông dụng và chữ có dấu (khi một bên là tiếng Anh). Từ không có bằng chứng là trung tính, theo từ đứng trước.
+- Từ trung tính ở ĐẦU văn bản nay thuộc ngôn ngữ thứ nhất (trước đây theo từ mạnh đầu tiên, gây sai với "Xin chào señor").
+- 3 chuỗi mới (dịch máy). Chưa thử với engine thật; danh sách từ chức năng nhỏ nên câu rất ngắn dễ nhận sai.
+
+## Bản 2.16.2: rà soát
+
+- Khi ngôn ngữ ứng dụng trùng ngôn ngữ của công cụ thứ hai (ví dụ cả hai là tiếng Anh) thì không tách văn bản nữa, đọc hết bằng công cụ thứ nhất (trước đây có thể đẩy nhầm vài từ sang công cụ thứ hai). Có test.
+- Đã đọc lại thứ tự khóa giữa `SpeechEngine` và `VoiceEngine` (không có đường khóa ngược nhau), thứ tự "đọc xong" và đồng hồ canh, việc áp chế độ từ luồng nền: không thấy lỗi khác. Chưa thử với hai engine thật.
+
+## Bản 2.16.1: đơn giản hóa phần chọn công cụ đọc
+
+- **Chỉ còn hai lựa chọn:** *Một công cụ* (chọn một công cụ duy nhất) hoặc *Hai công cụ* (chọn cả hai: công cụ thứ nhất đọc ngôn ngữ ứng dụng, công cụ thứ hai đọc ngôn ngữ đã chọn). Bỏ chế độ "Chỉ công cụ thứ hai" gây rối. Giá trị cũ `SECOND_ONLY` đã lưu từ bản 2.15 tự rơi về "Một công cụ".
+- Màn hình: chọn chế độ trước, rồi hiện ngay các bộ chọn công cụ tương ứng (một hoặc hai). Cử chỉ "Đổi chế độ công cụ đọc" nay đổi qua lại giữa hai chế độ.
+- Chưa thử với hai engine thật trên máy; chưa build Gradle/Compose.
+
+## Bản 2.16.0: chia văn bản theo câu (như chế độ tự nhận ngôn ngữ của các bộ đọc nhiều engine)
+
+- **Cài đặt → Giọng đọc → Cách chia văn bản** (hiện khi chọn "Hai công cụ"): *Theo từ* (đổi công cụ tại từng từ của ngôn ngữ kia, như bản 2.15) hoặc *Theo câu* (mỗi câu do MỘT công cụ đọc trọn, theo ngôn ngữ chiếm nhiều từ hơn trong câu; hòa thì theo câu trước). Theo câu mượt hơn và ít đổi giọng; "Bật Bluetooth để kết nối." vẫn đọc trọn bằng giọng tiếng Việt.
+- Tách câu theo dấu `. ! ? … ؟` (cần khoảng trắng sau) và `。！？` (không cần). Ghép các đoạn lại luôn bằng đúng văn bản gốc (có test).
+- Học từ mô tả công khai của các bộ đọc nhiều engine (chế độ theo từ và chế độ tự nhận theo câu); không dùng mã của ứng dụng nào.
+- 4 chuỗi mới (dịch máy). Chưa thử với hai engine thật trên máy.
+
+## Bản 2.15.1: rà soát hai công cụ đọc
+
+- **Cảnh báo thiếu giọng:** trước đây công cụ này báo đủ giọng sẽ xóa cảnh báo thiếu giọng của công cụ kia. Nay trạng thái được gộp: thiếu ở bất kỳ công cụ nào đang dùng thì vẫn báo.
+- **Câu báo khi đổi chế độ bằng cử chỉ:** áp chế độ ngay rồi mới đọc, nên câu báo dùng đúng công cụ mới và không bị cắt khi công cụ cũ đóng. `SpeechEngine.configure` gọi được từ luồng bất kỳ.
+- **Tách ngôn ngữ:** dạng rút gọn tiếng Anh có dấu nháy ("don't", "it's") nay được coi là tiếng Anh thay vì trung tính.
+- Test thêm: `LanguageRunsContractionTest`. Chưa thử với hai engine thật trên máy.
+
+## Bản 2.15.0: hai công cụ đọc, mỗi công cụ một ngôn ngữ
+
+- **Cài đặt → Giọng đọc → Chế độ công cụ đọc:** *Một công cụ* (mặc định, như cũ) / *Hai công cụ, mỗi công cụ một ngôn ngữ* / *Chỉ công cụ thứ hai*. Công cụ thứ nhất đọc ngôn ngữ ứng dụng (ví dụ tiếng Việt), công cụ thứ hai đọc ngôn ngữ bạn chọn (mặc định tiếng Anh; có thể chọn Trung, Nga, Ả Rập, Nhật, Hàn). Tắt bớt một công cụ bằng cách đổi chế độ: công cụ không dùng được đóng kết nối ngay.
+- **Cử chỉ mới "Đổi chế độ công cụ đọc"** (không gán mặc định): xoay vòng ba chế độ và đọc tên chế độ.
+- **Cách tách ngôn ngữ** (`LanguageRuns`, có test): khác hệ chữ thì tách theo hệ chữ (chắc chắn). Việt + Anh: từ có dấu là tiếng Việt; từ không dấu không khớp cấu trúc một âm tiết tiếng Việt ("Bluetooth", "wifi", "settings") là tiếng Anh; từ ngắn nhập nhằng ("to", "can") theo từ đứng trước. Đây là heuristic: từ rất ngắn hoặc tên riêng lạ có thể bị giao nhầm công cụ. Cặp Latin không có tiếng Anh (ví dụ Pháp + Tây Ban Nha) không tách.
+- **Phát tuần tự** (`RunScheduler`, có test): hai TextToSpeech không có hàng đợi chung nên mỗi lúc chỉ một đoạn được phát; ngắt dừng cả hai công cụ; có đồng hồ canh để hàng đợi không kẹt nếu một công cụ chết giữa chừng. Chế độ một công cụ đi thẳng đường cũ, không qua bộ điều phối.
+- Mã: `SpeechEngine` nay là lớp ghép; mỗi kết nối TTS nằm trong `VoiceEngine` (mã cũ của `SpeechEngine`, thêm ngôn ngữ riêng và báo "đọc xong").
+- 11 chuỗi mới (dịch máy, cần người bản ngữ rà soát). Chưa chạy trên máy thật: cần thử với hai engine thật (ví dụ Google + một engine khác), kiểm tra không đọc chồng và độ trễ khi đổi giọng giữa câu.
+
+## Bản 2.14.1
+
+- Sửa test `GestureRouterTest` (kỳ vọng sai: trong trình đơn, vuốt phải là "mục kế", không phải hành động ngoài trình đơn). Mã chạy đúng, chỉ test sai nên CI sẽ đỏ. Đã đối chiếu mọi hằng số `AccessibilityService.GESTURE_*` với android.jar API 36: đều tồn tại.
+
+## Bản 2.14.0: sửa lỗi tồn đọng (cử chỉ, TTS, ổn định) và phần ngôn ngữ
+
+Rà soát bản 2.13.0 (đối chiếu hành vi với một trình đọc màn hình khác, không sao chép mã) và vá các lỗi tìm thấy.
+
+- **Cử chỉ:** `ReaderSession.handleGesture` trước đây tính `inMenu` và hành động ngay trên luồng chính nhưng chạy sau trên luồng nền,
+  nên vuốt nhanh hai lần có thể dùng trạng thái trình đơn đã cũ. Nay `GestureRouter` (thuần hàm, có test) được gọi hai lần: một lần
+  trên luồng chính chỉ để báo "đã xử lý" và ngắt lời đọc, một lần trên luồng xử lý ngay trước khi chạy hành động (kết quả chính thức).
+- **Mã cử chỉ hệ thống:** bỏ `SystemGestureIds` (tra tên bằng reflection, gõ sai tên thì cử chỉ lặng lẽ biến mất). minSdk 35 nên dùng
+  thẳng hằng số `AccessibilityService.GESTURE_*`; sai tên sẽ báo lỗi biên dịch. Bỏ `Gesture.isSupported` và dòng nhật ký `GESTURES unsupported`.
+- **TTS tự phục hồi:** engine bị tắt hoặc vừa cập nhật khiến mọi lệnh đọc trả `ERROR` và máy im lặng đến khi tắt/bật dịch vụ. Nay
+  `SpeechEngine` tạo lại engine khi `speak` trả `ERROR` hoặc `onError(ERROR_SERVICE)`, đọc lại câu vừa lỡ, có giới hạn
+  (`SpeechRecoveryPolicy`: tối đa 3 lần/phút, cách nhau ≥ 1,5 giây; đọc xong một câu thì xóa bộ đếm).
+- **Ổn định:** mọi `CoroutineScope` của dịch vụ có `CoroutineExceptionHandler` (`CoroutineGuard`, ghi vào nhật ký lỗi). `runSafely` bắt thêm
+  `VirtualMachineError` (hết bộ nhớ, tràn ngăn xếp) và báo "hành động thất bại". `AiAssistant` bắt `OutOfMemoryError` khi xử lý ảnh chụp.
+- **Ngôn ngữ:**
+  - Tiếng Trung: dấu `。！？` kết thúc câu không cần khoảng trắng phía sau; "từ" của cụm chữ Hán/Nhật/Thái được tách tiếp bằng `BreakIterator`
+    (từ điển ICU của Android; trên JVM thử nghiệm không tách được nên test chỉ kiểm tra các tính chất bất biến). Thêm dấu `؟ ۔` của tiếng Ả Rập.
+  - Ký tự theo cụm ký tự người dùng thấy (`Graphemes`): dấu thanh viết rời (NFD), emoji màu da/ZWJ, cờ, cặp surrogate không bị tách khi
+    duyệt từng ký tự và khi đánh vần (`SpeechFormats.spell` trước đây duyệt từng `Char` UTF-16). Văn bản được chuẩn hóa NFC trước khi đọc.
+  - Thiếu giọng cho ngôn ngữ ứng dụng: dịch vụ nhắc bằng lời một lần mỗi ngôn ngữ, và màn hình Giọng đọc hiện nút **Cài dữ liệu giọng**
+    (`ACTION_INSTALL_TTS_DATA`). Trước đây chỉ ghi log.
+  - `SpeechChunker` (văn bản > 4000 ký tự) cắt được sau dấu toàn chiều rộng và dấu hỏi tiếng Ả Rập; `LinkRoles` nhận vai trò "liên kết" ở cả
+    es/fr/ru/ar/zh; `SkipAdPlugin` có từ khóa bằng es/fr/ru/zh/ar.
+- **Nhỏ:** `DiagFile` giới hạn theo BYTE (trước đây tính theo số ký tự nên tệp tiếng Việt vượt ngân sách); sửa chú thích enum `Gesture`.
+- **Chuỗi mới:** 5 chuỗi (`msg_tts_voice_missing`, `vo_voice_*`) thêm vào `tools/i18n/table_d.py` rồi chạy bộ sinh. Bản dịch là dịch máy, cần người bản ngữ rà soát.
+- **Phiên bản:** `versionCode` 39, `versionName` 2.14.0.
+- **Test mới:** `GestureRouterTest`, `GestureIdsTest`, `SpeechRecoveryPolicyTest`, `GraphemesTest`, `TextUnitsLanguageTest`, `SpeechFormatsSpellTest`,
+  `DiagFileBytesTest`, `SpeechChunkerCjkTest`, `LinkRolesTest`.
+- **Chưa làm / cần quyết định:** khi trình đơn đang mở, chạm hai ngón (`STOP_SPEECH`) vừa dừng đọc vừa đóng trình đơn; chưa đổi vì có thể là chủ ý.
+  Các tính năng còn thiếu so với trình đọc khác (phím cứng, `NotificationListenerService`, trạng thái cuộc gọi/màn hình, hồ sơ theo ứng dụng,
+  xuất/nhập cài đặt) chưa làm.
+- **Chưa kiểm chứng:** môi trường soạn thảo không có trình biên dịch Kotlin, Gradle hay Android SDK nên chưa chạy build, lint hay
+  `./gradlew :app:testDebugUnitTest`. Đã kiểm cân ngoặc, nhất quán chuỗi bằng bộ sinh, và đối chiếu logic tách câu/ký tự bằng bản thử Java trên JDK 21.
+  Cần chạy build và thử trên máy thật (nhất là phục hồi TTS và tách từ tiếng Trung).
+
+## Bản 2.13.0: hợp nhất nhánh 2.11.0 với nhánh 2.12.x
+
+Lấy bản 2.11.0 làm nền (giữ nguyên các tính năng của nó) và đưa vào những phần còn thiếu:
+
+- **Đã bỏ** toàn bộ phần đọc mã xác thực khỏi mã nguồn, chuỗi, cử chỉ và trình đơn; không còn mục nào liên quan.
+- **Mức chi tiết và gợi ý thao tác:** dùng một bản duy nhất (`Verbosity`, `ActionHints`); bỏ bản trùng.
+- **Thêm vào nền 2.11.0:** chế độ đọc theo loại, vùng chứa kế/trước, cửa sổ kế/trước, 11 cử chỉ mới (tra theo tên lúc chạy, máy không có thì ẩn), vuốt trang có kiểm tra màn hình đổi, nhật ký chẩn đoán tự động (chỉ siêu dữ liệu), trình đơn mở thẳng mục đầu, gợi ý cho ảnh không nhãn, giao diện gọn (mỗi cử chỉ một điểm dừng, không tiêu đề thừa).
+- **Giữ của nhánh 2.11.0:** bám vết tiêu điểm, `ClickResolver`, duyệt nhanh tiêu đề/liên kết, cử chỉ 2-3 ngón theo bộ gán sẵn, nhật ký lỗi, màn hình Quyền, plurals.
+- Chưa chạy Gradle/lint/Compose/ML Kit ở môi trường soạn thảo; cần chạy `./gradlew :app:testDebugUnitTest` và thử trên máy thật.
+
+## Bản 2.12.3
+
+- **Chế độ đọc theo loại** (tiêu đề, liên kết, điều khiển, ô nhập, ô tích, hình ảnh): hành động "chế độ đọc tiếp theo/trước đó"; khi khác "phần tử", vuốt phần tử kế/trước nhảy theo loại và tự cuộn tìm tiếp (tối đa 4 lần, 4 giây). Tìm không ra thì trả lựa chọn về chỗ cũ. Chế độ tự về mặc định khi cửa sổ đổi; trạng thái ("Đọc trạng thái") nhắc chế độ đang dùng.
+- **Vùng chứa và cửa sổ kế/trước** (hành động mới). Lựa chọn cửa sổ chỉ mất khi cửa sổ thật sự đổi. Plugin vẫn chạy trên cửa sổ đang hoạt động.
+- **11 cử chỉ mới** (nhấn giữ nhiều ngón, bốn ngón vuốt/nhấn ba lần), tra theo tên hằng số lúc chạy; máy không có thì ẩn (nhật ký ghi `GESTURES unsupported=...`). Không gán mặc định.
+- **Giao diện gọn hơn:** mỗi cử chỉ một điểm dừng; không tiêu đề/giới thiệu thừa ở màn hình cử chỉ và trình đơn; trình đơn mở thẳng mục đầu.
+- **Cài đặt Đọc:** mức chi tiết (đầy đủ/gọn/tối giản), đọc gợi ý thao tác, **nhật ký chẩn đoán tự động** (chỉ siêu dữ liệu, không có chữ trên màn hình; sao chép để gửi).
+- **Chuyển trang/cuộn:** thử hành động trước, rồi vuốt giả lập (`canPerformGestures`) và kiểm tra màn hình có đổi không; bám vết tiêu điểm khi giao diện vẽ lại; nhấn không nhấn đúp hai lần; chỉ nhấn nút con khi nó duy nhất; nhấn giữ có dự phòng ngữ cảnh/chạm giữ.
+
+## Bản 2.11.0: bám vết tiêu điểm, nhấn liên kết web, cử chỉ 2-3 ngón, mức chi tiết, nhật ký lỗi
+
+- **Không nhảy về đầu khi giao diện vẽ lại**: `FocusNavigator` giữ bộ đệm vết (`FocusTraceBuffer`: mã duy nhất, viewId, nhãn, hộp tọa độ, chỉ số danh sách) của vài phần tử gần nhất. Nút đang chọn bị tái chế thì tìm lại theo vết (`TraceLocator`), không khớp thì dùng khe theo vị trí (`FocusTracker`). Chỉ `reset()` (màn hình/cửa sổ mới, sau khi cuộn) mới xóa vết.
+- **Nhấn liên kết/vùng tương tác trong WebView**: `ClickResolver` + `ClickTargetPolicy` chọn nút nhận `ACTION_CLICK`: chính nó hoặc tổ tiên gần nhất có hành động nhấn (kể cả khi cờ `isClickable` là false), không leo vào gốc WebView/vùng cuộn; không có thì thử con bấm được (ưu tiên thẻ liên kết); cuối cùng, chỉ trong nội dung web, giả lập một cú chạm vào giữa phần tử. `ActionDispatcher` đọc câu báo theo kết quả (`ActivateOutcome`). Vai trò "liên kết" được đọc khi nhận diện được.
+- **Duyệt nhanh trong web** dùng hành động chuẩn của nền tảng (`ACTION_NEXT/PREVIOUS_HTML_ELEMENT`, loại LINK/HEADING) nên không cần cuộn; vòng cuộn dài dừng ngay khi có cử chỉ mới.
+- **Cử chỉ hai và ba ngón**: `GestureAnalyzer` phân nhóm vuốt theo số ngón + hướng; `SwipeProfile` là bộ gán sẵn cho bốn hướng (cuộn/chuyển trang, đọc theo đơn vị, duyệt nhanh tiêu đề/liên kết, cả trang). Chọn nhanh ở đầu nhóm hai/ba ngón trong màn hình Cử chỉ; từng cử chỉ vẫn gán riêng được cho bất kỳ chức năng nào. Mặc định không đổi. Chức năng mới: tiêu đề/liên kết kế-trước, cuộn tới đầu/cuối trang, nhảy phần tử đầu/cuối (cũng có trong trình đơn chung, mục Khác).
+- **Gợi ý và mức chi tiết** (Cài đặt → Đọc): công tắc riêng "Đọc gợi ý thao tác" (câu gợi ý xếp hàng sau phần tử, không ngắt; tên cử chỉ lấy theo cấu hình hiện tại) và mức Gọn/Chuẩn/Chi tiết ("Mục 3 trên 12" khi ứng dụng cung cấp thông tin danh sách). Nội dung chính của phần tử luôn đọc đủ.
+- **Nhật ký lỗi** (Cài đặt → Nhật ký lỗi): chỉ lưu trong `filesDir/crash_logs` (bộ nhớ riêng, không backup, không cần quyền). Tối đa 3 báo cáo sập (mỗi báo cáo ≤ 16.000 ký tự) + một tệp sự kiện lỗi nhẹ cuộn vòng ≤ 24.000 ký tự, tổng ≤ ~80 KB; lỗi lặp bị gộp (1 lần/phút/chữ ký, ≤ 20 lần/giờ). Thông điệp lỗi được che thư điện tử, địa chỉ web, chuỗi số dài. Xem, chia sẻ (hộp chia sẻ hệ thống, dạng văn bản) và xóa (có hỏi lại) ngay trong ứng dụng; có công tắc tắt. Không gửi đi đâu tự động.
+- **Đối chiếu với trình đọc khác (học hỏi, không sao chép)**: dịch vụ nay nghe thêm `typeWindowContentChanged`, `typeViewScrolled` (chỉ đánh dấu bộ đệm điểm dừng đã cũ, không qua hàng đợi) và `typeViewAccessibilityFocused` (đồng bộ con trỏ khi ứng dụng/trình duyệt tự đặt tiêu điểm, không đọc lại); `notificationTimeout` = 0 để giảm trễ khi rê ngón tay. Thứ tự duyệt tôn trọng `accessibilityTraversalAfter/Before` (`TraversalOrder`). "Cuộn tới đầu/cuối" nhảy thẳng bằng `ACTION_SCROLL_TO_POSITION` khi danh sách biết số hàng.
+- Lượt rà soát lần hai: gợi ý thao tác không còn duyệt con (tránh ~60 lần gọi hệ thống mỗi lần chọn); duyệt nhanh web xuất phát từ gốc WebView không báo sai "không còn" khi chỉ là chưa có điểm bắt đầu. Chưa có (khác biệt tính năng, không phải lỗi): nhập phím bằng nhấc tay trên bàn phím, phím tắt âm lượng/phím cứng, vân tay, quy tắc theo từng ứng dụng, chỉnh độ trễ chạm.
+- Chưa làm có chủ đích: vùng cho cử chỉ/chạm đi xuyên (`setTouchExplorationPassthroughRegion`, `setGestureDetectionPassthroughRegion`). Cấu hình sai có thể khiến người dùng không chạm được vùng đó, nên cần thử trên máy thật (bàn phím, thanh điều hướng, cạnh màn hình) trước khi bật.
+
+- Chưa build/chạy test trong môi trường soạn thảo (không có Gradle/Kotlin); chạy `./gradlew :app:testDebugUnitTest` và thử trên máy thật, nhất là nhấn liên kết Google trong Chrome/WebView (khóa extras của Chromium không thuộc API công khai nên chỉ dùng để nhận diện thêm).
+
+## Bản 2.10.0: sửa lỗi tồn đọng
+Các lỗi tồn đọng sau khi rà soát:
+- **`HighlightOverlay`**: `suspendCancellableCoroutine<Unit>` có kiểu tường minh; huỷ chờ khung hình dùng `Choreographer` đã giữ sẵn thay vì gọi `getInstance()` ở luồng không có Looper (có thể ném `IllegalStateException`).
+- **Tự đọc chữ trong ảnh**: ảnh chỉ bị đánh dấu "đã đọc" SAU khi người dùng đã dừng đủ lâu và đã thử chụp. Trước đây đánh dấu ngay lúc chọn nên vuốt nhanh qua ảnh làm mất lần đọc. Bộ nhớ này được xóa khi đổi cửa sổ (`AiAssistant.onWindowChanged`) và an toàn đa luồng.
+- **Chụp màn hình**: quá hạn 5 giây thì báo lỗi thay vì treo; ảnh đến muộn hoặc khi tác vụ đã bị hủy được `recycle()` (trước đây bị rò, mỗi ảnh vài MB).
+- **Trình đơn bị đóng vì đổi cửa sổ** (bàn phím, hộp thoại nhỏ): nay báo "Đã đóng trình đơn" thay vì đóng im lặng.
+- **Đọc theo đơn vị** (`moveUnit`): làm mới nút trước khi đọc; nút đã đổi thì báo "Phần tử đã thay đổi" (không còn đọc dữ liệu cũ).
+- **Script áp dụng mọi ứng dụng**: lớp lưu trữ từ chối cài khi chưa xác nhận (`AllAppsConfirmationRequired`), không chỉ giao diện.
+- **Chuỗi số lượng**: `sp_state_percent`, `script_err_depth`, `script_err_rules_count`, `lb_limits` chuyển sang `<plurals>` (tiếng Nga và Ả Rập đúng ngữ pháp). Test `QuantityStringsTest` buộc mọi chuỗi có số lượng mới phải là plurals.
+- **Mục "Quyền"** (Cài đặt → Nâng cao): luồng xin quyền theo tính năng (`PermissionFlow`: giải thích trước, từ chối thì dừng, "không hỏi lại" thì có nút mở Cài đặt) và `rememberPermissionRequest`. **Hiện chưa có tính năng nào cần quyền** (đọc địa điểm gần bạn, tìm danh bạ, gọi điện, mô tả ảnh trong bộ nhớ: chưa làm) nên danh sách `PermissionFeatures.all` rỗng và manifest chỉ khai báo rung. `ManifestPermissionsTest` buộc quyền khai báo đúng bằng quyền mà tính năng cần.
+
+Chưa sửa (cần quyết định): trình đơn chung có 7 mục + "Khác" = 8 mục ở cấp đầu (yêu cầu ghi "tối đa 7").
 
 ## Bản 2.7.3
 
@@ -110,7 +236,7 @@ Gộp bản "v17" bạn gửi (đọc emoji có khoảng lặng, bảng emoji đ
 ## Chuyển trang, vuốt trái/phải và tự cuộn (2.6.0)
 - **Trang kế / Trang trước** (hai hoặc ba ngón vuốt trái/phải): tìm vùng cuộn **ngang** (ViewPager, tab vuốt ngang, danh sách ngang) và chuyển trang. Chưa thử trên máy thật với từng loại giao diện.
 - Vuốt phải/trái chuyển phần tử: nếu phần tử bạn chạm vào không phải điểm dừng (ví dụ con của khối đã gộp nhãn), app bắt đầu từ điểm dừng chứa nó thay vì nhảy về đầu/cuối danh sách.
-- Tới phần tử cuối/đầu của màn hình: app tự cuộn một lần rồi chọn phần tử mới (như TalkBack); hết thật mới báo "phần tử cuối".
+- Tới phần tử cuối/đầu của màn hình: app tự cuộn một lần rồi chọn phần tử mới; hết thật mới báo "phần tử cuối".
 - Trình đơn tự đóng sau 30 giây không dùng; trong trình đơn, nếu bạn đã bỏ gán hết "phần tử kế/trước, nhấn, quay lại" thì cử chỉ mặc định của chúng được dùng tạm để không bị kẹt.
 
 ## Đọc biểu tượng cảm xúc (emoji)
@@ -137,25 +263,6 @@ Cài đặt → Đọc → **Đọc biểu tượng cảm xúc** (mặc định 
 - Khoảng lặng dùng `playSilentUtterance`; hành vi thật phụ thuộc engine TTS và **chưa được thử trên máy**.
 - Chưa có kiểm thử trên thiết bị thật; chưa chạy được `assembleDebug`, `testDebugUnitTest`, `lintDebug`.
 
-## Đọc mã xác thực (CAPTCHA dạng chữ)
-Giúp bạn **tự đọc rồi tự nhập** mã trong ảnh xác thực khi duyệt web hoặc dùng ứng dụng. Chạy hoàn toàn trên máy, không dùng mạng.
-- **Kích hoạt (luôn do bạn yêu cầu, không bao giờ tự động):** (1) mục **Đọc mã xác thực** trong trình đơn phần tử của một ảnh
-  (đứng đầu nếu ảnh có nhãn kiểu "captcha", "mã xác thực", "mã bảo mật"...); (2) mục đầu của trình đơn con **Khác** trong trình
-  đơn chung; (3) gán hành động **Đọc mã xác thực trong ảnh** vào một cử chỉ bất kỳ (mặc định chưa gán).
-- **Tìm đúng ảnh:** ưu tiên ảnh bạn đang chọn; không có thì ảnh tự khai báo là ảnh xác thực (gần phần tử đang chọn nhất); không
-  có nữa thì ảnh nằm sát ô hay dòng chữ nhắc "nhập mã xác thực" (trong khoảng 220dp). Duyệt cả những ảnh không nhãn mà vuốt
-  không dừng lại được. Ảnh trong trang web (Chrome báo `android.widget.Image`) cũng được nhận.
-- **Đọc:** phóng to ảnh nhỏ, thử ảnh gốc trước, chưa đủ tin cậy thì thử thêm bản đen trắng (ngưỡng Otsu), chọn kết quả tốt
-  nhất. Luôn dùng bộ nhận dạng **Latin** (mã thường gồm chữ và số) kể cả khi ngôn ngữ ứng dụng là Nga hay Ả Rập.
-- **Lời đọc:** từng ký tự cách nhau một nhịp, ví dụ "Mã xác thực: toàn chữ hoa, A, K, 7, 9"; lẫn chữ hoa thường thì chỉ đánh
-  dấu chữ hoa ("a, hoa K, 7, 9"). Độ tin cậy thấp hoặc độ dài lạ thì thêm "có thể sai". Nghe lại bằng *Lặp lại*.
-- **Khi đang chọn một ảnh xác thực:** vai trò đọc là "ảnh xác thực"; nếu bật *Đọc hướng dẫn thao tác* thì thêm một gợi ý
-  ngắn về trình đơn phần tử. Tự đọc chữ trong ảnh không nhãn **bỏ qua** ảnh xác thực.
-- **An toàn:** không điền vào ô nhập, không sao chép vào clipboard, không lưu, không gửi đi đâu; ô mật khẩu bị che trước khi
-  chụp; màn hình bảo mật (FLAG_SECURE) báo thay vì đọc; mỗi lần chỉ một tác vụ; ảnh chỉ nằm trong RAM và được giải phóng ngay.
-- **Chưa kiểm chứng trên máy thật:** độ chính xác với từng kiểu CAPTCHA, ảnh `android.widget.Image` trong Chrome và các trình
-  duyệt khác, ảnh vẽ bằng canvas (không có nút ảnh nên không tìm được), và mã chỉ được biên dịch/kiểm thử trên GitHub Actions.
-
 ## Kiểm tra cử chỉ
 Mục **Kiểm tra cử chỉ** trong cài đặt: khi bật, mọi cử chỉ hệ thống gửi tới ứng dụng chỉ được **đọc tên** (ví dụ
 "Vuốt hai ngón lên"), không chạy chức năng đã gán. Cử chỉ nào không được đọc tên nghĩa là hệ thống không gửi tới
@@ -174,7 +281,7 @@ Mục **Kiểm tra cử chỉ** trong cài đặt: khi bật, mọi cử chỉ h
 2. **Android 13 trở lên, APK cài ngoài Google Play:** hệ thống chặn bật dịch vụ hỗ trợ tiếp cận (công tắc bị mờ).
    Vào *Cài đặt → Ứng dụng → Đọc Màn Hình Việt Pro → ⋮ → Cho phép cài đặt bị hạn chế*, rồi làm bước 3.
 3. Mở ứng dụng, chạm công tắc để vào Cài đặt Hỗ trợ tiếp cận và bật dịch vụ.
-4. **Tắt TalkBack** trước khi dùng vì cả hai dùng chế độ khám phá bằng cảm ứng.
+4. **Tắt trình đọc màn hình khác** trước khi dùng vì cả hai dùng chế độ khám phá bằng cảm ứng.
 5. Cài giọng tiếng Việt (Google Text-to-Speech) nếu thiết bị chưa có.
 
 ## Script plugin
@@ -220,10 +327,9 @@ Script là JSON khai báo, không chứa mã thực thi. Xem mẫu trong `sample
   báo "chưa hỗ trợ" thay vì đọc ra kết quả sai.** Chữ Việt đọc được ở mức cơ bản, dấu thanh có thể sai với chữ nhỏ/mờ.
   Kết quả có độ tin cậy thấp được thêm "có thể sai". Mô hình Trung làm APK nặng thêm khoảng 4 MB mỗi kiến trúc CPU (theo
   tài liệu ML Kit; chưa đo trên bản build thật).
-- **Ảnh xác minh/CAPTCHA:** ứng dụng chỉ **đọc to mã trong ảnh dạng chữ để bạn tự nhập tay** (xem mục "Đọc mã xác thực"),
-  **không tự điền, không tự gửi, không vượt xác minh**. OCR **không đáng tin** với chữ méo nhiều, nhiễu, gạch chéo; khi đó
-  hãy dùng lựa chọn âm thanh của dịch vụ, kênh hỗ trợ dành cho người khiếm thị của họ, hoặc nhờ người nhìn giúp. Thử
-  thách dạng lưới hình hay ô đánh dấu (reCAPTCHA, hCaptcha, Turnstile) **không** được hỗ trợ.
+- **Ảnh xác minh/CAPTCHA:** OCR thông thường **không đáng tin** với chữ méo, nhiễu, gạch chéo, và ứng dụng **không có chức
+  năng giải hay vượt xác minh**. Nếu gặp ảnh xác minh, hãy dùng lựa chọn âm thanh của dịch vụ đó, kênh hỗ trợ dành cho
+  người khiếm thị của họ, hoặc nhờ người nhìn giúp.
 - **Tự đọc chữ trong ảnh không nhãn** (Cài đặt → Đọc, **mặc định tắt**): chỉ khi bạn chọn một ảnh không có chữ/mô tả/nhãn,
   mỗi lần một tác vụ, hủy khi chọn phần tử khác, không đọc lại cùng phần tử trong cùng cửa sổ, bỏ qua ô mật khẩu và
   cửa sổ bảo mật, không ghi gì ra đĩa. Cách này chụp màn hình mỗi lần chọn nên tốn pin hơn.
@@ -252,6 +358,8 @@ Script là JSON khai báo, không chứa mã thực thi. Xem mẫu trong `sample
 
 Khi đưa lên Google Play: chỉ khai báo các quyền trên, khai báo mục đích dịch vụ hỗ trợ tiếp cận (Accessibility API
 declaration) và chính sách quyền riêng tư nêu rõ **không thu thập, không gửi dữ liệu ra ngoài thiết bị**.
+
+**Mục "Quyền" trong ứng dụng.** Hiển thị theo từng tính năng cần quyền (tên, trạng thái "Đã cấp"/"Chưa cấp", nút mở đúng màn hình quyền của ứng dụng) và cập nhật khi quay lại từ Cài đặt hệ thống. Mở mục này không bao giờ tự xin quyền. Khi chưa có tính năng nào cần quyền, mục chỉ hiện lời giải thích. Luồng xin quyền: có quyền thì làm ngay; chưa có thì đọc lời giải thích rồi mới hiện hộp thoại hệ thống; bị từ chối thì đọc thông báo và kết thúc (không hỏi lại trong cùng một lần bấm); "không hỏi lại" thì kèm nút "Mở Cài đặt". Với gọi điện sẽ dùng `ACTION_DIAL` (không xin `CALL_PHONE`); với ảnh trong bộ nhớ sẽ dùng `PickVisualMedia` (không xin quyền đọc ảnh).
 
 ## Rà soát bố cục (5.5) — đã đọc mã, CHƯA xem trên máy
 Kiểm theo mã nguồn (không có thiết bị/emulator ở môi trường làm việc):

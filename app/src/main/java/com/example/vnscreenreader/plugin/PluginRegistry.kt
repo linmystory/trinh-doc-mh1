@@ -44,7 +44,8 @@ class PluginRegistry(context: Context) {
         prefs.edit { putStringSet(KEY_DISABLED, updated) }
     }
 
-    fun installScript(json: String): Result<ScriptDefinition> = store.install(json, reservedIds = builtInIds)
+    fun installScript(json: String, allAppsConfirmed: Boolean = false): Result<ScriptDefinition> =
+        store.install(json, reservedIds = builtInIds, allAppsConfirmed = allAppsConfirmed)
 
     fun removeScript(id: String): Boolean {
         val removed = store.delete(id)

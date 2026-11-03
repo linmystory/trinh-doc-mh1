@@ -31,8 +31,14 @@ class SkipAdPlugin : ScreenReaderPlugin {
     companion object {
         const val ID = "builtin_skip_ad"
         private val KEYWORDS = listOf(
+            // Cụm đầy đủ (khớp một phần): tiếng Việt, Anh, Tây Ban Nha, Pháp, Nga, Trung, Ả Rập.
             "Bỏ qua quảng cáo" to false, "Đóng quảng cáo" to false, "Skip ads" to false, "Skip ad" to false,
-            "Bỏ qua" to true, "Skip" to true,
+            "Saltar anuncio" to false, "Omitir anuncio" to false, "Passer l'annonce" to false,
+            "Ignorer l'annonce" to false, "Пропустить рекламу" to false, "跳过广告" to false, "跳過廣告" to false,
+            "تخطي الإعلان" to false,
+            // Từ chung: chỉ khớp khi CẢ nhãn đúng bằng từ đó.
+            "Bỏ qua" to true, "Skip" to true, "Saltar" to true, "Omitir" to true, "Passer" to true,
+            "Пропустить" to true, "跳过" to true, "跳過" to true, "تخطي" to true,
         )
 
         private fun isExactly(node: AccessibilityNodeInfo, keyword: String): Boolean =

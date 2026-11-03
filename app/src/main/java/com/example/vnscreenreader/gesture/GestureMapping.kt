@@ -35,7 +35,7 @@ class GestureMapping(initial: Map<Gesture, GestureAction> = defaults()) {
             Gesture.SWIPE_RIGHT to GestureAction.NEXT_ELEMENT,
             Gesture.SWIPE_LEFT to GestureAction.PREVIOUS_ELEMENT,
             Gesture.DOUBLE_TAP to GestureAction.ACTIVATE,
-            // Giống TalkBack: chạm hai lần và giữ = nhấn giữ phần tử đang chọn (nếu hệ thống gửi cử chỉ này tới app).
+            // Chạm hai lần và giữ = nhấn giữ phần tử đang chọn (nếu hệ thống gửi cử chỉ này tới app).
             Gesture.DOUBLE_TAP_AND_HOLD to GestureAction.LONG_CLICK_FOCUSED,
             Gesture.SWIPE_UP to GestureAction.SCROLL_FORWARD,
             Gesture.SWIPE_DOWN to GestureAction.SCROLL_BACKWARD,

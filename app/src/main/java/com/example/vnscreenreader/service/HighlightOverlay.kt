@@ -67,11 +67,14 @@ class HighlightOverlay(private val context: Context) {
     )
 
     private suspend fun awaitFrames(count: Int) {
+        // Gọi trên luồng chính (có Looper). Giữ tham chiếu để hủy từ luồng khác mà KHÔNG gọi getInstance() ở đó
+        // (getInstance() ném IllegalStateException ở luồng không có Looper).
+        val choreographer = Choreographer.getInstance()
         repeat(count) {
-            suspendCancellableCoroutine { cont ->
+            suspendCancellableCoroutine<Unit> { cont ->
                 val callback = Choreographer.FrameCallback { cont.resume(Unit) }
-                Choreographer.getInstance().postFrameCallback(callback)
-                cont.invokeOnCancellation { Choreographer.getInstance().removeFrameCallback(callback) }
+                choreographer.postFrameCallback(callback)
+                cont.invokeOnCancellation { choreographer.removeFrameCallback(callback) }
             }
         }
     }

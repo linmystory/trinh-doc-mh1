@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
-    android:accessibilityEventTypes="typeViewClicked|typeViewFocused|typeWindowStateChanged|typeViewTextChanged|typeViewHoverEnter|typeNotificationStateChanged"
+    android:accessibilityEventTypes="typeViewClicked|typeViewFocused|typeWindowStateChanged|typeViewTextChanged|typeViewHoverEnter|typeNotificationStateChanged|typeWindowContentChanged|typeViewScrolled|typeViewAccessibilityFocused"
     android:accessibilityFeedbackType="feedbackSpoken"
     android:accessibilityFlags="flagDefault|flagReportViewIds|flagRetrieveInteractiveWindows|flagRequestTouchExplorationMode|flagRequestMultiFingerGestures|flagServiceHandlesDoubleTap"
     android:canRetrieveWindowContent="true"
@@ -9,5 +9,5 @@
     android:canTakeScreenshot="true"
     android:description="@string/service_description"
     android:isAccessibilityTool="true"
-    android:notificationTimeout="50"
+    android:notificationTimeout="0"
     android:settingsActivity="com.example.vnscreenreader.MainActivity" />

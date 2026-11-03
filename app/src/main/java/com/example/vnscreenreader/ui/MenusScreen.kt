@@ -20,32 +20,24 @@ fun MenusScreen() {
     val mapping = remember { GestureMappingStore(context).load() }
 
     @Composable
-    fun gestureLine(action: GestureAction) {
+    fun gestureText(action: GestureAction): String {
         val gestures = mapping.gesturesFor(action)
-        BodyText(
-            if (gestures.isEmpty()) stringResource(R.string.mn_gesture_none)
-            else stringResource(R.string.mn_gesture_line, gestures.joinToString(", ") { it.label }),
-        )
+        return if (gestures.isEmpty()) stringResource(R.string.mn_gesture_none)
+        else stringResource(R.string.mn_gesture_line, gestures.joinToString(", ") { it.label })
     }
 
-    @Composable
-    fun itemList(items: List<MenuItem>) = items.forEachIndexed { i, item -> BodyText("${i + 1}. ${item.label}") }
+    fun itemText(items: List<MenuItem>): String = items.mapIndexed { i, item -> "${i + 1}. ${item.label}" }.joinToString("\n")
 
-    ScreenColumn(stringResource(R.string.sec_menus)) {
-        BodyText(stringResource(R.string.mn_intro))
-        BodyText(stringResource(R.string.mn_when_open))
-
-        SectionHeading(stringResource(R.string.menu_global_title))
-        gestureLine(GestureAction.OPEN_GLOBAL_MENU)
-        itemList(Menus.global())
-        SectionHeading(stringResource(R.string.menu_more_title))
-        itemList(Menus.globalMore())
-
-        SectionHeading(stringResource(R.string.mn_local_head))
-        gestureLine(GestureAction.OPEN_LOCAL_MENU)
-        itemList(Menus.local(emptyList(), editable = false))
-        SectionHeading(stringResource(R.string.menu_edit_title))
-        itemList(Menus.localEdit())
-        BodyText(stringResource(R.string.mn_local_extra))
+    // Không tiêu đề, không phần giới thiệu: vào thẳng từng trình đơn. Mỗi trình đơn là MỘT khối chữ bắt đầu bằng tên của nó.
+    ScreenColumn(stringResource(R.string.sec_menus), showTitle = false) {
+        BodyText(
+            stringResource(R.string.menu_global_title) + ". " + gestureText(GestureAction.OPEN_GLOBAL_MENU) + "\n" + itemText(Menus.global()),
+        )
+        BodyText(stringResource(R.string.menu_more_title) + ".\n" + itemText(Menus.globalMore()))
+        BodyText(
+            stringResource(R.string.mn_local_head) + ". " + gestureText(GestureAction.OPEN_LOCAL_MENU) + "\n" +
+                itemText(Menus.local(emptyList(), editable = false)),
+        )
+        BodyText(stringResource(R.string.menu_edit_title) + ".\n" + itemText(Menus.localEdit()) + "\n" + stringResource(R.string.mn_local_extra))
     }
 }

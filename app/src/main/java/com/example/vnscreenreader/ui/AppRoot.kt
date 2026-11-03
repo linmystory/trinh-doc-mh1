@@ -39,7 +39,7 @@ import androidx.compose.ui.unit.sp
 import com.example.vnscreenreader.R
 
 /**
- * Các mục cài đặt, sắp theo thứ tự quen thuộc của TalkBack/Jieshuo: giọng nói → âm báo và rung → cử chỉ và trình đơn
+ * Các mục cài đặt, sắp theo thứ tự quen thuộc: giọng nói → âm báo và rung → cử chỉ và trình đơn
  * → nâng cao → tiện ích. `key` được lưu khi xoay màn hình nên không đổi tên tùy tiện.
  */
 private enum class Section(
@@ -56,6 +56,8 @@ private enum class Section(
     MENUS("menus", R.string.grp_control, R.string.sec_menus, R.string.sec_menus_sum),
     READING("reading", R.string.grp_advanced, R.string.sec_reading, R.string.sec_reading_sum),
     LABELS("labels", R.string.grp_advanced, R.string.sec_labels, R.string.sec_labels_sum),
+    PERMISSIONS("permissions", R.string.grp_advanced, R.string.sec_perms, R.string.sec_perms_sum),
+    LOG("log", R.string.grp_advanced, R.string.sec_log, R.string.sec_log_sum),
     PLUGINS("plugins", R.string.grp_extend, R.string.sec_plugins, R.string.sec_plugins_sum),
     HELP("help", R.string.grp_help, R.string.sec_help, R.string.sec_help_sum);
 
@@ -168,6 +170,8 @@ private fun SectionContent(section: Section) {
         Section.GESTURE_TEST -> GestureTestScreen()
         Section.READING -> ReadingScreen()
         Section.LABELS -> LabelsScreen()
+        Section.PERMISSIONS -> PermissionsScreen()
+        Section.LOG -> LogScreen()
         Section.GESTURES -> GestureSettingsScreen()
         Section.PLUGINS -> PluginManagerScreen()
         Section.HELP -> HelpScreen()

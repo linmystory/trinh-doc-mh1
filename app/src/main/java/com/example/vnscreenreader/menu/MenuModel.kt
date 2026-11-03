@@ -41,8 +41,6 @@ object Menus {
 
     private fun back() = MenuItem(t(S.MENU_BACK), isBack = true)
 
-    private fun captchaItem() = MenuItem(t(S.MENU_CAPTCHA), GestureAction.READ_CAPTCHA)
-
     /** Trình đơn chung, cấp đầu: 7 mục dùng nhiều nhất + "Khác". Phần còn lại nằm trong [globalMore]. */
     fun global(): List<MenuItem> = listOf(
         MenuItem(t(S.GA_READ_FROM_TOP), GestureAction.READ_FROM_TOP),
@@ -57,12 +55,17 @@ object Menus {
 
     /** Trình đơn con "Khác" của trình đơn chung; mục cuối là "Quay lại". */
     fun globalMore(): List<MenuItem> = listOf(
-        MenuItem(t(S.MENU_CAPTCHA), GestureAction.READ_CAPTCHA),
         MenuItem(t(S.MSG_QUICK_SETTINGS), GestureAction.QUICK_SETTINGS),
         MenuItem(t(S.MSG_RECENTS), GestureAction.RECENTS),
         MenuItem(t(S.GA_CYCLE_FEEDBACK), GestureAction.CYCLE_FEEDBACK),
         MenuItem(t(S.GA_SPEAK_STATUS), GestureAction.SPEAK_STATUS),
         MenuItem(t(S.GA_RUN_PLUGINS), GestureAction.RUN_PLUGINS),
+        MenuItem(t(S.GA_NEXT_HEADING), GestureAction.NEXT_HEADING),
+        MenuItem(t(S.GA_PREV_HEADING), GestureAction.PREVIOUS_HEADING),
+        MenuItem(t(S.GA_NEXT_LINK), GestureAction.NEXT_LINK),
+        MenuItem(t(S.GA_PREV_LINK), GestureAction.PREVIOUS_LINK),
+        MenuItem(t(S.GA_SCROLL_TOP), GestureAction.SCROLL_TO_TOP),
+        MenuItem(t(S.GA_SCROLL_BOTTOM), GestureAction.SCROLL_TO_BOTTOM),
         MenuItem(t(S.MENU_DETAILED_FOCUS), GestureAction.TOGGLE_DETAILED_FOCUS),
         MenuItem(t(S.GA_OPEN_SETTINGS), GestureAction.OPEN_SETTINGS),
         back(),
@@ -71,23 +74,12 @@ object Menus {
     /**
      * Trình đơn của phần tử đang chọn. Mục chỉnh sửa văn bản chỉ nằm trong trình đơn con [localEdit] và chỉ hiện
      * khi [editable]; cuối danh sách là các hành động tùy chỉnh của chính phần tử đó.
-     *
-     * Với ảnh ([imageLike]) các mục đọc ảnh (mô tả, đọc chữ, đọc mã xác thực) lên ĐẦU danh sách để mở trình đơn rồi
-     * chạm hai lần là xong; ảnh xác thực ([captchaLike]) thì "Đọc mã xác thực" đứng trên cùng. Phần tử không phải
-     * ảnh giữ nguyên thứ tự cũ.
      */
-    fun local(
-        custom: List<CustomAction>,
-        editable: Boolean = false,
-        imageLike: Boolean = false,
-        captchaLike: Boolean = false,
-    ): List<MenuItem> = buildList {
-        val isImage = imageLike || captchaLike
-        if (isImage) {
-            if (captchaLike) add(captchaItem())
+    fun local(custom: List<CustomAction>, editable: Boolean = false, imageLike: Boolean = false): List<MenuItem> = buildList {
+        // Với ảnh, các mục đọc ảnh (mô tả, đọc chữ) lên ĐẦU để mở trình đơn rồi chạm hai lần là xong.
+        if (imageLike) {
             add(MenuItem(t(S.MENU_DESCRIBE), GestureAction.DESCRIBE_FOCUSED))
             add(MenuItem(t(S.MENU_OCR_FOCUSED), GestureAction.OCR_FOCUSED))
-            if (!captchaLike) add(captchaItem())
         }
         add(MenuItem(t(S.MENU_ACTIVATE), GestureAction.ACTIVATE))
         add(MenuItem(t(S.MENU_LONG_CLICK), GestureAction.LONG_CLICK_FOCUSED))
@@ -98,7 +90,7 @@ object Menus {
         add(MenuItem(t(S.MENU_COPY), GestureAction.COPY_FOCUSED))
         add(MenuItem(t(S.MENU_SPELL), GestureAction.SPELL_FOCUSED))
         add(MenuItem(t(S.MENU_LABEL), GestureAction.LABEL_FOCUSED))
-        if (!isImage) {
+        if (!imageLike) {
             add(MenuItem(t(S.MENU_DESCRIBE), GestureAction.DESCRIBE_FOCUSED))
             add(MenuItem(t(S.MENU_OCR_FOCUSED), GestureAction.OCR_FOCUSED))
         }
@@ -133,7 +125,7 @@ object Menus {
 
 /**
  * Trạng thái một trình đơn đang mở, đọc bằng giọng nói và điều khiển bằng cử chỉ (vuốt chuyển mục, chạm hai lần
- * chọn). Bất biến: mỗi thao tác trả về trạng thái mới. Chuyển mục theo vòng tròn như TalkBack.
+ * chọn). Bất biến: mỗi thao tác trả về trạng thái mới. Chuyển mục theo vòng tròn.
  */
 class MenuState private constructor(
     val kind: MenuKind,

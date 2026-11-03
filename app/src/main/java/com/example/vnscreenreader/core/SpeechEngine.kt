@@ -1,27 +1,19 @@
 package com.example.vnscreenreader.core
 
 import android.content.Context
-import android.media.AudioAttributes
 import android.os.Handler
 import android.os.Looper
-import android.speech.tts.TextToSpeech
-import android.speech.tts.UtteranceProgressListener
-import android.util.Log
 import java.util.Locale
-import java.util.UUID
-import java.util.concurrent.atomic.AtomicInteger
 
 /**
- * Bọc TextToSpeech: giọng tiếng Việt, luồng âm thanh dành cho hỗ trợ tiếp cận, ngắt lời tức thì
- * và hàng đợi thông minh. An toàn khi gọi từ nhiều luồng.
+ * Giọng đọc của ứng dụng: ghép một hoặc hai [VoiceEngine] theo [VoiceMode].
  *
- * Khác biệt so với bản cũ:
- * - Văn bản dài được chia nhỏ (TTS từ chối > 4000 ký tự, trước đây người dùng không nghe thấy gì).
- * - Khởi tạo thất bại (hay gặp ngay sau khi khởi động máy) được thử lại với backoff, không câm vĩnh viễn.
- * - `onInit` luôn được xử lý trên luồng chính SAU khi constructor của TextToSpeech trả về: khi lỗi,
- *   TextToSpeech có thể gọi `onInit` đồng bộ ngay trong constructor lúc biến `tts` còn null.
- * - Mọi chuyển trạng thái (ready/pending/closed) nằm dưới một khóa duy nhất → hết race condition
- *   giữa luồng chính (onInit) và luồng nền (speak).
+ * - [VoiceMode.SINGLE]: một công cụ đọc mọi thứ, đúng như bản cũ (không có đường mã mới nào chen vào).
+ * - [VoiceMode.BOTH]: công cụ thứ nhất đọc ngôn ngữ ứng dụng, công cụ thứ hai đọc ngôn ngữ thứ hai (ví dụ tiếng Anh).
+ *   Văn bản trộn được tách đoạn ([LanguageRuns]) và phát LẦN LƯỢT từng đoạn ([RunScheduler]) để hai công cụ không đọc
+ *   chồng lên nhau. Văn bản chỉ một ngôn ngữ thì vẫn đi thẳng một đoạn.
+ *
+ * An toàn khi gọi từ nhiều luồng.
  */
 class SpeechEngine(
     context: Context,
@@ -31,218 +23,209 @@ class SpeechEngine(
 ) {
     private val appContext = context.applicationContext
     private val mainHandler = Handler(Looper.getMainLooper())
+    private val lock = Any()
 
     // Các trường dưới đây chỉ được đọc/ghi khi giữ [lock].
-    private val lock = Any()
-    private var tts: TextToSpeech? = null
-    private var ready = false
-    private var closed = false
-    private var generation = 0 // tăng mỗi lần tạo engine mới / đóng; callback của thế hệ cũ bị bỏ qua
-    private var failures = 0
     private var rate = initialRate
     private var pitch = initialPitch
-    private var pendingText: String? = null
-    private var enginePackage = initialEnginePackage
+    private var primaryPackage = initialEnginePackage
+    private var secondPackage = ""
+    private var mode = VoiceMode.SINGLE
+    private var primary: VoiceEngine? = null
+    private var second: VoiceEngine? = null
+    private var closed = false
+    private val missingBy = HashMap<String, Pair<Boolean, Locale>>()
+    private val scheduler = RunScheduler()
+    private var watchdog: Runnable? = null
 
-    /** Câu gần nhất ở dạng GỐC (chưa lập kế hoạch) để "đọc lại" lập lại đúng các khoảng lặng. */
+    @Volatile private var secondTag = DEFAULT_SECOND_LANGUAGE
+    @Volatile private var splitMode = SplitMode.WORD
+
+    /** Ngôn ngữ công cụ thứ nhất đọc; rỗng = theo ngôn ngữ ứng dụng. */
+    @Volatile private var firstTag = ""
     @Volatile private var lastText: String? = null
 
-    /**
-     * Lập kế hoạch đọc từ chữ gốc: đổi emoji thành tên và xen khoảng lặng giữa các mục. Đặt một lần khi khởi tạo
-     * phiên; mặc định đọc nguyên văn.
-     */
+    /** Lập kế hoạch đọc (emoji, khoảng lặng) cho từng đoạn; áp cho mọi công cụ. */
     @Volatile var planner: (String) -> List<SpeechPart> = { SpeechPlan.single(it) }
-
-    // Đếm theo CÂU (một lần speak gồm nhiều đoạn và khoảng lặng), không theo từng đoạn phát.
-    private val pending = SpeechPendingTracker()
-
-    // Tăng mỗi khi stop(): một lần speak() đang chia nhỏ văn bản dài sẽ dừng xếp hàng các đoạn còn lại.
-    private val stopEpoch = AtomicInteger()
-
-    private val progressListener = object : UtteranceProgressListener() {
-        override fun onStart(utteranceId: String?) = Unit
-
-        override fun onDone(utteranceId: String?) {
-            utteranceId?.let { pending.complete(it) }
+        set(value) {
+            field = value
+            synchronized(lock) { listOfNotNull(primary, second).forEach { it.planner = value } }
         }
 
-        @Deprecated("Deprecated in Java")
-        override fun onError(utteranceId: String?) {
-            utteranceId?.let { pending.complete(it) }
-        }
+    /** Gọi trên luồng chính mỗi khi kiểm tra lại giọng của MỘT công cụ: (thiếu giọng hay không, ngôn ngữ đã kiểm tra). */
+    @Volatile var onVoiceStatus: ((missing: Boolean, locale: Locale) -> Unit)? = null
 
-        override fun onError(utteranceId: String?, errorCode: Int) {
-            utteranceId?.let { pending.complete(it) }
+    /**
+     * Gộp trạng thái giọng của từng công cụ: báo "thiếu" nếu BẤT KỲ công cụ nào đang dùng thiếu giọng. Nếu không gộp,
+     * công cụ này báo đủ giọng sẽ xóa mất cảnh báo thiếu giọng của công cụ kia.
+     */
+    private fun reportVoiceStatus(key: String, missing: Boolean, locale: Locale) {
+        val (anyMissing, shown) = synchronized(lock) {
+            missingBy[key] = missing to locale
+            val firstMissing = missingBy.values.firstOrNull { it.first }
+            (firstMissing != null) to (firstMissing?.second ?: locale)
         }
-
-        override fun onStop(utteranceId: String?, interrupted: Boolean) {
-            utteranceId?.let { pending.complete(it) }
-        }
+        onVoiceStatus?.invoke(anyMissing, shown)
     }
+
+    /** true khi một công cụ đang dùng không có giọng cho ngôn ngữ của nó. */
+    val voiceMissing: Boolean
+        get() = synchronized(lock) { listOfNotNull(primary, second).any { it.voiceMissing } }
 
     init {
-        connect()
+        synchronized(lock) { primary = newEngine(primaryPackage, appLocale = true) }
     }
 
-    /** Tạo (hoặc tạo lại) engine TextToSpeech. Luôn chạy trên luồng chính. */
-    private fun connect() {
-        val gen = synchronized(lock) {
-            if (closed) return
-            ++generation
+    private fun appLocale(): Locale = appContext.resources.configuration.locales[0]
+
+    private fun firstLocale(): Locale = if (firstTag.isBlank()) appLocale() else Locale.forLanguageTag(firstTag)
+
+    private fun newEngine(pkg: String, appLocale: Boolean): VoiceEngine =
+        VoiceEngine(
+            appContext, rate, pitch, pkg,
+            if (appLocale) ({ firstLocale() }) else ({ Locale.forLanguageTag(secondTag) }),
+        ).also {
+            it.planner = planner
+            val key = if (appLocale) "first" else "second"
+            it.onVoiceStatus = { missing, locale -> reportVoiceStatus(key, missing, locale) }
         }
-        // Callback của TextToSpeech có thể chạy đồng bộ khi lỗi → luôn chuyển qua handler để `tts` đã được gán.
-        val listener = TextToSpeech.OnInitListener { status -> mainHandler.post { onInitResult(gen, status) } }
-        val pkg = synchronized(lock) { enginePackage }
-        val engine = if (pkg.isEmpty()) TextToSpeech(appContext, listener) else TextToSpeech(appContext, listener, pkg)
-        val stale = synchronized(lock) {
-            if (closed || gen != generation) {
-                true
+
+    /**
+     * Áp chế độ công cụ. Gọi được từ luồng bất kỳ; đổi chế độ tạo hoặc đóng kết nối ngay, không cần khởi động lại dịch vụ.
+     * @param secondPackage gói công cụ thứ hai (rỗng = mặc định hệ thống).
+     * @param secondLanguageTag ngôn ngữ công cụ thứ hai, dạng BCP 47 ("en", "zh"...).
+     * @param split cách chia văn bản giữa hai công cụ (chỉ dùng ở [VoiceMode.BOTH]).
+     * @param firstLanguageTag ngôn ngữ công cụ thứ nhất đọc (rỗng = ngôn ngữ ứng dụng).
+     */
+    fun configure(
+        newMode: VoiceMode,
+        secondPackage: String,
+        secondLanguageTag: String,
+        split: SplitMode = SplitMode.WORD,
+        firstLanguageTag: String = "",
+    ) {
+        val toShutdown = ArrayList<VoiceEngine>()
+        var languageChanged = false
+        synchronized(lock) {
+            if (closed) return
+            languageChanged = secondLanguageTag != secondTag
+            splitMode = split
+            val firstChanged = firstLanguageTag != firstTag
+            firstTag = firstLanguageTag
+            if (firstChanged) primary?.updateLanguage()
+            secondTag = secondLanguageTag.ifBlank { DEFAULT_SECOND_LANGUAGE }
+            val needSecond = newMode == VoiceMode.BOTH
+            if (primary == null) primary = newEngine(primaryPackage, appLocale = true)
+            if (needSecond) {
+                val current = second
+                if (current == null) {
+                    second = newEngine(secondPackage, appLocale = false)
+                } else {
+                    if (secondPackage != this.secondPackage) current.changeEngine(secondPackage)
+                    if (languageChanged) current.updateLanguage()
+                }
             } else {
-                tts = engine
-                false
+                second?.let { toShutdown += it; second = null; missingBy.remove("second") }
+            }
+            this.secondPackage = secondPackage
+            if (newMode != mode) {
+                mode = newMode
+                scheduler.clear()
+                cancelWatchdog()
             }
         }
-        if (stale) engine.shutdown()
+        toShutdown.forEach { it.stop(); it.shutdown() }
     }
 
-    private fun onInitResult(gen: Int, status: Int) {
-        val engine = synchronized(lock) {
-            if (closed || gen != generation) return
-            tts ?: return
+    /**
+     * interrupt = true: ngắt câu đang đọc ngay. false: xếp hàng (bị bỏ nếu hàng đã đầy). Xem [VoiceEngine.speak].
+     */
+    fun speak(rawText: String, interrupt: Boolean = true) {
+        if (rawText.isBlank()) return
+        lastText = rawText
+        val direct: VoiceEngine?
+        synchronized(lock) {
+            if (closed) return
+            direct = when (mode) {
+                VoiceMode.SINGLE -> primary
+                VoiceMode.BOTH -> null
+            }
         }
-        if (status != TextToSpeech.SUCCESS) {
-            onInitFailed(engine, status)
+        if (direct != null) {
+            direct.speak(rawText, interrupt)
             return
         }
-        configure(engine)
-        val queued = synchronized(lock) {
-            if (closed || gen != generation) return
-            ready = true
-            failures = 0
-            pendingText.also { pendingText = null }
-        }
-        if (queued != null) speak(queued, interrupt = true)
-    }
-
-    private fun onInitFailed(engine: TextToSpeech, status: Int) {
-        Log.e(TAG, "Không khởi tạo được TextToSpeech, status=$status")
-        val retryDelayMs = synchronized(lock) {
-            tts = null
-            failures++
-            SpeechRetryPolicy.delayMs(failures)
-        }
-        engine.shutdown()
-        if (retryDelayMs != null) {
-            mainHandler.postDelayed({ connect() }, retryDelayMs)
-        } else {
-            Log.e(TAG, "Bỏ cuộc sau ${SpeechRetryPolicy.MAX_RETRIES} lần thử lại khởi tạo TextToSpeech")
+        val runs = LanguageRuns.split(rawText, firstLocale().toLanguageTag(), secondTag, splitMode)
+        synchronized(lock) {
+            if (closed) return
+            if (interrupt) {
+                // Hai công cụ không chia sẻ hàng đợi: phải dừng cả hai, nếu không công cụ kia còn đọc chồng lên.
+                primary?.stop()
+                second?.stop()
+            }
+            if (!scheduler.submit(runs, interrupt)) return
+            pumpLocked()
         }
     }
 
-    private fun configure(engine: TextToSpeech) {
-        engine.setAudioAttributes(
-            AudioAttributes.Builder()
-                .setUsage(AudioAttributes.USAGE_ASSISTANCE_ACCESSIBILITY)
-                .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
-                .build(),
-        )
-        applyLanguage(engine)
-        engine.setOnUtteranceProgressListener(progressListener)
-        val (currentRate, currentPitch) = synchronized(lock) { rate to pitch }
-        engine.setSpeechRate(currentRate)
-        engine.setPitch(currentPitch)
+    /** Phát đoạn kế tiếp nếu rảnh. Gọi khi đang giữ [lock]. */
+    private fun pumpLocked() {
+        while (true) {
+            val (run, token) = scheduler.next() ?: return
+            val engine = when (run.side) {
+                LanguageRuns.Side.PRIMARY -> primary ?: second
+                LanguageRuns.Side.SECOND -> second ?: primary
+            }
+            val accepted = engine?.speak(run.text, interrupt = true) { onRunFinished(token) } ?: false
+            if (accepted) {
+                armWatchdogLocked(token, run.text.length)
+                return
+            }
+            scheduler.finished(token) // không phát được: sang đoạn kế
+        }
     }
 
-    /** Đọc theo ngôn ngữ hiện hành của ứng dụng (đổi trong Cài đặt hệ thống → Ngôn ngữ ứng dụng). */
-    private fun applyLanguage(engine: TextToSpeech) {
-        // Lấy theo cấu hình tài nguyên của ứng dụng (đã áp dụng "ngôn ngữ theo ứng dụng"), không theo Locale.getDefault().
-        // CÙNG nguồn với chữ giao diện ([com.example.vnscreenreader.i18n.ResourceTexts.language]): giọng và chữ không lệch nhau.
-        val locale: Locale = appContext.resources.configuration.locales[0]
-        val result = engine.setLanguage(locale)
-        if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
-            // Không có giọng cho ngôn ngữ này: giữ giọng hiện có của engine (không im lặng) và ghi log để dễ chẩn đoán.
-            Log.w(TAG, "No TTS voice for $locale (result=$result); keeping the engine's current voice.")
+    private fun onRunFinished(token: Int) {
+        synchronized(lock) {
+            if (closed || !scheduler.finished(token)) return
+            cancelWatchdog()
+            pumpLocked()
         }
+    }
+
+    /**
+     * Phòng khi một công cụ chết giữa chừng và không bao giờ báo "xong": hết thời gian dự kiến thì tự đi tiếp để hàng đợi
+     * không kẹt vĩnh viễn.
+     */
+    private fun armWatchdogLocked(token: Int, chars: Int) {
+        cancelWatchdog()
+        val task = Runnable { onRunFinished(token) }
+        watchdog = task
+        mainHandler.postDelayed(task, WATCHDOG_BASE_MS + chars * WATCHDOG_PER_CHAR_MS)
+    }
+
+    private fun cancelWatchdog() {
+        watchdog?.let { mainHandler.removeCallbacks(it) }
+        watchdog = null
     }
 
     /** Gọi khi người dùng đổi ngôn ngữ ứng dụng lúc dịch vụ đang chạy. */
     fun updateLanguage() {
-        val engine = synchronized(lock) { if (closed || !ready) null else tts } ?: return
-        applyLanguage(engine)
+        val engines = synchronized(lock) { listOfNotNull(primary, second) }
+        engines.forEach { it.updateLanguage() }
     }
 
-    /**
-     * interrupt = true: ngắt câu đang đọc ngay lập tức. false: xếp hàng (tự flush nếu hàng đợi quá dài).
-     * Chưa sẵn sàng: giữ lại câu mới nhất và đọc ngay khi engine khởi tạo xong.
-     */
-    fun speak(rawText: String, interrupt: Boolean = true) {
-        if (rawText.isBlank()) return
-        val parts = SpeechPlan.chunk(planner(rawText), TextToSpeech.getMaxSpeechInputLength())
-        if (parts.isEmpty()) return
-        lastText = rawText
-        val engine = synchronized(lock) {
-            if (closed) return
-            if (!ready) {
-                pendingText = rawText
-                return
-            }
-            tts
-        } ?: return
-
-        val epoch = stopEpoch.get()
-        val messageId = UUID.randomUUID().toString()
-        // Chính sách hàng đợi chỉ quyết định MỘT lần cho cả câu; các đoạn sau luôn nối tiếp để không tự flush chính mình.
-        val mode = SpeechQueuePolicy.modeFor(interrupt, pending.pendingMessages())
-        if (mode == SpeechQueuePolicy.Mode.DROP) return
-        val flush = mode == SpeechQueuePolicy.Mode.FLUSH
-        val currentRate = synchronized(lock) { rate }
-        for ((index, part) in parts.withIndex()) {
-            if (stopEpoch.get() != epoch) return // stop() được gọi giữa chừng: bỏ các phần còn lại
-            enqueue(engine, part, flush && index == 0, messageId, currentRate)
-        }
-    }
-
-    private fun enqueue(engine: TextToSpeech, part: SpeechPart, flush: Boolean, messageId: String, speechRate: Float) {
-        val queueMode = if (flush) {
-            pending.clear()
-            TextToSpeech.QUEUE_FLUSH
-        } else {
-            TextToSpeech.QUEUE_ADD
-        }
-        val id = UUID.randomUUID().toString()
-        pending.register(messageId, id)
-        val result = when (part) {
-            is SpeechPart.Say -> engine.speak(part.text, queueMode, null, id)
-            is SpeechPart.Pause ->
-                engine.playSilentUtterance(SpeechPlan.scaledPause(part.millis, speechRate).toLong(), queueMode, id)
-        }
-        if (result == TextToSpeech.ERROR) {
-            pending.complete(id)
-            Log.w(TAG, "TextToSpeech trả về ERROR khi xếp hàng một đoạn")
-        }
-    }
-
-    /**
-     * Đổi engine TTS (gói rỗng = mặc định hệ thống) và kết nối lại ngay, không cần khởi động lại dịch vụ.
-     * Chạy được từ luồng bất kỳ; việc tạo TextToSpeech luôn diễn ra trên luồng chính.
-     */
+    /** Đổi công cụ TTS thứ nhất (gói rỗng = mặc định hệ thống). Công cụ thứ hai đổi qua [configure]. */
     fun changeEngine(newPackage: String) {
-        val old = synchronized(lock) {
-            if (closed || newPackage == enginePackage) return
-            enginePackage = newPackage
-            ready = false
-            failures = 0
-            generation++ // vô hiệu callback của engine cũ
-            pendingText = null
-            tts.also { tts = null }
+        val engine = synchronized(lock) {
+            if (closed || newPackage == primaryPackage) return
+            primaryPackage = newPackage
+            primary
         }
-        pending.clear()
-        old?.stop()
-        old?.shutdown()
-        mainHandler.post { connect() }
+        engine?.changeEngine(newPackage)
     }
 
-    /** Đọc lại câu gần nhất (để nghe lại điều vừa bỏ lỡ). @return false nếu chưa đọc gì. */
+    /** Đọc lại câu gần nhất. @return false nếu chưa đọc gì. */
     fun repeatLast(): Boolean {
         val text = lastText ?: return false
         speak(text, interrupt = true)
@@ -250,41 +233,37 @@ class SpeechEngine(
     }
 
     fun updateVoice(newRate: Float, newPitch: Float) {
-        val engine = synchronized(lock) {
+        val engines = synchronized(lock) {
             rate = newRate
             pitch = newPitch
-            if (ready) tts else null
+            listOfNotNull(primary, second)
         }
-        engine?.setSpeechRate(newRate)
-        engine?.setPitch(newPitch)
+        engines.forEach { it.updateVoice(newRate, newPitch) }
     }
 
     fun stop() {
-        stopEpoch.incrementAndGet()
-        pending.clear()
-        val engine = synchronized(lock) {
-            pendingText = null // câu đang chờ engine khởi tạo đã cũ, không đọc nữa
-            tts
+        val engines = synchronized(lock) {
+            scheduler.clear()
+            cancelWatchdog()
+            listOfNotNull(primary, second)
         }
-        engine?.stop()
+        engines.forEach { it.stop() }
     }
 
     fun shutdown() {
-        val engine = synchronized(lock) {
+        val engines = synchronized(lock) {
             if (closed) return
             closed = true
-            ready = false
-            generation++
-            pendingText = null
-            tts.also { tts = null }
+            scheduler.clear()
+            cancelWatchdog()
+            listOfNotNull(primary, second).also { primary = null; second = null }
         }
-        mainHandler.removeCallbacksAndMessages(null)
-        pending.clear()
-        engine?.stop()
-        engine?.shutdown()
+        engines.forEach { it.stop(); it.shutdown() }
     }
 
-    private companion object {
-        const val TAG = "SpeechEngine"
+    companion object {
+        const val DEFAULT_SECOND_LANGUAGE = "en"
+        private const val WATCHDOG_BASE_MS = 4000L
+        private const val WATCHDOG_PER_CHAR_MS = 150L
     }
 }

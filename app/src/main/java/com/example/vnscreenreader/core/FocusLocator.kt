@@ -21,6 +21,20 @@ object FocusLocator {
         }
         return best
     }
+
+    /**
+     * Tìm lại phần tử đang chọn theo bộ đệm vết [traces] (mới nhất trước) trong danh sách điểm dừng mới: khớp mạnh theo mã
+     * hoặc nhãn (xem [TraceLocator]). -1 nếu không khớp, khi đó dùng [FocusTracker.virtualCurrent] (khe theo vị trí).
+     */
+    fun relocate(
+        traces: List<FocusTrace>,
+        count: Int,
+        uniqueIdOf: (Int) -> String?,
+        viewIdOf: (Int) -> String?,
+        labelOf: (Int) -> String,
+        boxOf: (Int) -> IntArray,
+        itemIndexOf: (Int) -> Int,
+    ): Int = TraceLocator.locate(traces, count, uniqueIdOf, viewIdOf, labelOf, boxOf, itemIndexOf)
 }
 
 /**

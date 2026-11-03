@@ -17,17 +17,20 @@ class SpeechPendingTracker {
         }
     }
 
-    /** Một đoạn đã xong, bị lỗi hoặc bị dừng. Gọi nhiều lần cho cùng một đoạn là vô hại. */
-    fun complete(utteranceId: String) {
+    /**
+     * Một đoạn đã xong, bị lỗi hoặc bị dừng. Gọi nhiều lần cho cùng một đoạn là vô hại.
+     * @return mã câu nếu đây là đoạn CUỐI của câu (cả câu đã xong); null nếu còn đoạn khác hoặc đoạn không còn theo dõi.
+     */
+    fun complete(utteranceId: String): String? {
         synchronized(lock) {
-            val messageId = messageOf.remove(utteranceId)
-            if (messageId != null) {
-                val left = (remaining[messageId] ?: 1) - 1
-                if (left <= 0) {
-                    remaining.remove(messageId)
-                } else {
-                    remaining[messageId] = left
-                }
+            val messageId = messageOf.remove(utteranceId) ?: return null
+            val left = (remaining[messageId] ?: 1) - 1
+            return if (left <= 0) {
+                remaining.remove(messageId)
+                messageId
+            } else {
+                remaining[messageId] = left
+                null
             }
         }
     }
