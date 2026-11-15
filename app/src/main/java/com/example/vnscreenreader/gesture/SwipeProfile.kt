@@ -4,11 +4,13 @@ import com.example.vnscreenreader.core.S
 import com.example.vnscreenreader.core.t
 
 /**
- * Bộ gán sẵn cho BỐN cú vuốt (lên, xuống, trái, phải) của nhóm hai ngón hoặc ba ngón. Áp một lần rồi vẫn chỉnh riêng
+ * Bộ gán sẵn cho BỐN cú vuốt (lên, xuống, trái, phải) của một nhóm nhiều ngón. Màn hình cài đặt chỉ cho chọn ở nhóm ba ngón
+ * ([GestureAnalyzer.hasProfile]): hai ngón vuốt do Android xử lý nên chỉ còn logic này làm dự phòng. Áp một lần rồi vẫn chỉnh riêng
  * từng cử chỉ được (và gán bất kỳ chức năng nào cho bất kỳ cử chỉ nào ở bảng bên dưới); kết quả lưu như mọi cử chỉ
  * khác (chỉ phần khác mặc định, xem [GestureMapping.serializeOverrides]).
- * [SCROLL_AND_PAGE] đúng bằng mặc định hai ngón và [TEXT_UNITS] đúng bằng mặc định ba ngón, nên không đổi hành vi của
- * ai chưa chọn.
+ * [SCROLL_AND_PAGE] đúng bằng mặc định hai ngón và [READING_CONTROLS] đúng bằng mặc định ba ngón, nên không đổi hành vi của
+ * ai chưa chọn. Từ 2.20.0 mặc định ba ngón là [READING_CONTROLS] (theo bảng cử chỉ chuẩn của Bộ trợ năng Android); [TEXT_UNITS]
+ * là mặc định cũ, vẫn chọn lại được.
  */
 enum class SwipeProfile(
     private val labelKey: S,
@@ -23,7 +25,16 @@ enum class SwipeProfile(
         GestureAction.SCROLL_FORWARD, GestureAction.SCROLL_BACKWARD, GestureAction.PAGE_NEXT, GestureAction.PAGE_PREVIOUS,
     ),
 
-    /** Đọc theo đơn vị (lên/xuống), chuyển trang (trái/phải): mặc định của ba ngón. */
+    /**
+     * Đổi điều khiển đọc (xuống = kế, lên = trước), chuyển trang (trái/phải): mặc định của ba ngón, đúng bảng cử chỉ chuẩn.
+     * Ba ngón vuốt xuống/lên làm đúng việc của "lên-rồi-xuống / xuống-rồi-lên" nhưng dễ bấm hơn.
+     */
+    READING_CONTROLS(
+        S.GS_SWIPE_PROFILE_CONTROLS,
+        GestureAction.PREVIOUS_CONTROL, GestureAction.NEXT_CONTROL, GestureAction.PAGE_NEXT, GestureAction.PAGE_PREVIOUS,
+    ),
+
+    /** Đọc theo đơn vị (lên/xuống), chuyển trang (trái/phải): mặc định của ba ngón trước 2.20.0. */
     TEXT_UNITS(
         S.GS_SWIPE_PROFILE_TEXTUNITS,
         GestureAction.UNIT_PREVIOUS, GestureAction.UNIT_NEXT, GestureAction.PAGE_NEXT, GestureAction.PAGE_PREVIOUS,
@@ -53,8 +64,8 @@ enum class SwipeProfile(
     companion object {
         /** Các bộ cho nhóm [fingers] ngón, bộ mặc định đứng đầu. Nhóm khác 2 và 3: rỗng. */
         fun forFingers(fingers: Int): List<SwipeProfile> = when (fingers) {
-            2 -> listOf(SCROLL_AND_PAGE, QUICK_NAV, FULL_PAGE, TEXT_UNITS)
-            3 -> listOf(TEXT_UNITS, QUICK_NAV, FULL_PAGE, SCROLL_AND_PAGE)
+            2 -> listOf(SCROLL_AND_PAGE, QUICK_NAV, FULL_PAGE, TEXT_UNITS, READING_CONTROLS)
+            3 -> listOf(READING_CONTROLS, TEXT_UNITS, QUICK_NAV, FULL_PAGE, SCROLL_AND_PAGE)
             else -> emptyList()
         }
 

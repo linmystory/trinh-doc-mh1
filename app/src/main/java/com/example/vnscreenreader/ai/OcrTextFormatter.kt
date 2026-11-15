@@ -40,7 +40,7 @@ object OcrTextFormatter {
     }
 
     /** Loại nhiễu: khối rỗng hoặc chỉ một ký tự không phải chữ/số (vết bẩn, đường kẻ bị nhận nhầm). */
-    private fun isMeaningful(text: String): Boolean {
+    internal fun isMeaningful(text: String): Boolean {
         val trimmed = text.trim()
         if (trimmed.isEmpty()) return false
         // Một ký tự: giữ chữ/số và ký hiệu có nghĩa (%, ?, !, tiền tệ...), bỏ dấu gạch/chấm do vết bẩn hoặc đường kẻ.

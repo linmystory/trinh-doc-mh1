@@ -9,9 +9,13 @@ import com.example.vnscreenreader.gesture.GestureMapping
  */
 object MenuGestures {
 
-    /** Các hành động mà trình đơn hiểu (chuyển mục, thực hiện, đóng/lùi). */
+    /**
+     * Các hành động mà trình đơn hiểu (chuyển mục, thực hiện, đóng/lùi). Vuốt một ngón xuống/lên ("tiến/lùi theo điều khiển
+     * đọc") trong trình đơn chuyển mục y như vuốt phải/trái.
+     */
     val HANDLED: Set<GestureAction> = setOf(
         GestureAction.NEXT_ELEMENT, GestureAction.PREVIOUS_ELEMENT, GestureAction.ACTIVATE, GestureAction.BACK,
+        GestureAction.NEXT_BY_CONTROL, GestureAction.PREVIOUS_BY_CONTROL,
         GestureAction.STOP_SPEECH, GestureAction.OPEN_GLOBAL_MENU, GestureAction.OPEN_LOCAL_MENU,
     )
 
@@ -19,6 +23,13 @@ object MenuGestures {
     private val NAVIGATION: Set<GestureAction> = setOf(
         GestureAction.NEXT_ELEMENT, GestureAction.PREVIOUS_ELEMENT, GestureAction.ACTIVATE, GestureAction.BACK,
     )
+
+    /**
+     * Chỉ tính cử chỉ CẢM ỨNG: phím âm lượng và nút tai nghe cũng gán được "phần tử kế", nhưng người dùng vẫn cần ít nhất
+     * một cử chỉ trên màn hình để không bị kẹt khi không có phím.
+     */
+    private fun touchGesturesFor(mapping: GestureMapping, action: GestureAction): List<Gesture> =
+        mapping.gesturesFor(action).filter { it.fingers > 0 }
 
     /**
      * Hành động hiệu lực của [gesture] trong trình đơn. Nếu người dùng đã bỏ gán hết một hành động điều khiển
@@ -29,7 +40,7 @@ object MenuGestures {
         val chosen = mapping.actionFor(gesture)
         if (chosen in HANDLED) return chosen
         val fallback = GestureMapping.defaults()[gesture]
-        if (fallback in NAVIGATION && mapping.gesturesFor(fallback!!).isEmpty()) return fallback
+        if (fallback != null && fallback in NAVIGATION && touchGesturesFor(mapping, fallback).isEmpty()) return fallback
         return chosen
     }
 
@@ -45,6 +56,6 @@ object MenuGestures {
     fun essentialLost(mapping: GestureMapping, gesture: Gesture, newAction: GestureAction): GestureAction? {
         val old = mapping.actionFor(gesture)
         if (old == newAction || old !in ESSENTIAL) return null
-        return if (mapping.gesturesFor(old).all { it == gesture }) old else null
+        return if (touchGesturesFor(mapping, old).all { it == gesture }) old else null
     }
 }

@@ -18,4 +18,18 @@ object AccessibilityStatus {
                     service.name == ScreenReaderService::class.java.name
             }
     }
+
+    private val OTHER_READER_PACKAGES = setOf(
+        "com.google.android.marvin.talkback",
+        "com.samsung.android.accessibility.talkback",
+        "com.android.talkback",
+    )
+
+    /** Một trình đọc màn hình khác của hệ thống đang bật cùng lúc: hai trình đọc màn hình dễ xung đột giọng và cử chỉ. */
+    fun isOtherReaderEnabled(context: Context): Boolean {
+        val manager = context.getSystemService(AccessibilityManager::class.java) ?: return false
+        return manager
+            .getEnabledAccessibilityServiceList(AccessibilityServiceInfo.FEEDBACK_SPOKEN)
+            .any { it.resolveInfo.serviceInfo.packageName in OTHER_READER_PACKAGES }
+    }
 }

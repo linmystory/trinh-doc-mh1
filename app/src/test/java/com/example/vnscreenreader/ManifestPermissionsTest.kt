@@ -35,7 +35,7 @@ class ManifestPermissionsTest {
         val removed = declared.findAll(text!!).map { it.value }.filter { it.contains("tools:node=\"remove\"") }.toList()
         assertTrue(removed.any { it.contains("android.permission.INTERNET") })
         assertTrue(removed.any { it.contains("android.permission.ACCESS_NETWORK_STATE") })
-        for (forbidden in listOf("QUERY_ALL_PACKAGES", "READ_EXTERNAL_STORAGE", "CALL_PHONE", "ACCESS_FINE_LOCATION", "READ_CONTACTS")) {
+        for (forbidden in listOf("QUERY_ALL_PACKAGES", "READ_EXTERNAL_STORAGE", "CALL_PHONE", "ANSWER_PHONE_CALLS", "WRITE_CONTACTS", "WRITE_CALL_LOG", "RECORD_AUDIO", "CAMERA", "ACCESS_BACKGROUND_LOCATION")) {
             val active = declared.findAll(text).map { it.value }.filter { !it.contains("tools:node=\"remove\"") }
             assertFalse("$forbidden không được khai báo khi chưa có tính năng cần nó", active.any { it.contains(forbidden) })
         }

@@ -43,7 +43,8 @@ class GestureAnalyzerTest {
         Gesture.entries.forEach { assertEquals(it.name, it.name.contains("_THEN_"), it.isTwoStep) }
         assertEquals(12, Gesture.entries.count { it.isTwoStep })
         assertEquals(18, Gesture.entries.count { it.fingers == 1 })
-        assertEquals(45, Gesture.entries.size)
+        assertEquals(8, Gesture.entries.count { it.fingers == 0 }) // phím âm lượng + nút tai nghe
+        assertEquals(53, Gesture.entries.size)
         assertEquals(GestureAction.LONG_CLICK_FOCUSED, GestureMapping().actionFor(Gesture.DOUBLE_TAP_AND_HOLD))
     }
 
@@ -61,14 +62,16 @@ class GestureMappingTest {
         assertEquals(Gesture.entries.toSet(), mapping.toMap().keys)
         assertEquals(GestureAction.OPEN_GLOBAL_MENU, mapping.actionFor(Gesture.DOWN_THEN_RIGHT))
         assertEquals(GestureAction.OPEN_LOCAL_MENU, mapping.actionFor(Gesture.UP_THEN_RIGHT))
-        assertEquals(GestureAction.HOME, mapping.actionFor(Gesture.DOWN_THEN_LEFT))
-        assertEquals(GestureAction.BACK, mapping.actionFor(Gesture.UP_THEN_LEFT))
+        // Bảng cử chỉ chuẩn của Bộ trợ năng Android (từ 2.20.0): lên-rồi-trái = Màn hình chính, xuống-rồi-trái = Quay lại.
+        assertEquals(GestureAction.HOME, mapping.actionFor(Gesture.UP_THEN_LEFT))
+        assertEquals(GestureAction.BACK, mapping.actionFor(Gesture.DOWN_THEN_LEFT))
+        assertEquals(GestureAction.RECENTS, mapping.actionFor(Gesture.LEFT_THEN_UP))
+        assertEquals(GestureAction.NOTIFICATIONS, mapping.actionFor(Gesture.RIGHT_THEN_DOWN))
+        assertEquals(GestureAction.SEARCH_SCREEN, mapping.actionFor(Gesture.LEFT_THEN_DOWN))
         assertEquals(GestureAction.NEXT_ELEMENT, mapping.actionFor(Gesture.SWIPE_RIGHT))
-        // Không gán cử chỉ hai bước bắt đầu bằng trái/phải: dễ bị nhận nhầm từ cú vuốt trái/phải hơi cong.
-        listOf(
-            Gesture.RIGHT_THEN_DOWN, Gesture.LEFT_THEN_DOWN, Gesture.RIGHT_THEN_UP, Gesture.LEFT_THEN_UP,
-            Gesture.RIGHT_THEN_LEFT, Gesture.LEFT_THEN_RIGHT,
-        ).forEach { assertEquals(it.name, GestureAction.NONE, mapping.actionFor(it)) }
+        // Còn để trống: phải-rồi-lên (lệnh giọng nói, ứng dụng chưa có) và hai cử chỉ đi-rồi-quay-lại ngang.
+        listOf(Gesture.RIGHT_THEN_UP, Gesture.RIGHT_THEN_LEFT, Gesture.LEFT_THEN_RIGHT)
+            .forEach { assertEquals(it.name, GestureAction.NONE, mapping.actionFor(it)) }
         assertEquals(GestureAction.PAGE_NEXT, mapping.actionFor(Gesture.TWO_FINGER_SWIPE_LEFT))
         assertEquals(GestureAction.PAGE_PREVIOUS, mapping.actionFor(Gesture.TWO_FINGER_SWIPE_RIGHT))
         assertEquals(GestureAction.PAGE_NEXT, mapping.actionFor(Gesture.THREE_FINGER_SWIPE_LEFT))
@@ -80,7 +83,7 @@ class GestureMappingTest {
         val original = GestureMapping()
         val changed = original.with(Gesture.SWIPE_UP, GestureAction.HOME)
         assertEquals(GestureAction.HOME, changed.actionFor(Gesture.SWIPE_UP))
-        assertEquals(GestureAction.SCROLL_FORWARD, original.actionFor(Gesture.SWIPE_UP))
+        assertEquals(GestureAction.PREVIOUS_BY_CONTROL, original.actionFor(Gesture.SWIPE_UP))
     }
 
     @Test
@@ -101,7 +104,7 @@ class GestureMappingTest {
     fun parse_ignoresGarbageAndUnknownNames() {
         val parsed = GestureMapping.parse("SWIPE_UP=HOME;BOGUS=BACK;SWIPE_DOWN=NOT_AN_ACTION;;x;a=b=c")
         assertEquals(GestureAction.HOME, parsed.actionFor(Gesture.SWIPE_UP))
-        assertEquals(GestureAction.SCROLL_BACKWARD, parsed.actionFor(Gesture.SWIPE_DOWN))
+        assertEquals(GestureAction.NEXT_BY_CONTROL, parsed.actionFor(Gesture.SWIPE_DOWN))
     }
 }
 
@@ -126,9 +129,14 @@ class MultiFingerGestureTest {
     fun everyMultiFingerGesture_hasADefaultExceptRarelyUsed() {
         val mapping = GestureMapping()
         assertEquals(GestureAction.OPEN_GLOBAL_MENU, mapping.actionFor(Gesture.THREE_FINGER_TAP))
-        assertEquals(GestureAction.UNIT_PREVIOUS, mapping.actionFor(Gesture.THREE_FINGER_SWIPE_UP))
-        assertEquals(GestureAction.READ_FROM_TOP, mapping.actionFor(Gesture.THREE_FINGER_TRIPLE_TAP))
-        assertEquals(GestureAction.CYCLE_GRANULARITY, mapping.actionFor(Gesture.TWO_FINGER_TRIPLE_TAP))
+        assertEquals(GestureAction.COPY_FOCUSED, mapping.actionFor(Gesture.THREE_FINGER_DOUBLE_TAP))
+        assertEquals(GestureAction.PASTE_FOCUSED, mapping.actionFor(Gesture.THREE_FINGER_TRIPLE_TAP))
+        assertEquals(GestureAction.CUT_FOCUSED, mapping.actionFor(Gesture.THREE_FINGER_DOUBLE_TAP_AND_HOLD))
+        assertEquals(GestureAction.PREVIOUS_CONTROL, mapping.actionFor(Gesture.THREE_FINGER_SWIPE_UP))
+        assertEquals(GestureAction.NEXT_CONTROL, mapping.actionFor(Gesture.THREE_FINGER_SWIPE_DOWN))
+        assertEquals(GestureAction.STOP_SPEECH, mapping.actionFor(Gesture.TWO_FINGER_TAP))
+        assertEquals(GestureAction.MEDIA_PLAY_PAUSE, mapping.actionFor(Gesture.TWO_FINGER_DOUBLE_TAP))
+        assertEquals(GestureAction.READ_FROM_CURRENT, mapping.actionFor(Gesture.TWO_FINGER_TRIPLE_TAP))
     }
 
     @Test

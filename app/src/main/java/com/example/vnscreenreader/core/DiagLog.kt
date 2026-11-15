@@ -16,6 +16,19 @@ object DiagFormat {
         val body = if (clean.length > MAX_LINE) clean.take(MAX_LINE) + "…" else clean
         return "$time $tag $body"
     }
+
+    /**
+     * Giữ tối đa [maxChars] ký tự CUỐI của [text] và bỏ dòng bị cắt dở ở đầu (chỉ khi phía sau còn dòng đầy đủ).
+     * Dùng khi chép nhật ký qua clipboard vì clipboard đi qua Binder nên có giới hạn dung lượng.
+     */
+    fun tail(text: String, maxChars: Int): String {
+        if (text.length <= maxChars) return text
+        val kept = text.takeLast(maxChars.coerceAtLeast(0))
+        val start = text.length - kept.length
+        if (start > 0 && text[start - 1] == '\n') return kept // điểm cắt trùng ranh giới dòng: không có dòng nào bị cụt
+        val firstBreak = kept.indexOf('\n')
+        return if (firstBreak in 0 until kept.length - 1) kept.substring(firstBreak + 1) else kept
+    }
 }
 
 /**
@@ -79,7 +92,31 @@ object Diag {
         executor.execute { runCatching { s.append(line) } }
     }
 
-    fun text(): String = sink?.readAll().orEmpty()
-    fun lineCount(): Int = sink?.lineCount() ?: 0
-    fun clear() { sink?.clear() }
+    /**
+     * Toàn bộ nhật ký, hoặc [maxChars] ký tự CUỐI (cắt ở ranh giới dòng) khi cần chép qua clipboard: clipboard đi qua
+     * Binder nên có giới hạn dung lượng. Lỗi đọc tệp trả chuỗi rỗng, không ném ra giao diện.
+     */
+    fun text(maxChars: Int = Int.MAX_VALUE): String = try {
+        DiagFormat.tail(sink?.readAll().orEmpty(), maxChars)
+    } catch (e: java.io.IOException) {
+        ""
+    } catch (e: RuntimeException) {
+        ""
+    }
+
+    fun lineCount(): Int = try {
+        sink?.lineCount() ?: 0
+    } catch (e: java.io.IOException) {
+        0
+    } catch (e: RuntimeException) {
+        0
+    }
+
+    fun clear() {
+        try {
+            sink?.clear()
+        } catch (e: RuntimeException) {
+            // Xóa không được thì thôi: tệp vẫn bị giới hạn dung lượng nên không phình vô hạn.
+        }
+    }
 }

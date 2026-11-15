@@ -120,9 +120,11 @@ fun LabeledSlider(
     steps: Int,
     onValueChange: (Float) -> Unit,
     onValueChangeFinished: () -> Unit,
+    valueText: ((Float) -> String)? = null,
 ) {
     // LocalLocale.current là state quan sát được (Locale.getDefault() bị lint NonObservableLocale chặn).
-    val display = String.format(LocalLocale.current.platformLocale, "%.1f", value)
+    val locale = LocalLocale.current.platformLocale
+    val display = valueText?.invoke(value) ?: String.format(locale, "%.1f", value)
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Text(text = "$title: $display", fontSize = 22.sp, color = Color.White)
         Slider(

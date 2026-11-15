@@ -59,6 +59,7 @@ object Menus {
         MenuItem(t(S.MSG_RECENTS), GestureAction.RECENTS),
         MenuItem(t(S.GA_CYCLE_FEEDBACK), GestureAction.CYCLE_FEEDBACK),
         MenuItem(t(S.GA_SPEAK_STATUS), GestureAction.SPEAK_STATUS),
+        MenuItem(t(S.GA_MEDIA_PLAY_PAUSE), GestureAction.MEDIA_PLAY_PAUSE),
         MenuItem(t(S.GA_RUN_PLUGINS), GestureAction.RUN_PLUGINS),
         MenuItem(t(S.GA_NEXT_HEADING), GestureAction.NEXT_HEADING),
         MenuItem(t(S.GA_PREV_HEADING), GestureAction.PREVIOUS_HEADING),
@@ -67,6 +68,7 @@ object Menus {
         MenuItem(t(S.GA_SCROLL_TOP), GestureAction.SCROLL_TO_TOP),
         MenuItem(t(S.GA_SCROLL_BOTTOM), GestureAction.SCROLL_TO_BOTTOM),
         MenuItem(t(S.MENU_DETAILED_FOCUS), GestureAction.TOGGLE_DETAILED_FOCUS),
+        MenuItem(t(S.GA_SAY_LOCATION), GestureAction.SAY_LOCATION),
         MenuItem(t(S.GA_OPEN_SETTINGS), GestureAction.OPEN_SETTINGS),
         back(),
     )
@@ -108,6 +110,8 @@ object Menus {
         MenuItem(t(S.GA_CURSOR_END), GestureAction.CURSOR_END),
         MenuItem(t(S.GA_SELECT_TO_START), GestureAction.SELECT_TO_START),
         MenuItem(t(S.GA_SELECT_TO_END), GestureAction.SELECT_TO_END),
+        MenuItem(t(S.GA_CLEAR_FIELD), GestureAction.CLEAR_FIELD),
+        MenuItem(t(S.GA_RESTORE_CLEARED), GestureAction.RESTORE_CLEARED),
         back(),
     )
 

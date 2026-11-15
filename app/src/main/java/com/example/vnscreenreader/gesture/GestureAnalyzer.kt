@@ -11,7 +11,10 @@ enum class SwipeDirection { UP, DOWN, LEFT, RIGHT }
  */
 object GestureAnalyzer {
 
-    /** Các nhóm số ngón cho phép người dùng chọn bộ gán sẵn (hai và ba ngón). */
+    /**
+     * Các nhóm số ngón có bộ gán sẵn về mặt logic (hai và ba ngón). Màn hình cài đặt chỉ dùng nhóm mà dịch vụ thật sự nhận được
+     * cử chỉ vuốt: xem [hasProfile] (hai ngón vuốt do Android xử lý, không có gì để gán).
+     */
     val PROFILE_FINGER_GROUPS: List<Int> = listOf(2, 3)
 
     private val SWIPES: Map<Int, Map<SwipeDirection, Gesture>> = mapOf(
@@ -42,6 +45,9 @@ object GestureAnalyzer {
 
     /** Bốn cú vuốt của nhóm [fingers] ngón theo thứ tự lên, xuống, trái, phải; rỗng nếu không có. */
     fun swipes(fingers: Int): List<Gesture> = SwipeDirection.entries.mapNotNull { swipe(fingers, it) }
+
+    /** Nhóm [fingers] ngón có cho người dùng chọn bộ gán sẵn không: thuộc [PROFILE_FINGER_GROUPS] và dịch vụ nhận được bốn cú vuốt. */
+    fun hasProfile(fingers: Int): Boolean = fingers in PROFILE_FINGER_GROUPS && swipes(fingers).none { it.passedToSystem }
 
     /** Cú vuốt nhiều ngón (hai hoặc ba ngón). */
     fun isMultiFingerSwipe(gesture: Gesture): Boolean = gesture.fingers in PROFILE_FINGER_GROUPS && swipeDirection(gesture) != null

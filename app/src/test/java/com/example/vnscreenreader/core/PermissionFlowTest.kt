@@ -74,8 +74,24 @@ class PermissionFlowTest {
     }
 
     @Test
-    fun noFeatureNeedsPermissionYet() {
-        // Hiện chưa có tính năng nào cần quyền: danh sách rỗng và manifest không khai báo quyền nhạy cảm.
-        assertTrue(PermissionFeatures.all.isEmpty())
+    fun everyFeatureHasUniqueIdPermissionsAndReadableTexts() {
+        val all = PermissionFeatures.all
+        assertEquals(all.size, all.map { it.id }.toSet().size)
+        assertTrue(all.size >= 3)
+        for (feature in all) {
+            assertTrue(feature.id, feature.permissions.isNotEmpty())
+            assertTrue(feature.id, t(feature.name).isNotBlank())
+            assertTrue(feature.id, t(feature.rationale).isNotBlank())
+        }
+    }
+
+    @Test
+    fun sensitivePermissionsAreOnlyAskedForTheirOwnFeature() {
+        val byPermission = PermissionFeatures.all.flatMap { f -> f.permissions.map { it to f.id } }.toMap()
+        assertEquals("caller", byPermission["android.permission.READ_CALL_LOG"])
+        assertEquals("caller", byPermission["android.permission.READ_PHONE_STATE"])
+        assertEquals("contacts", byPermission["android.permission.READ_CONTACTS"])
+        assertEquals("location", byPermission["android.permission.ACCESS_FINE_LOCATION"])
+        assertFalse(byPermission.containsKey("android.permission.CALL_PHONE"))
     }
 }

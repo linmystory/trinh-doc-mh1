@@ -42,8 +42,6 @@ object TextUnits {
     /** Từng "ký tự người dùng thấy": gộp dấu thanh rời, emoji màu da/ZWJ, cờ, cặp surrogate (xem [Graphemes]). */
     private fun characters(text: String): List<IntRange> = Graphemes.clusters(text)
 
-    private val WORD_RUN = Regex("\\S+")
-
     /** Các hệ chữ không dùng khoảng trắng giữa các từ: một "từ" tách bằng khoảng trắng sẽ là cả cụm dài. */
     private val UNSPACED_SCRIPTS = setOf(
         Character.UnicodeScript.HAN, Character.UnicodeScript.HIRAGANA, Character.UnicodeScript.KATAKANA,
@@ -57,8 +55,16 @@ object TextUnits {
      */
     private fun words(text: String): List<IntRange> {
         val out = ArrayList<IntRange>()
-        for (match in WORD_RUN.findAll(text)) {
-            val run = match.range
+        var i = 0
+        while (i < text.length) {
+            // Khoảng trắng theo Unicode (gồm dấu cách không ngắt U+00A0, U+202F, U+3000...), không chỉ khoảng trắng ASCII như
+            // regex `\S`: trang web hay chèn &nbsp; giữa các từ, nếu không "Hà&nbsp;Nội" thành một từ và "&nbsp;" đứng một mình
+            // thành một "từ" rỗng khi duyệt.
+            while (i < text.length && text[i].isWhitespace()) i++
+            if (i >= text.length) break
+            val start = i
+            while (i < text.length && !text[i].isWhitespace()) i++
+            val run = start until i
             if (hasUnspacedScript(text, run)) out += splitUnspaced(text, run) else out += run
         }
         return out
@@ -205,12 +211,34 @@ class TextCursor(var granularity: TextGranularity = TextGranularity.SENTENCE) {
         index = -1
     }
 
-    fun cycle(): TextGranularity {
+    fun cycle(): TextGranularity = select(granularity.next())
+
+    /**
+     * Đổi sang đơn vị [target] và giữ nguyên chỗ đang đứng (chọn đơn vị chứa ký tự hiện tại). Chọn lại đúng đơn vị đang dùng
+     * thì không làm gì cả, nên gọi nhiều lần vẫn an toàn.
+     */
+    fun select(target: TextGranularity): TextGranularity {
+        if (target == granularity) return granularity
         val anchor = ranges.getOrNull(index)?.first
-        granularity = granularity.next()
+        granularity = target
         ranges = TextUnits.ranges(text, granularity)
         index = if (anchor == null) -1 else ranges.indexOfLast { it.first <= anchor }
         return granularity
+    }
+
+    /** Quên văn bản và vị trí đang gắn: lần [bind] kế tiếp luôn bắt đầu lại, kể cả khi chữ giống hệt phần tử trước. */
+    fun reset() {
+        text = ""
+        ranges = emptyList()
+        index = -1
+    }
+
+    /**
+     * Đặt con trỏ SAU đơn vị cuối cùng: lần [move] lùi kế tiếp đọc đơn vị cuối, lần tiến kế tiếp báo hết chữ. Dùng khi vừa lùi
+     * sang phần tử trước, để vuốt tiếp đi ngược qua từng đơn vị của phần tử đó thay vì nhảy qua cả phần tử.
+     */
+    fun parkAtEnd() {
+        index = ranges.size
     }
 
     fun move(forward: Boolean): UnitMove {
@@ -222,8 +250,11 @@ class TextCursor(var granularity: TextGranularity = TextGranularity.SENTENCE) {
         return UnitMove.At(slice(ranges[index]))
     }
 
-    /** Đơn vị đang chọn; null nếu chưa di chuyển. */
+    /** Đơn vị đang chọn; null nếu chưa di chuyển (hoặc đang đặt sau đơn vị cuối, xem [parkAtEnd]). */
     fun current(): String? = ranges.getOrNull(index)?.let { slice(it) }
+
+    /** Văn bản đang gắn không có đơn vị nào để đọc (rỗng hoặc toàn khoảng trắng). */
+    val isEmpty: Boolean get() = ranges.isEmpty()
 
     private fun slice(r: IntRange) = text.substring(r.first, r.last + 1)
 }

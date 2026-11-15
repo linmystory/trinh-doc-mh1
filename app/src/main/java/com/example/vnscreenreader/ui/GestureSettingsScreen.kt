@@ -38,8 +38,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.vnscreenreader.gesture.Gesture
 import com.example.vnscreenreader.gesture.GestureAction
-import com.example.vnscreenreader.gesture.GestureMapping
 import com.example.vnscreenreader.gesture.GestureMappingStore
+import com.example.vnscreenreader.gesture.GestureSource
 import com.example.vnscreenreader.gesture.GestureAnalyzer
 import com.example.vnscreenreader.gesture.SwipeProfile
 import com.example.vnscreenreader.gesture.withSwipeProfile
@@ -51,9 +51,10 @@ import androidx.compose.foundation.rememberScrollState
 import com.example.vnscreenreader.menu.MenuGestures
 
 @Composable
-fun GestureSettingsScreen() {
+fun GestureSettingsScreen(source: GestureSource? = null, heading: String? = null) {
     val context = LocalContext.current
-    val store = remember { GestureMappingStore(context) }
+    // Mặc định: bản đồ chung. Màn hình "Cử chỉ theo ứng dụng" truyền nguồn riêng của một ứng dụng.
+    val store: GestureSource = remember(source) { source ?: GestureMappingStore(context) }
     var mapping by remember { mutableStateOf(store.load()) }
     // Đổi cử chỉ làm mất hết cử chỉ của một hành động thiết yếu: hỏi lại trước khi áp dụng.
     var pendingChange by remember { mutableStateOf<Triple<Gesture, GestureAction, GestureAction>?>(null) }
@@ -63,17 +64,30 @@ fun GestureSettingsScreen() {
         contentPadding = PaddingValues(20.dp),
         verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
-        Gesture.entries.groupBy { it.fingers }.forEach { (fingers, gestures) ->
+        if (heading != null) {
+            item { Text(heading, color = HighContrastGreen, fontSize = 22.sp) }
+        }
+        // Hai ngón vuốt do Android xử lý (Gesture.passedToSystem): dịch vụ không nhận được nên không liệt kê để gán.
+        Gesture.entries.filterNot { it.passedToSystem }.groupBy { it.fingers }.forEach { (fingers, gestures) ->
             item(key = "heading_$fingers") {
                 Text(
-                    text = if (fingers == 1) stringResource(R.string.gs_one_finger) else pluralStringResource(R.plurals.gs_n_fingers, fingers, fingers),
+                    text = when (fingers) {
+                        0 -> stringResource(R.string.gs_keys)
+                        1 -> stringResource(R.string.gs_one_finger)
+                        else -> pluralStringResource(R.plurals.gs_n_fingers, fingers, fingers)
+                    },
                     color = HighContrastGreen,
                     fontSize = 22.sp,
                     modifier = Modifier.semantics { heading() },
                 )
             }
-            // Hai và ba ngón: chọn nhanh một bộ gán sẵn cho cả bốn hướng; từng cử chỉ vẫn chỉnh riêng được ở dưới.
-            if (fingers in GestureAnalyzer.PROFILE_FINGER_GROUPS) {
+            if (fingers == 2) {
+                item(key = "note_$fingers") {
+                    Text(stringResource(R.string.gs_f2_system_note), color = Color.White, fontSize = 18.sp)
+                }
+            }
+            // Ba ngón: chọn nhanh một bộ gán sẵn cho cả bốn hướng; từng cử chỉ vẫn chỉnh riêng được ở dưới.
+            if (GestureAnalyzer.hasProfile(fingers)) {
                 item(key = "profile_$fingers") {
                     val profiles = SwipeProfile.forFingers(fingers)
                     val current = SwipeProfile.detect(mapping, fingers)
@@ -110,7 +124,7 @@ fun GestureSettingsScreen() {
             Button(
                 onClick = {
                     store.reset()
-                    mapping = GestureMapping()
+                    mapping = store.load()
                 },
                 modifier = Modifier.fillMaxWidth().heightIn(min = 72.dp),
                 colors = ButtonDefaults.buttonColors(

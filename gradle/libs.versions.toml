@@ -1,6 +1,6 @@
-# Version catalog: nguồn duy nhất cho phiên bản phụ thuộc/plugin (cập nhật 10/2026).
+# Version catalog: nguồn duy nhất cho phiên bản phụ thuộc/plugin (cập nhật 11/2026).
 [versions]
-agp = "9.4.0"                 # AGP 9.x: Kotlin tích hợp sẵn (built-in Kotlin), cần Gradle >= 9.6
+agp = "9.5.0"                 # AGP 9.x: Kotlin tích hợp sẵn (built-in Kotlin); 9.5 cần Gradle >= 9.6, JDK >= 17, compileSdk tối đa 37
 kotlin = "2.4.21"             # dùng cho Compose compiler plugin; KGP được AGP kéo theo
 composeBom = "2026.09.00"
 coreKtx = "1.19.1"

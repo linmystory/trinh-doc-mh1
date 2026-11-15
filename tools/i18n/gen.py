@@ -5,8 +5,12 @@ from table_a import A
 from table_b import B
 from table_c import C
 from table_d import D
+from table_e import E
+from table_f import F
+from table_g import G
+from table_h import H
 from table_plurals import PLURALS, QUANTITIES
-ALL_ROWS = A + B + C + D
+ALL_ROWS = A + B + C + D + E + F + G + H
 # Chuỗi có số đếm xuất ra <plurals>, không phải <string>; vẫn có khóa S như mọi chuỗi khác.
 ROWS = [r for r in ALL_ROWS if r[0] not in PLURALS]
 PLURAL_KEYS = [r[0] for r in ALL_ROWS if r[0] in PLURALS]

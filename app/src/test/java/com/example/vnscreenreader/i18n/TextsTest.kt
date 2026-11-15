@@ -125,4 +125,32 @@ class TextsTest {
             }
         }
     }
+
+    /** Provider luôn ném lỗi: mô phỏng thiếu tài nguyên hoặc sai kiểu tham số. */
+    private object Throwing : TextProvider {
+        override val language = "xx"
+        override fun get(key: S, args: Array<out Any>): String = throw IllegalStateException("hỏng: ${key.name}")
+    }
+
+    @Test
+    fun lookup_fallsBackToVietnameseWhenProviderThrows() {
+        Texts.provider = Throwing
+        assertEquals(FallbackTexts.get(S.APP_NAME, emptyArray()), com.example.vnscreenreader.core.t(S.APP_NAME))
+        assertEquals(FallbackTexts.get(S.APP_NAME, emptyArray()), Texts.get(S.APP_NAME))
+    }
+
+    @Test
+    fun lookup_returnsKeyNameWhenEvenTheFallbackCannotFormat() {
+        // Tìm một khóa mà chuỗi dự phòng cần tham số số: truyền chuỗi sẽ làm cả hai nguồn ném lỗi.
+        val key = S.entries.firstOrNull { runCatching { FallbackTexts.get(it, arrayOf<Any>("x")) }.isFailure }
+        assumeTrue("không có khóa nào ném lỗi với tham số chuỗi", key != null)
+        Texts.provider = Throwing
+        assertEquals(key!!.name, com.example.vnscreenreader.core.t(key, "x"))
+    }
+
+    @Test
+    fun lookup_doesNotChangeResultsWhenProviderWorks() {
+        Texts.provider = EnglishLike
+        assertEquals("APP_NAME", com.example.vnscreenreader.core.t(S.APP_NAME))
+    }
 }

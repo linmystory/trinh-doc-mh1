@@ -41,6 +41,7 @@ fun StatusScreen() {
     val context = LocalContext.current
     var serviceEnabled by remember { mutableStateOf(AccessibilityStatus.isServiceEnabled(context)) }
     var ignoringBattery by remember { mutableStateOf(isIgnoringBatteryOptimizations(context)) }
+    var otherReaderOn by remember { mutableStateOf(AccessibilityStatus.isOtherReaderEnabled(context)) }
     var message by remember { mutableStateOf<String?>(null) }
     val unavailableText = stringResource(R.string.accessibility_settings_unavailable)
     val onText = stringResource(R.string.ui_state_on)
@@ -50,6 +51,7 @@ fun StatusScreen() {
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
         serviceEnabled = AccessibilityStatus.isServiceEnabled(context)
         ignoringBattery = isIgnoringBatteryOptimizations(context)
+        otherReaderOn = AccessibilityStatus.isOtherReaderEnabled(context)
     }
 
     ScreenColumn(stringResource(R.string.sec_status)) {
@@ -77,6 +79,9 @@ fun StatusScreen() {
             )
         }
         BodyText(stringResource(R.string.service_toggle_hint, stringResource(R.string.service_label)))
+        if (otherReaderOn) {
+            Text(text = stringResource(R.string.st_other_reader_warn), fontSize = 18.sp, color = HighContrastYellow)
+        }
         message?.let {
             Text(
                 text = it,

@@ -11,6 +11,27 @@ fun HelpScreen() {
         BodyText(stringResource(R.string.hp_basic_1))
         BodyText(stringResource(R.string.hp_basic_2))
 
+        SectionHeading(stringResource(R.string.hp_controls_head))
+        BodyText(stringResource(R.string.hp_controls_body))
+
+        SectionHeading(stringResource(R.string.hp_std_head))
+        BodyText(stringResource(R.string.hp_std_body))
+
+        SectionHeading(stringResource(R.string.hp_swipes_head))
+        BodyText(stringResource(R.string.hp_swipes_body))
+
+        SectionHeading(stringResource(R.string.hp_keys_head))
+        BodyText(stringResource(R.string.hp_keys_nav))
+        BodyText(stringResource(R.string.hp_keys_global))
+        BodyText(stringResource(R.string.hp_keys_vol))
+        BodyText(stringResource(R.string.hp_keys_extra))
+
+        SectionHeading(stringResource(R.string.hp_voice_head))
+        BodyText(stringResource(R.string.hp_voice_body))
+
+        SectionHeading(stringResource(R.string.hp_more_head))
+        BodyText(stringResource(R.string.hp_more_body))
+
         SectionHeading(stringResource(R.string.hp_perm_head))
         BodyText(stringResource(R.string.hp_perm_body))
 

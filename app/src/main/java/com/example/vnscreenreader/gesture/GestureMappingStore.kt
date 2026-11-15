@@ -4,16 +4,16 @@ import android.content.Context
 import android.content.SharedPreferences
 import androidx.core.content.edit
 
-class GestureMappingStore(context: Context) {
+class GestureMappingStore(context: Context) : GestureSource {
 
     private val prefs: SharedPreferences =
         context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
-    fun load(): GestureMapping = GestureMapping.parse(prefs.getString(KEY_MAPPING, null))
+    override fun load(): GestureMapping = GestureMapping.parse(prefs.getString(KEY_MAPPING, null))
 
-    fun save(mapping: GestureMapping) = prefs.edit { putString(KEY_MAPPING, mapping.serializeOverrides()) }
+    override fun save(mapping: GestureMapping) = prefs.edit { putString(KEY_MAPPING, mapping.serializeOverrides()) }
 
-    fun reset() = prefs.edit { remove(KEY_MAPPING) }
+    override fun reset() = prefs.edit { remove(KEY_MAPPING) }
 
     fun register(listener: SharedPreferences.OnSharedPreferenceChangeListener) =
         prefs.registerOnSharedPreferenceChangeListener(listener)

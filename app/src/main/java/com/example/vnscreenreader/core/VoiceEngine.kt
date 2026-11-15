@@ -8,6 +8,7 @@ import android.os.SystemClock
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
 import android.util.Log
+import com.example.vnscreenreader.CrashLogger
 import java.util.Locale
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicInteger
@@ -48,7 +49,9 @@ class VoiceEngine(
     private var pitch = initialPitch
     private var pendingText: String? = null
     private var pendingFinished: (() -> Unit)? = null
-    private var enginePackage = initialEnginePackage
+    private var enginePackage = initialEnginePackage // engine ĐANG dùng (có thể là mặc định do tự rơi về)
+    private var requestedPackage = initialEnginePackage // engine người dùng CHỌN; đổi cài đặt mới đổi cái này
+    private var announceFallback = false
 
     /** Câu gần nhất ở dạng GỐC (chưa lập kế hoạch) để "đọc lại" lập lại đúng các khoảng lặng. */
     @Volatile private var lastText: String? = null
@@ -66,9 +69,36 @@ class VoiceEngine(
     private val finishedCallbacks = java.util.concurrent.ConcurrentHashMap<String, () -> Unit>()
 
     private fun completeUtterance(utteranceId: String?) {
-        val message = utteranceId?.let { pending.complete(it) } ?: return
-        finishedCallbacks.remove(message)?.invoke()
+        // Chạy trên luồng binder của TTS: một ngoại lệ ở đây sẽ làm sập cả tiến trình, nên bắt hết lỗi thường.
+        try {
+            val message = utteranceId?.let { pending.complete(it) } ?: return
+            finishedCallbacks.remove(message)?.invoke()
+        } catch (e: RuntimeException) {
+            Log.w(TAG, "Lỗi khi xử lý kết thúc câu đọc", e)
+            CrashLogger.recordNonFatal("kết thúc câu đọc", e)
+        }
     }
+
+    /** true khi còn câu đang đọc hoặc đang chờ phát (dùng để chọn luồng âm khi chỉnh âm lượng). */
+    val isSpeaking: Boolean get() = pending.pendingMessages() > 0
+
+    /** Dừng rồi đóng một engine mà không bao giờ ném lỗi (đóng một dịch vụ đã chết/chưa gắn có thể ném IllegalArgumentException). */
+    private fun shutdownQuietly(engine: TextToSpeech?) {
+        if (engine == null) return
+        try {
+            engine.stop()
+        } catch (e: RuntimeException) {
+            Log.w(TAG, "Dừng engine lỗi", e)
+        }
+        try {
+            engine.shutdown()
+        } catch (e: RuntimeException) {
+            Log.w(TAG, "Đóng engine lỗi", e)
+        }
+    }
+
+    /** Gọi (luồng chính) một lần khi engine đã chọn không dùng được và phải rơi về engine mặc định của hệ thống. */
+    @Volatile var onFallback: (() -> Unit)? = null
 
     // Phục hồi khi engine chết giữa chừng (xem SpeechRecoveryPolicy).
     private val recovery = SpeechRecoveryPolicy()
@@ -130,7 +160,7 @@ class VoiceEngine(
                 false
             }
         }
-        if (stale) engine.shutdown()
+        if (stale) shutdownQuietly(engine)
     }
 
     private fun onInitResult(gen: Int, status: Int) {
@@ -147,9 +177,21 @@ class VoiceEngine(
             if (closed || gen != generation) return
             ready = true
             failures = 0
-            Pair(pendingText, pendingFinished).also { pendingText = null; pendingFinished = null }
+            val fellBack = announceFallback
+            announceFallback = false
+            Triple(pendingText, pendingFinished, fellBack).also { pendingText = null; pendingFinished = null }
         }
-        if (queued.first != null) speak(queued.first!!, interrupt = true, onFinished = queued.second)
+        // Báo một lần khi phải dùng engine mặc định thay cho engine đã chọn; người dùng không nhìn được màn hình cài đặt.
+        if (queued.third) {
+            try {
+                onFallback?.invoke()
+            } catch (e: RuntimeException) {
+                Log.w(TAG, "Lỗi khi báo rơi về engine mặc định", e)
+            }
+        } else {
+            val waiting = queued.first
+            if (waiting != null) speak(waiting, interrupt = true, onFinished = queued.second)
+        }
     }
 
     private fun onInitFailed(engine: TextToSpeech, status: Int) {
@@ -159,12 +201,26 @@ class VoiceEngine(
             failures++
             SpeechRetryPolicy.delayMs(failures)
         }
-        engine.shutdown()
+        shutdownQuietly(engine)
         if (retryDelayMs != null) {
             mainHandler.postDelayed({ connect() }, retryDelayMs)
-        } else {
-            Log.e(TAG, "Bỏ cuộc sau ${SpeechRetryPolicy.MAX_RETRIES} lần thử lại khởi tạo TextToSpeech")
+            return
         }
+        // Hết lượt thử: engine người dùng chọn (đã gỡ/hỏng) → tự rơi về engine mặc định của hệ thống, không câm vĩnh viễn.
+        // Engine mặc định cũng hỏng thì cứ vài chục giây thử lại (hiếm và rẻ), thay vì bỏ cuộc.
+        val fellBack = synchronized(lock) {
+            if (closed) return
+            failures = 0
+            if (enginePackage.isNotEmpty()) {
+                enginePackage = ""
+                announceFallback = true
+                true
+            } else {
+                false
+            }
+        }
+        Log.e(TAG, "Hết ${SpeechRetryPolicy.MAX_RETRIES} lần thử khởi tạo TextToSpeech; " + if (fellBack) "dùng engine mặc định" else "thử lại sau")
+        mainHandler.postDelayed({ connect() }, if (fellBack) 0L else LONG_RETRY_MS)
     }
 
     private fun configure(engine: TextToSpeech) {
@@ -194,7 +250,11 @@ class VoiceEngine(
             Log.w(TAG, "No TTS voice for $locale (result=$result); keeping the engine's current voice.")
         }
         voiceMissing = missing
-        onVoiceStatus?.invoke(missing, locale)
+        try {
+            onVoiceStatus?.invoke(missing, locale)
+        } catch (e: RuntimeException) {
+            Log.w(TAG, "Lỗi khi báo trạng thái giọng", e)
+        }
     }
 
     /** Gọi khi người dùng đổi ngôn ngữ ứng dụng lúc dịch vụ đang chạy. */
@@ -303,11 +363,7 @@ class VoiceEngine(
         Log.w(TAG, "Phục hồi TextToSpeech: $reason")
         pending.clear()
         finishedCallbacks.clear()
-        try {
-            old?.shutdown()
-        } catch (e: RuntimeException) {
-            Log.w(TAG, "Đóng engine cũ lỗi", e)
-        }
+        shutdownQuietly(old)
         mainHandler.post { connect() }
     }
 
@@ -317,8 +373,10 @@ class VoiceEngine(
      */
     fun changeEngine(newPackage: String) {
         val old = synchronized(lock) {
-            if (closed || newPackage == enginePackage) return
+            if (closed || newPackage == requestedPackage) return
+            requestedPackage = newPackage
             enginePackage = newPackage
+            announceFallback = false
             ready = false
             failures = 0
             generation++ // vô hiệu callback của engine cũ
@@ -328,8 +386,7 @@ class VoiceEngine(
         }
         pending.clear()
         finishedCallbacks.clear()
-        old?.stop()
-        old?.shutdown()
+        shutdownQuietly(old)
         mainHandler.post { connect() }
     }
 
@@ -341,7 +398,7 @@ class VoiceEngine(
     }
 
     /** Gói công cụ TTS đang dùng (rỗng = mặc định hệ thống). */
-    fun currentPackage(): String = synchronized(lock) { enginePackage }
+    fun currentPackage(): String = synchronized(lock) { requestedPackage }
 
     fun updateVoice(newRate: Float, newPitch: Float) {
         val engine = synchronized(lock) {
@@ -362,7 +419,11 @@ class VoiceEngine(
             pendingFinished = null
             tts
         }
-        engine?.stop()
+        try {
+            engine?.stop()
+        } catch (e: RuntimeException) {
+            Log.w(TAG, "Dừng engine lỗi", e)
+        }
     }
 
     fun shutdown() {
@@ -378,11 +439,11 @@ class VoiceEngine(
         mainHandler.removeCallbacksAndMessages(null)
         pending.clear()
         finishedCallbacks.clear()
-        engine?.stop()
-        engine?.shutdown()
+        shutdownQuietly(engine)
     }
 
     private companion object {
         const val TAG = "SpeechEngine"
+        const val LONG_RETRY_MS = 60_000L
     }
 }

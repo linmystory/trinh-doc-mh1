@@ -220,6 +220,14 @@ object NodeCollector {
     fun hasClickAction(node: AccessibilityNodeInfo): Boolean =
         node.actionList.any { it.id == AccessibilityNodeInfo.ACTION_CLICK }
 
+    /**
+     * Nút thuộc nội dung web: có hành động duyệt phần tử HTML (ACTION_NEXT/PREVIOUS_HTML_ELEMENT). Dựa vào khả năng chứ
+     * không dựa vào tên lớp nên đúng cả với trình duyệt không dùng WebView (Gecko và các trình duyệt khác).
+     */
+    fun hasHtmlNavigation(node: AccessibilityNodeInfo): Boolean = node.actionList.any {
+        it.id == AccessibilityNodeInfo.ACTION_NEXT_HTML_ELEMENT || it.id == AccessibilityNodeInfo.ACTION_PREVIOUS_HTML_ELEMENT
+    }
+
     /** Gốc nội dung web (WebView/GeckoView). */
     fun isWebRoot(node: AccessibilityNodeInfo): Boolean = ClickTargetPolicy.isWebContainerClass(node.className?.toString())
 

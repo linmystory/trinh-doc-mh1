@@ -11,7 +11,7 @@ Trình đọc màn hình (screen reader) cho Android dành cho người khiếm 
 - Khung viền xanh lá quanh phần tử đang chọn.
 - Khám phá bằng cảm ứng: đặt ngón tay lên phần tử nào thì đọc phần tử đó; chạm hai lần (ở bất kỳ đâu) để nhấn
   phần tử vừa nghe.
-- 34 cử chỉ (1 ngón: vuốt 4 hướng, 12 cử chỉ hai bước, chạm hai lần, chạm hai lần và giữ; 2, 3, 4 ngón), gán chức năng tùy ý.
+- 45 cử chỉ chạm (1 ngón: vuốt 4 hướng, 12 cử chỉ hai bước, chạm hai lần, chạm hai lần và giữ; 2, 3, 4 ngón) và 8 cử chỉ phím cứng (phím âm lượng, nút tai nghe), gán chức năng tùy ý. Riêng bốn cú **hai ngón vuốt** do Android xử lý như ở các trình đọc màn hình lớn nên không gán lại được (xem bản 2.18.1).
 - **AI trên máy, không dùng mạng** (mô hình ML Kit đóng gói sẵn trong APK; ứng dụng không xin quyền INTERNET):
   - *Đọc chữ trên màn hình (OCR)* và *Mô tả hình ảnh của phần tử đang chọn* - gán vào cử chỉ bất kỳ trong thẻ "Cử chỉ".
   - Đọc thông báo mới đã được tóm tắt (bỏ trùng, rút gọn, gộp khi dồn dập); bật/tắt ở thẻ cài đặt chung.
@@ -30,34 +30,123 @@ Trình đọc màn hình (screen reader) cho Android dành cho người khiếm 
 | Vuốt phải / trái | Phần tử kế tiếp / trước đó |
 | Chạm hai lần | Nhấn phần tử đang chọn |
 | Chạm hai lần và giữ | Nhấn giữ phần tử đang chọn (nếu hệ thống gửi cử chỉ này tới app; kiểm tra bằng **Kiểm tra cử chỉ**) |
-| Vuốt lên / xuống | Cuộn xuống / cuộn lên |
+| Vuốt xuống / lên | Tiến / lùi theo **điều khiển đọc** đang chọn (ban đầu: từng phần tử, như vuốt phải / trái). Trong **ô nhập**: dời **con trỏ thật** theo đơn vị của điều khiển (ban đầu: từng ký tự) và đọc đoạn chữ vừa đi qua. Đang chọn thanh trượt thì xuống = giảm, lên = tăng (xem bản 2.19.0 và 2.20.0) |
 | Xuống rồi phải | **Trình đơn chung** |
 | Lên rồi phải | **Trình đơn của phần tử đang chọn** |
-| Xuống rồi trái | Màn hình chính |
-| Lên rồi trái | Quay lại |
-| Xuống rồi lên | Chạy các tiện ích đã bật |
-| Lên rồi xuống | Sao chép đơn vị đang đọc |
-| Hai ngón chạm / chạm hai lần | Dừng đọc / lặp lại câu vừa đọc |
-| Hai ngón vuốt lên / xuống | Cuộn xuống / cuộn lên |
-| Hai hoặc ba ngón vuốt trái / phải | **Trang kế / trang trước** (chuyển trang ngang: ViewPager, tab vuốt ngang) |
-| Ba ngón chạm / chạm hai lần | Trình đơn chung / trình đơn phần tử |
-| Ba ngón vuốt lên / xuống | Đơn vị đọc trước / kế |
-| Ba ngón chạm ba lần | Đọc từ đầu màn hình |
+| Lên rồi trái | Màn hình chính |
+| Xuống rồi trái | Quay lại |
+| Trái rồi lên | Ứng dụng gần đây |
+| Phải rồi xuống | Thông báo |
+| Trái rồi xuống | Tìm chữ trên màn hình |
+| Lên rồi xuống | Điều khiển đọc **kế** (phần tử → ký tự → từ → câu → đoạn → tiêu đề → điều khiển → liên kết → tốc độ đọc → phần tử...) |
+| Xuống rồi lên | Điều khiển đọc **trước** |
+| Hai ngón chạm | Dừng đọc |
+| Hai ngón chạm hai lần | Phát / tạm dừng nhạc hoặc video (phím media chuẩn) |
+| Hai ngón chạm ba lần | Đọc liên tục từ phần tử đang chọn |
+| Hai ngón vuốt lên / xuống | **Do Android xử lý như một ngón vuốt**: cuộn nội dung tại chỗ; khi dùng điều hướng bằng cử chỉ thì vuốt lên từ mép dưới = Màn hình chính (giữ = Ứng dụng gần đây), vuốt xuống từ mép trên = Thông báo |
+| Hai ngón vuốt trái / phải | **Do Android xử lý**: chuyển trang ngang tại chỗ; từ mép trái/phải vào = Quay lại |
+| Ba ngón chạm | Trình đơn chung |
+| Ba ngón chạm hai lần / ba lần | Sao chép chữ của phần tử đang chọn / dán vào ô nhập |
+| Ba ngón chạm hai lần và giữ | Cắt chữ ở ô nhập |
+| Ba ngón vuốt xuống / lên | Điều khiển đọc **kế** / **trước** (cùng việc với lên-rồi-xuống / xuống-rồi-lên) |
+| Ba ngón vuốt trái / phải | **Trang kế / trang trước** (chuyển trang ngang: ViewPager, tab vuốt ngang) |
 | Bốn ngón chạm / chạm hai lần | Đổi chế độ rung và âm báo / cho biết giờ và pin |
 
-**Cố ý không gán** các cử chỉ hai bước bắt đầu bằng trái/phải (phải-rồi-xuống, trái-rồi-lên...): cú vuốt trái/phải hơi cong rất dễ bị nhận nhầm thành chúng và mở Màn hình chính hay Thông báo. Các chức năng đó có trong trình đơn chung. Bản này đổi hai cử chỉ mở trình đơn so với các bản trước (chung: xuống rồi phải; phần tử: lên rồi phải). Chỉ áp dụng cho người **chưa từng lưu cử chỉ riêng**; ai đã chỉnh cử chỉ thì giữ nguyên cấu hình cũ. Từ bản 2.6.0, cấu hình chỉ lưu những cử chỉ bạn thật sự đổi nên mặc định mới vẫn tới được các cử chỉ còn lại; bản đã lưu từ trước giữ nguyên. Đổi cử chỉ làm mất hết cử chỉ của "phần tử kế", "phần tử trước" hay "nhấn" sẽ có cảnh báo. Tất cả đều đổi được trong mục **Cử chỉ**. Android không cho dịch vụ hỗ trợ tiếp cận bắt cử chỉ vuốt từ cạnh màn hình.
+**Từ bản 2.20.0 các cử chỉ hai bước và nhiều ngón theo bảng cử chỉ chuẩn của Bộ trợ năng Android** (xem phần "Bản 2.20.0" bên dưới: bảng so sánh, các hành động bị nhường chỗ và cách lấy lại). Mặc định mới chỉ tới những cử chỉ bạn **chưa đổi**: từ bản 2.6.0 cấu hình chỉ lưu những cử chỉ bạn thật sự đổi, nên cử chỉ đã đổi giữ nguyên và các cử chỉ còn lại nhận mặc định mới khi cập nhật; cấu hình lưu từ trước bản 2.6.0 (ghi đủ mọi cử chỉ) giữ nguyên hoàn toàn. Đổi cử chỉ làm mất hết cử chỉ của "phần tử kế", "phần tử trước" hay "nhấn" sẽ có cảnh báo. Tất cả đều đổi được trong mục **Cử chỉ**, nơi cũng có nút khôi phục mặc định. Android không cho dịch vụ hỗ trợ tiếp cận bắt cử chỉ vuốt từ cạnh màn hình.
 
 ## Trình đơn nhanh
 Cử chỉ mở trình đơn hiển thị ở mục **Trình đơn** trong ứng dụng, lấy từ cấu hình thật của bạn.
 - **Chung** (7 mục + "Khác"): đọc từ đầu, đọc từ phần tử hiện tại, lặp lại, tìm chữ, đọc chữ trên màn hình (OCR),
   thông báo, màn hình chính. Trình đơn con **Khác**: cài đặt nhanh, ứng dụng gần đây, đổi chế độ rung/âm báo,
-  giờ và pin, chạy tiện ích, cài đặt ứng dụng, **Quay lại**.
+  giờ và pin, phát/tạm dừng nhạc, chạy tiện ích, cài đặt ứng dụng, **Quay lại**.
 - **Phần tử**: nhấn, nhấn giữ, đơn vị kế/trước, đổi đơn vị đọc, sao chép đơn vị, sao chép, đọc từng ký tự,
   gắn nhãn, mô tả hình ảnh, đọc chữ trong ảnh, cộng các hành động tùy chỉnh của ứng dụng. Riêng **ô nhập liệu**
   có thêm trình đơn con **Chỉnh sửa văn bản**: dán, cắt, chọn tất cả, đưa con trỏ về đầu/cuối, chọn đến đầu/cuối, **Quay lại**.
-- Khi trình đơn mở: vuốt phải/trái chọn mục, chạm hai lần thực hiện, quay lại để lùi một cấp. Mở trình đơn là vào thẳng
+- Khi trình đơn mở: vuốt phải/trái (hoặc xuống/lên) chọn mục, chạm hai lần thực hiện, quay lại để lùi một cấp. Mở trình đơn là vào thẳng
   mục đầu tiên (không đọc tên và số mục trước); cử chỉ không dùng được trong trình đơn chỉ nhắc ngắn một lần.
 - Cài đặt **Đọc hướng dẫn thao tác** (Đọc, mặc định bật): tắt thì trình đơn chỉ đọc tên mục, không đọc vị trí và lời nhắc.
+
+## Bản 2.20.2: nâng công cụ build
+
+Chỉ đổi cấu hình build, **không đổi mã ứng dụng** (638 bài kiểm thử JVM vẫn đạt):
+
+- **Android Gradle Plugin 9.4.0 → 9.5.0** (ổn định từ 10/2026; yêu cầu tối thiểu Gradle 9.6, JDK 17, compileSdk tối đa 37: dự án đã thỏa).
+- **Gradle 9.8.2 → 9.9.1**, giữ ghim checksum SHA-256 của bản phân phối `gradle-9.9.1-bin.zip`. 9.9.1 là bản vá bảo mật (ra 10/11/2026) theo ghi chú phát hành của Gradle.
+- Chưa chạy Gradle ở môi trường soạn thảo nên chưa chứng minh được bản dựng; nếu CI báo lỗi, quay lại v51 hoặc đổi riêng từng dòng (`agp` trong `gradle/libs.versions.toml`, `distributionUrl` + `distributionSha256Sum` trong `gradle/wrapper/gradle-wrapper.properties`).
+
+## Bản 2.20.1: rà soát toàn diện, sửa 3 lỗi
+
+Rà lại toàn bộ mã dịch vụ, giọng đọc, AI/OCR, plugin, lưu trữ/sao lưu, nhật ký lỗi và phần giao diện đã đổi từ 2.18 (Compose không biên dịch được ở môi trường soạn thảo nên chỉ đọc mã). Chỉ sửa lỗi có bằng chứng trong mã:
+
+- **Vuốt xuống/lên bị kẹt ở thanh tiến trình chỉ-đọc** (tải xuống, mức pin, vòng tải): trước đây phần tử nào có khoảng giá trị cũng bị coi là thanh trượt, nên vuốt một ngón xuống/lên chỉ đọc lại giá trị mà không sang phần tử khác (và cuộn trang cũng bị nuốt). Nay chỉ thanh **đang bật và có hành động chỉnh** (`ACTION_SET_PROGRESS` hoặc cuộn tới/lui) mới được chỉnh bằng cử chỉ (`SliderMath.isAdjustable`).
+- **"Đưa con trỏ về đầu/cuối", "chọn tất cả" báo "không thực hiện được" khi đã ở đúng vị trí** (TextView trả false cho `ACTION_SET_SELECTION` nếu vùng chọn không đổi). Nay nhận ra trường hợp đã đúng sẵn (`SelectionMath.isNoOp`) và báo xong. Độ dài chữ lấy theo chữ THẬT, không tính gợi ý (hint) của ô trống; không gửi lại `ACTION_FOCUS` cho ô đang giữ tiêu điểm (như khi dời con trỏ), tránh ứng dụng chọn lại toàn bộ chữ rồi "dán" ghi đè cả ô.
+- **Duyệt theo từ không tách dấu cách không ngắt** (`&nbsp;` U+00A0, U+202F, U+3000... hay gặp trên trang web): "Hà&nbsp;Nội" từng là một từ và cụm chỉ gồm &nbsp; thành một "từ" rỗng. Nay mọi khoảng trắng Unicode đều tách từ, giống đơn vị câu/đoạn.
+- Kiểm thử: 638 bài JVM (thêm 3 bài hồi quy ở `SliderMathTest`, `SubmenuAndEditTest`, `TextUnitsTest`). **Chưa** chạy Gradle/Compose/lint và chưa thử trên máy thật. Lỗi thứ hai dựa trên hành vi TextView mà tôi nhớ từ mã nguồn Android (chưa kiểm chứng trên máy): phần kiểm tra "đã đúng vị trí" là logic thuần nên vô hại kể cả khi nhớ sai.
+
+## Bản 2.20.0: cử chỉ theo bảng chuẩn mới nhất của Bộ trợ năng Android
+
+Đối chiếu với bảng cử chỉ và danh sách "điều khiển đọc" trong tài liệu chính thức của Google (bản mới nhất, hai lần trích độc lập cho kết quả giống nhau) rồi đưa mặc định về đúng chuẩn. Mọi cử chỉ vẫn gán lại được trong mục **Cử chỉ**.
+
+- **Mặc định đổi** (`GestureMapping.defaults`):
+
+  | Cử chỉ | Bản 2.20.0 | Trước đó |
+  |---|---|---|
+  | Lên rồi trái | Màn hình chính | Quay lại |
+  | Xuống rồi trái | Quay lại | Màn hình chính |
+  | Trái rồi lên | Ứng dụng gần đây | (trống) |
+  | Phải rồi xuống | Thông báo | (trống) |
+  | Trái rồi xuống | Tìm chữ trên màn hình | (trống) |
+  | Hai ngón chạm hai lần | Phát/tạm dừng nhạc hoặc video | Đọc lại câu vừa đọc |
+  | Hai ngón chạm ba lần | Đọc từ phần tử đang chọn | Đổi đơn vị đọc |
+  | Ba ngón chạm hai lần | Sao chép chữ của phần tử | Trình đơn phần tử |
+  | Ba ngón chạm ba lần | Dán vào ô nhập | Đọc từ đầu màn hình |
+  | Ba ngón chạm hai lần và giữ | Cắt chữ ở ô nhập | (trống) |
+  | Ba ngón vuốt xuống / lên | Điều khiển đọc kế / trước | Đơn vị đọc kế / trước |
+
+- **Hành động bị nhường chỗ** (không còn cử chỉ mặc định nhưng không mất): *Đọc lại câu vừa đọc* và *Đọc từ đầu* (trình đơn chung), *Đổi đơn vị đọc* và *Đơn vị kế/trước* (trình đơn phần tử). Trình đơn phần tử vẫn mở bằng lên-rồi-phải. Muốn ba ngón vuốt như cũ: mục Cử chỉ → bộ ba ngón vuốt → "Đọc theo đơn vị và chuyển trang". Muốn lấy lại các hành động khác: gán cho một cử chỉ bất kỳ trong mục Cử chỉ (ví dụ hai ngón chạm hai lần = *Đọc lại*). Ai đã lưu cử chỉ riêng thì các cử chỉ đó giữ nguyên.
+- **Điều khiển đọc theo danh sách mới:** phần tử → ký tự → từ → câu → đoạn → tiêu đề → điều khiển → liên kết → tốc độ đọc → phần tử (`ReadingControl`). Trước: phần tử → tiêu đề → liên kết → đoạn → câu → từ → ký tự. Mới: **Điều khiển** (nhảy tới nút, ô nhập, công tắc... kế/trước, dùng lại chế độ đọc có sẵn qua `FocusNavigator.moveToMode`, không đổi chế độ đọc của vuốt phải/trái) và **Tốc độ đọc** (vuốt lên = nhanh hơn, xuống = chậm hơn, mỗi bước 10% trong khoảng 50%–200% của thanh trượt ở Cài đặt giọng đọc, áp ngay và đọc lại tốc độ mới; `SpeechRate`). "Phần tử" (mặc định) và "câu" là hai mục ứng dụng thêm so với bảng chuẩn.
+- **Ô nhập dời con trỏ thật:** vuốt xuống/lên khi đang ở ô nhập (không phải mật khẩu) dời con trỏ bằng `ACTION_SET_SELECTION` theo đơn vị của điều khiển (với "Phần tử": từng ký tự; với ký tự/từ/câu/đoạn: đúng đơn vị đó) và đọc đoạn chữ con trỏ vừa đi qua; ô trống hoặc đã tới đầu/cuối chữ thì lần vuốt kế sang phần tử kế/trước để không kẹt trong ô. Ô mật khẩu: không dời con trỏ, không đọc chữ, chỉ sang phần tử kế/trước. Phép tính nằm ở `CaretMath` (hàm thuần: tiến tới CUỐI đơn vị kế, lùi tới ĐẦU đơn vị trước, ký tự theo cụm ký tự người dùng thấy nên không cắt dấu thanh rời hay emoji); `FocusNavigator.moveCaret` thực thi và ghi nhận `lastOwnSelectionMs` để sự kiện "vùng chọn đổi" dội lại không bị đọc thêm. Không gửi lại `ACTION_FOCUS` khi ô đã giữ tiêu điểm nhập.
+- **Phát/tạm dừng nhạc:** hành động mới `MEDIA_PLAY_PAUSE` gửi cặp phím `KEYCODE_MEDIA_PLAY_PAUSE` bằng `AudioManager.dispatchMediaKeyEvent` (không cần quyền; không có trình phát thì không có gì xảy ra). Có trong trình đơn chung → Khác.
+- **Kiểu ba ngón vuốt:** thêm "Đổi điều khiển đọc và chuyển trang" (mặc định mới, `SwipeProfile.READING_CONTROLS`); "Đọc theo đơn vị và chuyển trang" thành lựa chọn thường.
+- **Chuỗi:** năm chuỗi mới (tên hành động nhạc, câu báo tốc độ đọc, tên kiểu ba ngón vuốt, tiêu đề và nội dung mục "Cử chỉ mặc định" trong Trợ giúp) và hai chuỗi sửa (nội dung mục "Điều khiển đọc" trong Trợ giúp, bỏ "(mặc định)" khỏi kiểu đơn vị). Đủ 7 ngôn ngữ, bản dịch do máy, cần người bản ngữ rà lại.
+- **Cố ý khác bảng chuẩn / chưa làm:** hai ngón chạm = **dừng đọc** (chuẩn là tạm dừng/tiếp tục; bộ đọc của Android không có tạm dừng giữa chừng); chưa có điều khiển "Dòng" (cần đo dòng hiển thị thật) và "Ngôn ngữ"; "Tìm trên màn hình" là hành động riêng chứ chưa thành điều khiển đọc; chưa có chế độ chọn văn bản (hai ngón chạm hai lần và giữ), trả lời/cúp cuộc gọi bằng hai ngón chạm hai lần, lệnh giọng nói (phải-rồi-lên), luyện cử chỉ/trợ giúp/cử chỉ đi xuyên bằng bốn ngón, chỉnh thanh trượt bằng phải-rồi-trái / trái-rồi-phải. "Đọc từ phần tử đang chọn" gần với "đọc từ phần tử kế" của bảng chuẩn nhưng bắt đầu từ chính phần tử đang chọn. Một trang trợ giúp khác của Google nói ba ngón vuốt trái/phải đổi điều khiển đọc, còn trang bảng cử chỉ chính thức thì không; bản này theo trang bảng cử chỉ (ba ngón vuốt trái/phải vẫn chuyển trang). Ba ngón vuốt lên từ mép dưới vẫn thuộc về nút hỗ trợ tiếp cận của hệ thống.
+- **Rủi ro cần biết:** trước đây ba cử chỉ hai bước bắt đầu bằng trái/phải để trống vì cú vuốt trái/phải hơi cong dễ bị nhận nhầm; nay chúng mở Ứng dụng gần đây, Thông báo và Tìm chữ (đúng chuẩn). Ai hay bị nhầm thì gán lại hoặc bỏ gán trong mục Cử chỉ.
+- Kiểm thử: 635 bài JVM (mới: `CaretMathTest`, `SpeechRateTest`; cập nhật `GestureTest`, `ReadingControlTest`, `ReadingControlGestureTest`, `SwipeProfileTest`, `QuantityStringsTest`). **Chưa** chạy Gradle/Compose/lint và chưa thử trên máy thật. Cần thử trên máy: dời con trỏ bằng vuốt trong nhiều loại ô nhập (EditText, Compose, WebView), phím media với nhiều trình phát, vuốt ngang có bị nhận nhầm thành trái-rồi-lên / phải-rồi-xuống không, đổi tốc độ đọc nghe rõ, ba ngón vuốt xuống/lên đổi điều khiển.
+
+## Bản 2.19.0: "điều khiển đọc" cho vuốt một ngón lên/xuống (theo bảng cử chỉ chuẩn)
+
+- **Vuốt một ngón xuống = tiến, lên = lùi, theo "điều khiển đọc" đang chọn** (`ReadingControl`, `FocusNavigator.readingControl`). Ban đầu là *Phần tử* (như vuốt phải/trái). Vuốt **lên rồi xuống** = điều khiển KẾ, **xuống rồi lên** = điều khiển TRƯỚC; ứng dụng đọc "Điều khiển đọc: <tên>". Các điều khiển xếp vòng tròn: phần tử → tiêu đề → liên kết → đoạn → câu → từ → ký tự → phần tử (thứ tự và danh sách đổi ở 2.20.0). Thứ tự lên-rồi-xuống / xuống-rồi-lên theo bảng cử chỉ chuẩn của Android; một bản mô tả trước đó đảo ngược hai cử chỉ này, ai quen kiểu đảo thì tự đổi trong mục Cử chỉ.
+- **Phần tử / tiêu đề / liên kết** dùng lại `moveElement` và `quickMove` (trong web dùng hành động duyệt chuẩn của nền tảng; ngoài web tự cuộn tìm tiếp như trước). Chế độ đọc cũ (`ReadingMode`, đổi bằng hành động "chế độ đọc kế/trước") là trục riêng chỉ tác động vuốt phải/trái; điều khiển đọc không đụng tới nó.
+- **Đoạn / câu / từ / ký tự:** mỗi lần vuốt đọc một đơn vị của phần tử đang chọn (`moveUnit`). Hết chữ (hoặc phần tử không có chữ) thì sang phần tử kế/trước và đọc cả phần tử đó như vuốt phải/trái (`FocusNavigator.moveToNeighbour`). Lùi sang phần tử trước thì con trỏ chữ đặt ở CUỐI phần tử (`TextCursor.parkAtEnd`) để vuốt lên tiếp đọc đơn vị cuối cùng thay vì nhảy qua cả phần tử. Ba ngón vuốt xuống/lên (đơn vị kế/trước) giữ như cũ: dừng và báo "hết văn bản" (từ 2.20.0 ba ngón vuốt xuống/lên đổi điều khiển đọc).
+- **Đồng bộ với "đổi đơn vị đọc"** (hai ngón chạm ba lần): điều khiển đọc đi theo đơn vị mới; ngược lại chọn một điều khiển theo đơn vị chữ cũng đặt đơn vị của con trỏ chữ (`TextCursor.select`, giữ chỗ đang đứng) nên "sao chép đơn vị" và ba ngón vuốt dùng đúng đơn vị đang chọn. Con trỏ chữ nay luôn bắt đầu lại khi sang phần tử khác, kể cả hai phần tử có chữ giống hệt (danh sách nút "Xóa").
+- **Thanh trượt:** đang chọn thanh trượt thì vuốt lên = tăng, xuống = giảm, bất kể điều khiển đang chọn (`adjustRange`). Công tắc "Cử chỉ cuộn chỉnh thanh trượt" chỉ còn tác dụng với hành động "Cuộn xuống/lên" do bạn tự gán.
+- **Điều khiển đọc tự về "Phần tử" khi cửa sổ đổi** (`onWindowChanged`, cùng chỗ với chế độ đọc cũ). "Đọc trạng thái" (bốn ngón chạm hai lần) nhắc điều khiển đang chọn khi khác "Phần tử".
+- **Trong trình đơn,** vuốt xuống/lên chuyển mục y như vuốt phải/trái (`MenuGestures.HANDLED`, `ReaderSession.handleMenuAction`); đổi điều khiển trong trình đơn chỉ nhận một lời nhắc ngắn.
+- **Mặc định đổi** (`GestureMapping.defaults`): vuốt xuống/lên (trước là cuộn), lên-rồi-xuống / xuống-rồi-lên (trước là "sao chép đơn vị" / "chạy tiện ích"). **Cuộn trang nay bằng hai ngón vuốt lên/xuống** (Android xử lý), hoặc gán "Cuộn xuống/lên" cho cử chỉ bất kỳ. "Sao chép đơn vị đang đọc" và "Chạy các tiện ích đã bật" không còn gán sẵn: vẫn có trong trình đơn phần tử / trình đơn chung (mục Khác) và gán được trong Cử chỉ. Ai đã lưu cử chỉ riêng thì giữ nguyên các cử chỉ đó (cấu hình chỉ lưu phần khác mặc định); ai chưa chỉnh vuốt lên/xuống sẽ nhận hành vi mới ngay khi cập nhật.
+- **Chuỗi:** bốn hành động mới ("Tiến theo điều khiển đọc", "Lùi theo điều khiển đọc", "Điều khiển đọc kế tiếp/trước đó") và lời báo "Điều khiển đọc: …"; mục "Điều khiển đọc" mới trong Trợ giúp (và trong tìm kiếm cài đặt); lời giới thiệu mục Tiện ích sửa theo việc không còn cử chỉ mặc định. Đủ 7 ngôn ngữ, bản dịch do máy, cần người bản ngữ rà lại.
+- Kiểm thử: 610 bài JVM (mới: `ReadingControlTest`, `TextCursorControlTest`, `ReadingControlGestureTest`; sửa hai khẳng định mặc định trong `GestureTest`). **Chưa** chạy Gradle/Compose/lint và chưa thử trên máy thật. Cần thử trên máy: vuốt lên rồi xuống / xuống rồi lên đổi điều khiển và nghe tên; đi từng từ tới hết phần tử rồi sang phần tử kế (phần tử mới được đọc cả, vuốt xuống tiếp đọc từ đơn vị đầu của nó nên từ đầu có thể nghe lặp) và đi ngược qua phần tử trước; thanh trượt tăng/giảm đúng chiều; hai ngón vuốt vẫn cuộn; trình đơn vuốt xuống/lên.
+- **Chưa làm ở bản này (cả ba việc đầu đã làm ở 2.20.0):** vuốt lên/xuống trong ô nhập chưa dời con trỏ thật (mới chỉ đọc theo đơn vị; dời con trỏ cần thử trên máy); ba ngón vuốt lên/xuống vẫn là đơn vị trước/kế (có thể đổi thành đổi điều khiển nếu muốn); mặc định Màn hình chính / Quay lại vẫn là xuống-rồi-trái / lên-rồi-trái, còn bảng chuẩn là lên-rồi-trái = Màn hình chính, xuống-rồi-trái = Quay lại (đổi được trong Cử chỉ; đổi mặc định nếu muốn đúng chuẩn).
+
+## Bản 2.18.1: hai ngón vuốt theo chuẩn, bỏ lối thoát khẩn cấp, rà soát chống sập
+
+- **Hai ngón vuốt nay theo chuẩn các trình đọc màn hình lớn.** Trước đây dịch vụ bật cờ cử chỉ nhiều ngón nhưng KHÔNG bật `FLAG_REQUEST_2_FINGER_PASSTHROUGH`, nên hệ thống nuốt cả bốn cú hai ngón vuốt thành "cử chỉ" gửi cho dịch vụ (kể cả khi bắt đầu từ mép màn hình) và dịch vụ tự cuộn bằng hành động trợ năng; điều hướng bằng cử chỉ của Android bằng hai ngón (vuốt lên từ mép dưới = Màn hình chính, vuốt lên và giữ = Ứng dụng gần đây, vào từ mép trái/phải = Quay lại, vuốt xuống từ mép trên = Thông báo) không bao giờ tới hệ thống. Nay cờ này luôn bật (đặt lúc chạy trong `ReaderSession.applyServiceFlags`, không phụ thuộc tên thuộc tính XML của từng bản SDK): hai ngón vuốt được chuyển nguyên cho ứng dụng/Android như một ngón vuốt. Ba ngón vuốt lên từ mép dưới thuộc về nút hỗ trợ tiếp cận của hệ thống.
+- **Hệ quả:** bốn cú hai ngón vuốt không còn gán lại được và không hiện trong "Cử chỉ" (`Gesture.passedToSystem`; chỉ còn một dòng giải thích). Cấu hình cũ vẫn đọc được; mặc định cũ (cuộn / chuyển trang) giữ làm dự phòng cho máy vẫn gửi các cử chỉ này tới dịch vụ. Bộ vuốt gán sẵn (Cuộn và chuyển trang, Duyệt nhanh...) chỉ còn ở nhóm ba ngón (`GestureAnalyzer.hasProfile`). Ai đã gán riêng cho hai ngón vuốt (ví dụ Duyệt nhanh = tiêu đề kế/trước) sẽ thấy các gán đó không còn chạy: dùng ba ngón vuốt thay thế.
+- **Cuộn gốc của Android không còn đi qua `FocusNavigator.scroll`**, nên không còn lời "Đã cuộn xuống/lên"; thay vào đó có "Đọc phạm vi danh sách" (Cài đặt → Đọc). Khi danh sách ngừng cuộn 450 ms mà phần tử đang chọn đã khuất khỏi màn hình, `FocusNavigator.releaseIfScrolledAway` bỏ nó để lần vuốt kế bắt đầu từ phần tử đầu tiên đang hiện (phần tử vẫn hiện thì giữ nguyên, kể cả khi ứng dụng tự cuộn để đưa nó vào màn hình).
+- **Đã bỏ lối thoát khẩn cấp** (`TOGGLE_TOUCH_EXPLORATION`: hai phím âm lượng cùng lúc, Alt+E, tự bật lại sau 10 phút, cờ khám phá cảm ứng bật/tắt lúc chạy). Lý do: không trình đọc lớn nào làm vậy; dễ bấm nhầm khi cầm máy và lúc đó mọi cú chạm của người khiếm thị thành bấm thật; và việc chiếm phím âm lượng làm hỏng chính phím tắt hỗ trợ tiếp cận của Android (giữ hai phím), vốn là lối thoát đáng tin hơn vì nằm ngoài dịch vụ. Hai phím cùng lúc (`VOLUME_BOTH`) vẫn là cử chỉ gán được nhưng không gán sẵn; cấu hình cũ nhắc tới hành động đã bỏ được bỏ qua mà không mất phần còn lại. Alt+P (tạm dừng phím) vẫn có.
+- **Phím âm lượng làm phím tắt nay mặc định TẮT** (các bản 2.14.0–2.18.0 mặc định bật chỉ để có lối thoát khẩn cấp). Ai đã tự bật/tắt trong Cài đặt thì giữ nguyên; ai chưa đụng tới cần bật lại ở Cài đặt → Đọc nếu muốn. Mô tả trong ứng dụng nói rõ: khi bật, phím tắt hỗ trợ tiếp cận của Android (giữ hai phím âm lượng) không dùng được lúc màn hình sáng.
+- **Chống sập (rà soát toàn bộ):** `ScreenReaderService` bọc try/catch mọi callback và việc tạo/đóng phiên; `ReaderSession.guardMain` bọc các điểm vào ở luồng chính; `VoiceEngine`/`SpeechEngine` bảo vệ callback TTS và watchdog, `isSpeaking` đúng ở chế độ một công cụ; `Texts.lookup` lùi về chuỗi tiếng Việt dự phòng (rồi tên khóa) thay vì ném lỗi khi thiếu tài nguyên; `Diag` đọc/xóa không ném lỗi và nút sao chép chỉ chép tối đa 100.000 ký tự cuối (clipboard có giới hạn Binder), báo thật khi chép thất bại; Sao lưu/Khôi phục chạy ở luồng nền và giới hạn dung lượng tệp; danh sách ứng dụng trong "Cử chỉ theo ứng dụng" nạp ở luồng nền; `VnApplication` cài bộ ghi lỗi trước tiên và bọc từng bước; bỏ các chỗ dùng `!!`.
+- **Thêm:** mục "Cử chỉ hệ thống bằng hai hoặc ba ngón" và "Hai công cụ giọng nói" trong Trợ giúp (7 ngôn ngữ, bản dịch do máy, cần người bản ngữ rà lại).
+- Kiểm thử: 584 bài JVM (mới: `SystemGestureTest`, bổ sung `DiagLogTest`, `TextsTest`). **Chưa** chạy Gradle/Compose/lint và chưa thử trên máy thật. Cần thử trên máy: hai ngón vuốt lên từ mép dưới về Màn hình chính (bật điều hướng bằng cử chỉ), hai ngón vuốt cuộn danh sách và chuyển trang, đọc phạm vi danh sách sau khi cuộn, hai công cụ giọng nói, đọc người gọi. Nếu cờ hai ngón không có tác dụng trên một dòng máy (nhà sản xuất tùy biến), cử chỉ hai ngón vẫn rơi về mặc định cũ (cuộn/chuyển trang).
+
+## Bản 2.18.0: ghép dòng v31–v33 vào dòng hai công cụ giọng nói
+
+- **Giữ nguyên** từ dòng hiện tại: hai công cụ giọng nói, chọn ngôn ngữ cho từng công cụ, cử chỉ đổi chế độ giọng, chế độ đọc theo loại, vùng chứa/cửa sổ kế/trước, mức chi tiết, nhật ký.
+- **Thêm** từ dòng v31–v33: cử chỉ riêng theo ứng dụng, sao lưu và khôi phục cài đặt, tìm kiếm trong cài đặt, bộ lọc đọc thông báo (không làm phiền, đang gọi, đang phát nhạc, từ khóa chặn/luôn đọc), nhập phím bằng nhấc tay, đọc Toast, phím tắt bàn phím ngoài, phím âm lượng và nút tai nghe làm cử chỉ, thanh trượt, lối thoát khẩn cấp, tự chuyển tiêu điểm vào hộp thoại, nhớ vị trí theo cửa sổ, tùy chọn đọc khi gõ, đọc phạm vi danh sách, đọc người gọi đến, nói vị trí hiện tại, xóa/khôi phục chữ trong ô nhập.
+- **Đọc người gọi đến chỉ còn MỘT công tắc** (Cài đặt → Đọc → Cuộc gọi và vị trí). Bật lên thì xin quyền cuộc gọi (bắt buộc), rồi xin thêm quyền danh bạ (tùy chọn): được cấp thì đọc tên trong danh bạ, không thì chỉ đọc số. Công tắc "tên từ danh bạ" cũ đã bỏ; khóa `call_names_contacts` cũ nếu có trong tệp sao lưu sẽ bị bỏ qua.
+- **Đã bỏ** phần đọc mã xác thực (như dòng hiện tại), ngưỡng 64 ms cho Android 16 của phím âm lượng (không có nguồn kiểm chứng độc lập; tổ hợp hai phím nay luôn nhận), và mọi nhắc tới tên ứng dụng khác trong chuỗi giao diện.
+- **Hòa giải xung đột:** `ReaderSession` (đường cử chỉ qua `GestureRouter` giữ nguyên, thêm `runAction` cho phím); `FocusNavigator.focusOn(node, prefix, interrupt)`; engine TTS đã chọn hỏng thì rơi về mặc định và báo một lần (chuyển vào `VoiceEngine`); trình đơn chỉ tính cử chỉ cảm ứng khi kiểm tra "còn cử chỉ cho phần tử kế" (phím âm lượng không được che mất lỗi kẹt trình đơn).
+- `Gesture.fromSystemId` vẫn từ chối mã âm; mã âm của phím cứng chỉ dùng nội bộ.
+- Chưa chạy Gradle/lint/Compose ở môi trường soạn thảo (chỉ có biên dịch và 569 bài kiểm thử JVM). Hãy chạy CI và gửi log nếu có lỗi.
 
 ## Bản 2.17.1: sửa lỗi build trên CI
 
@@ -164,16 +253,80 @@ Lấy bản 2.11.0 làm nền (giữ nguyên các tính năng của nó) và đ�
 - **Cài đặt Đọc:** mức chi tiết (đầy đủ/gọn/tối giản), đọc gợi ý thao tác, **nhật ký chẩn đoán tự động** (chỉ siêu dữ liệu, không có chữ trên màn hình; sao chép để gửi).
 - **Chuyển trang/cuộn:** thử hành động trước, rồi vuốt giả lập (`canPerformGestures`) và kiểm tra màn hình có đổi không; bám vết tiêu điểm khi giao diện vẽ lại; nhấn không nhấn đúp hai lần; chỉ nhấn nút con khi nó duy nhất; nhấn giữ có dự phòng ngữ cảnh/chạm giữ.
 
+## Bản 2.15.0: đọc người gọi, nói vị trí hiện tại, xóa tất cả trong ô nhập
+
+Cả ba đều TẮT mặc định hoặc chỉ xin quyền khi bạn bật; tắt công tắc là ứng dụng ngừng dùng quyền đó.
+
+- **Đọc người gọi đến** (Cài đặt → Đọc → Cuộc gọi và vị trí). Quyền: `READ_PHONE_STATE` + `READ_CALL_LOG` (từ Android 9, số gọi đến chỉ có khi có cả hai; theo tài liệu TelephonyManager). Khi có `READ_CALL_LOG` hệ thống gửi MỖI hồi chuông hai broadcast (một có số, một không, thứ tự không đảm bảo; số rỗng = số lạ/ẩn): `CallRingPolicy` chỉ đọc một lần, chờ tối đa 1,2 giây cho bản có số. Thiếu quyền số thì chỉ đọc "Có cuộc gọi đến". Công tắc riêng "đọc tên từ danh bạ" (`READ_CONTACTS`, tra bằng `PhoneLookup`, chạy ngoài luồng chính). Số được đọc từng chữ số theo nhóm 3. Bộ nhận chỉ được đăng ký khi công tắc bật VÀ có quyền. Số/tên không bị ghi nhật ký hay lưu. Lưu ý: Google Play hạn chế `READ_CALL_LOG`; bản này dành cho cài trực tiếp.
+- **Nói vị trí hiện tại** (Alt+G, hoặc gán cử chỉ "Nói vị trí hiện tại của tôi"; có trong trình đơn chung → Khác): quyền `ACCESS_FINE_LOCATION` + `ACCESS_COARSE_LOCATION`, công tắc "Cho phép nói vị trí của tôi". Chỉ hỏi vị trí MỘT lần khi bạn chạy hành động (không theo dõi, không lưu, không gửi): thử GPS tối đa 12 giây, rồi nhà cung cấp hợp nhất/mạng 6 giây, rồi vị trí cũ còn nhớ. Địa chỉ do `Geocoder` của hệ thống tra (dịch vụ vị trí của điện thoại có thể liên hệ nhà cung cấp qua internet; ứng dụng vẫn KHÔNG có quyền INTERNET); không có địa chỉ thì đọc vĩ độ/kinh độ 5 chữ số thập phân. Luôn đọc độ chính xác ("khoảng N mét"); sai số từ 50 m hoặc vị trí cũ hơn 2 phút thì nói rõ có thể chưa chính xác.
+- **Xóa tất cả trong ô nhập** (Alt+X, trình đơn "Chỉnh sửa văn bản", hoặc gán cử chỉ) và **khôi phục chữ vừa xóa** (Alt+Shift+X): dùng `ACTION_SET_TEXT` rỗng, không đụng clipboard; chữ cũ giữ trong bộ nhớ (tối đa 20 000 ký tự) và chỉ khôi phục khi ô còn trống. Ô mật khẩu không bao giờ bị xóa hay được nhớ (theo `EditPolicy`).
+- Mục "Quyền" nay liệt kê ba tính năng với trạng thái cấp quyền; `ManifestPermissionsTest` vẫn buộc quyền trong manifest khớp đúng `PermissionFeatures`.
+
+Chưa làm: tự trả lời/từ chối cuộc gọi (cần `ANSWER_PHONE_CALLS`), đọc cuộc gọi khi tắt màn hình bằng nguồn khác ngoài broadcast, la bàn/hướng đi trong "nói vị trí", đọc đường phố giao nhau gần nhất, kiểm tra chính tả số theo từng quốc gia.
+
+## Bản 2.14.0: phím âm lượng đúng kiểu, nút tai nghe, thanh trượt, lối thoát khẩn cấp (lối thoát khẩn cấp và mặc định bật phím âm lượng đã bỏ ở 2.18.1)
+
+Phím âm lượng và cử chỉ:
+
+- **Phím âm lượng không còn làm mất chỉnh âm lượng.** Phím bị chiếm thì chính trình đọc chỉnh âm lượng (`ReaderSession.adjustVolume`): trong cuộc gọi chỉnh âm cuộc gọi; đang đọc hoặc đang chạm màn hình chỉnh luồng trợ năng (đúng giọng đọc); còn lại chỉnh âm phương tiện (`VolumeStreamPolicy`). Không hiện bảng âm lượng hệ thống mà đọc phần trăm mới.
+- **Phím cứng thành "cử chỉ" 0 ngón** (`Gesture.fingers = 0`, `systemId` âm, hệ thống không bao giờ gửi): `VOLUME_UP/DOWN_SHORT`, `VOLUME_UP/DOWN_LONG`, `VOLUME_BOTH`, `HEADSET_SHORT/DOUBLE/LONG`. Vì vậy gán lại được trong Cài đặt cử chỉ (nhóm "Phím âm lượng và nút tai nghe") và gán riêng cho từng ứng dụng bằng cơ chế sẵn có. Mặc định: bấm nhanh = tăng/giảm âm lượng; giữ tăng = phần tử trước, giữ giảm = phần tử kế; hai phím cùng lúc = lối thoát khẩn cấp; tai nghe: một lần = phần tử kế, hai lần = kích hoạt, giữ = đọc từ phần tử hiện tại.
+- **Phím âm lượng bật mặc định** (trước là tắt) vì bấm nhanh không còn mất chức năng gốc và lối thoát khẩn cấp cần có sẵn. Tắt trong Cài đặt → Đọc → Phím nếu cần phím tắt trợ năng "giữ hai phím âm lượng" của hệ thống.
+- **Lối thoát khẩn cấp** (`TOGGLE_TOUCH_EXPLORATION`): hai phím âm lượng cùng lúc, Alt+E hoặc một cử chỉ tạm dừng "duyệt bằng cách chạm" (bỏ cờ khám phá cảm ứng, cử chỉ nhiều ngón và nhấn đôi do dịch vụ xử lý) để dùng màn hình như bình thường khi trình đọc làm kẹt một màn hình. Trong lúc tạm dừng, phím âm lượng luôn được xử lý (bất kể cài đặt khác): bấm nhanh = chỉnh âm lượng, hai phím = bật lại; Alt+E và Alt+P luôn dùng được. Tự bật lại khi tắt màn hình, sau 10 phút, hoặc khi phiên đóng, nên không bao giờ kẹt vĩnh viễn.
+- **Nút tai nghe** (`KEYCODE_HEADSETHOOK`, mặc định tắt): chỉ khi màn hình sáng và không trong cuộc gọi.
+- **Thanh trượt**:
+  - Cử chỉ cuộn (một/hai ngón vuốt lên/xuống, mặc định bật, có công tắc) đổi giá trị thanh trượt đang chọn ≈5% mỗi bước thay vì cuộn trang (`FocusNavigator.adjustRange`, dùng `ACTION_SET_PROGRESS`, không có thì cuộn tới/lui của chính nó). Từ 2.19.0 vuốt một ngón xuống/lên không còn là cuộn mà là "tiến/lùi theo điều khiển đọc", và luôn chỉnh thanh trượt đang chọn (không phụ thuộc công tắc này; công tắc chỉ còn tác dụng với hành động "Cuộn xuống/lên" do bạn tự gán).
+  - Hành động riêng gán được: "Tăng/Giảm thanh trượt đang chọn", "Kéo thanh trượt đang chọn tới cuối". Thanh chuẩn thì đặt thẳng giá trị lớn nhất; núm kéo thì thực hiện một cú kéo từ tâm núm tới mép phải đường trượt (`dragToEnd`). Chỉ kéo thẳng theo lệnh của người dùng, KHÔNG giải mã xác thực ghép hình.
+
+Chưa làm: bấm đúp/ba phím âm lượng, phím âm lượng điều khiển con trỏ khi sửa văn bản, hiện bảng âm lượng hệ thống, nhận lệnh phím khi tắt màn hình, kéo thanh trượt sang trái, thanh trượt dọc, trình đơn có sẵn mục thanh trượt.
+
+## Bản 2.13.0: an toàn phím, màn hình tắt/bật, hộp thoại và nhớ vị trí, tùy chọn gõ phím, phạm vi danh sách
+
+- **Lối thoát cho phím cứng/phím âm lượng**: Alt+P (hoặc cử chỉ "Tạm dừng/tiếp tục phím") tạm dừng cả hai, không lưu (khởi động lại dịch vụ là hoạt động lại). Alt+V (hoặc cử chỉ "Tắt/bật phím âm lượng cho ứng dụng này") ghi ứng dụng đang mở vào danh sách không dùng phím âm lượng (`volume_excluded_apps`). Hai hành động mới đã có trong danh sách cử chỉ, chưa gán mặc định.
+- **Màn hình tắt/bật** (`ACTION_SCREEN_OFF/ON`): luôn dừng giọng đọc, bỏ trạng thái phím đang giữ dở, hủy việc AI/chuyển tiêu điểm đang chờ; công tắc "Báo khi bật và tắt màn hình" (mặc định tắt) báo thêm bằng lời.
+- **Tự chuyển tiêu điểm vào hộp thoại** (mặc định bật): cửa sổ có lớp `*Dialog*`/`*BottomSheet*` mở ra thì đọc tiêu đề rồi chọn phần tử đầu tiên, nhưng chỉ khi người dùng chưa tự chọn gì và không đang trong trình đơn.
+- **Nhớ vị trí theo cửa sổ** (mặc định tắt): nhớ phần tử đang chọn khi rời cửa sổ (khóa = gói + tiêu đề, tối đa 8 cửa sổ) và tìm lại bằng vết (mã/nhãn) khi quay về.
+- **Gõ phím**: đọc từng ký tự (mặc định bật, như cũ), đọc từ vừa gõ xong sau dấu cách/dấu câu (mặc định tắt), đọc "Chữ hoa" trước chữ viết hoa (mặc định tắt). Ô mật khẩu không bao giờ đọc từ hay chữ hoa. Chưa làm: đọc từ ví dụ cho chữ cái (cần bảng theo từng ngôn ngữ).
+- **Đọc phạm vi danh sách khi cuộn** (mặc định tắt): "Mục 5 đến 9 trên 30" sau khi danh sách ngừng cuộn 450 ms; chỉ khi ứng dụng báo đủ `fromIndex/toIndex/itemCount` hợp lý.
+
+Chưa build/chạy test trong môi trường soạn thảo: chạy `./gradlew :app:testDebugUnitTest :app:lintDebug` rồi thử trên máy thật.
+
+## Bản 2.12.0: sửa lỗi + phím cứng và phím âm lượng
+
+Các lỗi tìm thấy ở v2.11.0 và cách xử lý:
+
+- **Hiện/ẩn bàn phím không còn xóa vị trí đang chọn**: `TYPE_WINDOW_STATE_CHANGED` của cửa sổ bàn phím (IME) hoặc lớp phủ trợ năng chỉ làm mới bộ đệm, không `reset()`, không đóng trình đơn, không ngắt lời đang đọc (`ReaderSession.handleWindowState`). Cửa sổ ứng dụng, hộp thoại, thanh thông báo vẫn đặt lại như trước.
+- **Đọc vùng cập nhật trực tiếp (`liveRegion`), khung mới (`paneTitle`) và `announceForAccessibility`**: thêm `typeAnnouncement` và xử lý `TYPE_WINDOW_CONTENT_CHANGED` qua kênh riêng (`contentEvents`, tối đa 1 sự kiện/80 ms, chỉ các kiểu đổi chữ/mô tả/cây con/khung). Assertive ngắt lời, còn lại xếp hàng; `LiveRegionGate` chống đọc lặp. Các màn hình của chính ứng dụng dùng `liveRegion` nay được đọc.
+- **Toast** đọc theo công tắc riêng (Đọc thông báo → Đọc thông báo nổi, mặc định bật), không phụ thuộc "đọc thông báo", không gộp "N thông báo mới", kể cả Toast của chính ứng dụng.
+- **Sự kiện bổ sung**: `typeViewTextSelectionChanged` (đọc ký tự vừa đi qua / đoạn được chọn / dòng khi nhảy xa; `SelectionSpeech`; bỏ qua tiếng vọng của chính lệnh đặt con trỏ), `typeViewSelected` (chỉ tab), `typeViewLongClicked` (bỏ tiếng vọng của lệnh nhấn giữ của trình đọc), `typeWindowsChanged` (chỉ đánh dấu bộ đệm cũ).
+- **Giọng đọc không còn câm vĩnh viễn**: engine đã chọn hỏng/bị gỡ → sau 5 lần thử lại tự rơi về engine mặc định và báo một lần (không đổi lựa chọn trong cài đặt); engine mặc định hỏng thì thử lại mỗi 60 giây. Lỗi dịch vụ TTS (`ERROR_SERVICE`, `ERROR_NOT_INSTALLED_YET`) hoặc 3 lần `speak()` trả `ERROR` liên tiếp → dựng lại engine (tối đa 1 lần/5 giây) và đọc lại câu đang dở.
+- **`runSafely`** nay bắt mọi `Exception`, `StackOverflowError`, `OutOfMemoryError`; scope có `CoroutineExceptionHandler` nên lỗi lạ chỉ được ghi nhật ký, không làm sập tiến trình hay chết vòng xử lý. Hàng đợi sự kiện chính 32 → 128 để rê ngón nhanh không làm rơi sự kiện nhấc tay.
+- Nhỏ: giới hạn độ dài `message` của script nay đúng 120 (trước đây bị chặn ở 100); KDoc `speakPasswords`/`announceActionHint` về đúng chỗ; `FocusNavigator.cachedNodes/cachedAtMs` là `@Volatile`.
+
+**Phím cứng** (Cài đặt → Đọc → Phím; mặc định BẬT): giữ Alt hoặc Windows/Search rồi nhấn phím (bảng đầy đủ trong Trợ giúp và `KeyShortcuts`). Chỉ tổ hợp có Alt/Meta và không có Ctrl mới bị chặn, nên gõ văn bản và Ctrl+phím vẫn hoạt động; Ctrl bấm riêng = dừng đọc. Nhả phím của tổ hợp đã chặn cũng được chặn nốt. Cần `canRequestFilterKeyEvents` + `flagRequestFilterKeyEvents` (đã thêm vào cấu hình dịch vụ; không cần quyền runtime). Người dùng đã bật dịch vụ từ bản cũ có thể phải tắt rồi bật lại dịch vụ để hệ thống áp cấu hình mới.
+
+**Phím âm lượng** (cùng mục, mặc định TẮT): giảm = phần tử kế, tăng = phần tử trước, nhấn cả hai = kích hoạt, giữ nửa giây = cuộn tới/lui (`VolumeKeyNav`, có khôi phục khi mất sự kiện nhả phím). Chỉ chiếm phím khi màn hình sáng và không trong cuộc gọi/chuông reo; tắt màn hình hoặc đang gọi thì chỉnh âm lượng như thường. Không có cử chỉ vân tay (theo yêu cầu).
+
+Chưa làm (có chủ đích, cần máy thật): duyệt xuyên nhiều cửa sổ (`service.windows`) vì phải sửa bộ nhớ vết tiêu điểm theo cửa sổ; `speakPasswords` vẫn gộp hai việc (đọc ký tự gõ và không che OCR); audio ducking.
+Chưa build/chạy test trong môi trường soạn thảo: chạy `./gradlew :app:testDebugUnitTest :app:lintDebug` rồi thử trên máy thật (bàn phím hiện/ẩn, Toast, Snackbar, bàn phím Bluetooth, phím âm lượng).
+
 ## Bản 2.11.0: bám vết tiêu điểm, nhấn liên kết web, cử chỉ 2-3 ngón, mức chi tiết, nhật ký lỗi
 
 - **Không nhảy về đầu khi giao diện vẽ lại**: `FocusNavigator` giữ bộ đệm vết (`FocusTraceBuffer`: mã duy nhất, viewId, nhãn, hộp tọa độ, chỉ số danh sách) của vài phần tử gần nhất. Nút đang chọn bị tái chế thì tìm lại theo vết (`TraceLocator`), không khớp thì dùng khe theo vị trí (`FocusTracker`). Chỉ `reset()` (màn hình/cửa sổ mới, sau khi cuộn) mới xóa vết.
 - **Nhấn liên kết/vùng tương tác trong WebView**: `ClickResolver` + `ClickTargetPolicy` chọn nút nhận `ACTION_CLICK`: chính nó hoặc tổ tiên gần nhất có hành động nhấn (kể cả khi cờ `isClickable` là false), không leo vào gốc WebView/vùng cuộn; không có thì thử con bấm được (ưu tiên thẻ liên kết); cuối cùng, chỉ trong nội dung web, giả lập một cú chạm vào giữa phần tử. `ActionDispatcher` đọc câu báo theo kết quả (`ActivateOutcome`). Vai trò "liên kết" được đọc khi nhận diện được.
 - **Duyệt nhanh trong web** dùng hành động chuẩn của nền tảng (`ACTION_NEXT/PREVIOUS_HTML_ELEMENT`, loại LINK/HEADING) nên không cần cuộn; vòng cuộn dài dừng ngay khi có cử chỉ mới.
-- **Cử chỉ hai và ba ngón**: `GestureAnalyzer` phân nhóm vuốt theo số ngón + hướng; `SwipeProfile` là bộ gán sẵn cho bốn hướng (cuộn/chuyển trang, đọc theo đơn vị, duyệt nhanh tiêu đề/liên kết, cả trang). Chọn nhanh ở đầu nhóm hai/ba ngón trong màn hình Cử chỉ; từng cử chỉ vẫn gán riêng được cho bất kỳ chức năng nào. Mặc định không đổi. Chức năng mới: tiêu đề/liên kết kế-trước, cuộn tới đầu/cuối trang, nhảy phần tử đầu/cuối (cũng có trong trình đơn chung, mục Khác).
+- **Cử chỉ hai và ba ngón**: `GestureAnalyzer` phân nhóm vuốt theo số ngón + hướng; `SwipeProfile` là bộ gán sẵn cho bốn hướng (cuộn/chuyển trang, đổi điều khiển đọc/chuyển trang, đọc theo đơn vị, duyệt nhanh tiêu đề/liên kết, cả trang). Chọn nhanh ở đầu nhóm hai/ba ngón trong màn hình Cử chỉ; từng cử chỉ vẫn gán riêng được cho bất kỳ chức năng nào. Mặc định không đổi. Chức năng mới: tiêu đề/liên kết kế-trước, cuộn tới đầu/cuối trang, nhảy phần tử đầu/cuối (cũng có trong trình đơn chung, mục Khác).
 - **Gợi ý và mức chi tiết** (Cài đặt → Đọc): công tắc riêng "Đọc gợi ý thao tác" (câu gợi ý xếp hàng sau phần tử, không ngắt; tên cử chỉ lấy theo cấu hình hiện tại) và mức Gọn/Chuẩn/Chi tiết ("Mục 3 trên 12" khi ứng dụng cung cấp thông tin danh sách). Nội dung chính của phần tử luôn đọc đủ.
 - **Nhật ký lỗi** (Cài đặt → Nhật ký lỗi): chỉ lưu trong `filesDir/crash_logs` (bộ nhớ riêng, không backup, không cần quyền). Tối đa 3 báo cáo sập (mỗi báo cáo ≤ 16.000 ký tự) + một tệp sự kiện lỗi nhẹ cuộn vòng ≤ 24.000 ký tự, tổng ≤ ~80 KB; lỗi lặp bị gộp (1 lần/phút/chữ ký, ≤ 20 lần/giờ). Thông điệp lỗi được che thư điện tử, địa chỉ web, chuỗi số dài. Xem, chia sẻ (hộp chia sẻ hệ thống, dạng văn bản) và xóa (có hỏi lại) ngay trong ứng dụng; có công tắc tắt. Không gửi đi đâu tự động.
 - **Đối chiếu với trình đọc khác (học hỏi, không sao chép)**: dịch vụ nay nghe thêm `typeWindowContentChanged`, `typeViewScrolled` (chỉ đánh dấu bộ đệm điểm dừng đã cũ, không qua hàng đợi) và `typeViewAccessibilityFocused` (đồng bộ con trỏ khi ứng dụng/trình duyệt tự đặt tiêu điểm, không đọc lại); `notificationTimeout` = 0 để giảm trễ khi rê ngón tay. Thứ tự duyệt tôn trọng `accessibilityTraversalAfter/Before` (`TraversalOrder`). "Cuộn tới đầu/cuối" nhảy thẳng bằng `ACTION_SCROLL_TO_POSITION` khi danh sách biết số hàng.
 - Lượt rà soát lần hai: gợi ý thao tác không còn duyệt con (tránh ~60 lần gọi hệ thống mỗi lần chọn); duyệt nhanh web xuất phát từ gốc WebView không báo sai "không còn" khi chỉ là chưa có điểm bắt đầu. Chưa có (khác biệt tính năng, không phải lỗi): nhập phím bằng nhấc tay trên bàn phím, phím tắt âm lượng/phím cứng, vân tay, quy tắc theo từng ứng dụng, chỉnh độ trễ chạm.
+- **Nhập phím bằng nhấc tay** (Cài đặt → Đọc, mặc định tắt): rê tới phím rồi nhấc tay là gõ; `LiftToTypePolicy` chỉ cho nhấn một lần mỗi lần chạm, hủy khi lướt khỏi bàn phím, khi bắt đầu cử chỉ hoặc khi chạm quá 5 giây. **Độ trễ chạm** (0 đến 600 ms, mặc định 0): ngón tay phải dừng đủ lâu mới đọc; phím luôn đọc ngay khi bật nhập bằng nhấc tay. Độ trễ chạm đúp do hệ thống quyết định, ứng dụng không chỉnh được.
+- **Cử chỉ theo ứng dụng** (Điều khiển → Cử chỉ theo ứng dụng): chọn ứng dụng có biểu tượng khởi chạy rồi sửa bằng chính màn hình cử chỉ chung; chỉ phần khác bản đồ chung được lưu (tối đa 50 ứng dụng). Ứng dụng đang mở lấy từ cửa sổ ứng dụng thật, nên bàn phím hay thanh thông báo không làm mất cử chỉ riêng. Trình đơn vẫn dùng bản đồ chung.
+- Không làm, có chủ đích: cử chỉ vân tay (phím cứng và phím âm lượng đã làm từ 2.12.0, xem mục đó) (ít máy hỗ trợ, thêm quyền), vùng chạm đi xuyên (cấu hình sai có thể khóa vùng chạm). Mỗi mục cần thử trên máy thật trước khi bật.
+- Nhận diện nội dung web theo khả năng (có hành động duyệt phần tử HTML) thay vì chỉ theo tên lớp WebView, để giả lập chạm cũng áp dụng cho trình duyệt không dùng WebView. - **Tìm cài đặt** (ô tìm ở đầu màn hình chính): không phân biệt hoa thường và dấu ("thong bao" ra "Đọc thông báo"); tên cài đặt xếp trước mô tả. Chỉ mục nằm ở `SettingsIndex.kt` (tạo từ các màn hình); thêm cài đặt mới thì nhớ thêm chuỗi vào đó.
+- **Màn Đọc chia nhóm** (Nội dung được đọc / Gợi ý và mức chi tiết / Chạm và gõ phím). Công tắc đọc thông báo chuyển hẳn sang màn **Đọc thông báo** để mỗi cài đặt chỉ có một nơi.
+- **Đọc thông báo** (mục mới): không đọc khi ngón tay đang chạm màn hình, đang gọi, bật không làm phiền, đang phát nhạc (đều mặc định tắt) cùng danh sách "không bao giờ đọc" và "luôn đọc" (không phân biệt hoa thường/dấu; danh sách chặn ưu tiên hơn; "luôn đọc" bỏ qua cả công tắc chính). Không cần thêm quyền.
+- **Sao lưu và khôi phục** (Nâng cao): lưu/khôi phục cài đặt, cử chỉ, cử chỉ theo ứng dụng và nhãn tùy chỉnh bằng bộ chọn tệp của hệ thống (không cần quyền lưu trữ). Chỉ nhận khóa và kiểu hợp lệ theo `BackupSchema` (khóa sai kiểu sẽ làm sập dịch vụ ở lần đọc sau nên bị bỏ qua); không gồm tiện ích mở rộng, nhật ký lỗi, công cụ giọng đọc.
+- **Chạm thẳng theo ứng dụng** (Cử chỉ theo ứng dụng → chọn ứng dụng): kích hoạt bằng cú chạm thật vào giữa phần tử thay vì `ACTION_CLICK`, cho ứng dụng tự vẽ giao diện. Trạng thái màn Trạng thái cảnh báo khi một trình đọc màn hình khác đang bật cùng lúc.
 - Chưa làm có chủ đích: vùng cho cử chỉ/chạm đi xuyên (`setTouchExplorationPassthroughRegion`, `setGestureDetectionPassthroughRegion`). Cấu hình sai có thể khiến người dùng không chạm được vùng đó, nên cần thử trên máy thật (bàn phím, thanh điều hướng, cạnh màn hình) trước khi bật.
 
 - Chưa build/chạy test trong môi trường soạn thảo (không có Gradle/Kotlin); chạy `./gradlew :app:testDebugUnitTest` và thử trên máy thật, nhất là nhấn liên kết Google trong Chrome/WebView (khóa extras của Chromium không thuộc API công khai nên chỉ dùng để nhận diện thêm).
@@ -313,7 +466,7 @@ Script là JSON khai báo, không chứa mã thực thi. Xem mẫu trong `sample
   không phân biệt dạng Unicode dựng sẵn/tổ hợp của tiếng Việt.
 
 ## Đọc theo đơn vị, sao chép, dán, cắt (v2.4.0)
-- Đơn vị đọc: đoạn → câu → từ → ký tự. Mặc định: ba ngón vuốt xuống = đơn vị kế, ba ngón vuốt lên = đơn vị trước, vuốt lên rồi xuống = sao chép đơn vị đang đọc, hai ngón chạm ba lần = đổi đơn vị.
+- Đơn vị đọc: đoạn → câu → từ → ký tự. Mặc định: ba ngón vuốt xuống = đơn vị kế, ba ngón vuốt lên = đơn vị trước, hai ngón chạm ba lần = đổi đơn vị. (Từ 2.20.0 ba ngón vuốt xuống/lên đổi điều khiển đọc và hai ngón chạm ba lần đọc từ phần tử đang chọn; "đơn vị kế/trước" và "đổi đơn vị đọc" còn trong trình đơn phần tử, và muốn ba ngón vuốt như cũ thì chọn kiểu "Đọc theo đơn vị và chuyển trang" trong mục Cử chỉ.) (Từ 2.19.0 "sao chép đơn vị đang đọc" không còn gán sẵn cho "lên rồi xuống": dùng trình đơn phần tử hoặc gán trong mục Cử chỉ; "lên rồi xuống" và "xuống rồi lên" nay đổi điều khiển đọc.)
 - Sao chép: nếu đang có vùng chọn trong ô nhập (kể cả chọn ngược) thì chỉ sao chép đoạn đã chọn.
 - Thêm hành động: đưa con trỏ về đầu/cuối, chọn đến đầu/cuối. Ô mật khẩu chỉ cho phép dán; cắt, chọn, di chuyển con trỏ, sao chép đều bị chặn. Cắt và dán do hệ thống thực hiện, ứng dụng không đọc hay ghi clipboard.
 - Dán, cắt, chọn tất cả và các mục trên có trong trình đơn con "Chỉnh sửa văn bản" của ô nhập; có thể gán cho cử chỉ bất kỳ trong mục Cử chỉ.
@@ -379,9 +532,9 @@ Kiểm theo mã nguồn (không có thiết bị/emulator ở môi trường là
 Việc còn lại: chạy bản debug với en-XA/ar-XB, cỡ chữ lớn nhất, màn hình nhỏ/ngang/lớn.
 
 ## Build
-- Android Studio (bản hỗ trợ AGP 9.4): mở thư mục dự án, chờ sync, chọn *Build → Build APK(s)*.
+- Android Studio (bản hỗ trợ AGP 9.5): mở thư mục dự án, chờ sync, chọn *Build → Build APK(s)*.
 - Dòng lệnh: `./gradlew :app:testDebugUnitTest :app:lintDebug :app:assembleDebug`
-  (Gradle wrapper đã ghim Gradle 9.8.2 kèm checksum SHA-256).
+  (Gradle wrapper đã ghim Gradle 9.9.1 kèm checksum SHA-256).
 - GitHub Actions: workflow `.github/workflows/build.yml` tự chạy test, lint và build APK mỗi lần push.
 - **Bản release đã ký:** khóa KHÔNG nằm trong repo. `app/build.gradle.kts` chỉ ký khi đủ 4 biến môi trường
   `RELEASE_KEYSTORE_PATH`, `RELEASE_KEYSTORE_PASSWORD`, `RELEASE_KEY_ALIAS`, `RELEASE_KEY_PASSWORD` (thiếu thì ra APK
@@ -390,17 +543,19 @@ Việc còn lại: chạy bản debug với en-XA/ar-XB, cỡ chữ lớn nhất
   `RELEASE_KEY_ALIAS`, `RELEASE_KEY_PASSWORD`, rồi chạy tay workflow **Build release** (`release.yml`) để lấy APK/AAB đã ký.
   Giữ kỹ keystore: mất khóa là không cập nhật được ứng dụng.
 
-## Công nghệ (cập nhật 10/2026)
+## Công nghệ (cập nhật 11/2026)
 | Thành phần | Phiên bản |
 |---|---|
-| Android Gradle Plugin | 9.4.0 (Kotlin tích hợp sẵn, không còn plugin `kotlin-android`) |
-| Gradle | 9.8.2 |
+| Android Gradle Plugin | 9.5.0 (Kotlin tích hợp sẵn, không còn plugin `kotlin-android`) |
+| Gradle | 9.9.1 |
 | Kotlin / Compose compiler plugin | 2.4.21 |
 | Compose BOM | 2026.09.00 |
 | compileSdk / targetSdk / minSdk | 37 / 36 / 35 (Android 15+) |
 | JDK | 17 trở lên (CI dùng 21) |
 
 Phiên bản phụ thuộc nằm tập trung tại `gradle/libs.versions.toml`.
+
+**Đối chiếu 13/11/2026 với trang phát hành chính thức:** Kotlin 2.4.21, Compose BOM 2026.09.00 (ui 1.12.1, Material3 1.4.0), core-ktx 1.19.1, activity-compose 1.13.0, lifecycle 2.11.0, coroutines 1.11.0, ML Kit (text-recognition 16.0.1, image-labeling 17.0.9), JUnit 4.13.2 (bản cuối của nhánh 4) và các action CI (checkout v7, setup-java v6, setup-android v4, setup-gradle v6, upload-artifact v7) đều là bản ổn định mới nhất. Cố ý **chưa** nâng: Compose 1.13.0-rc01 / Material3 1.5.0-rc01 (bản thử nghiệm; chờ BOM ổn định kế tiếp), activity 1.14 và lifecycle 2.12 (alpha), targetSdk 37 (Google Play mới yêu cầu API 36 từ 31/8/2026; nâng 37 cần thử hành vi mới trên máy thật), JUnit 6 (cần plugin ngoài cho AGP, không có lợi ích rõ).
 
 ## Yêu cầu
 - Android 15 (API 35) trở lên, JDK 17 trở lên.

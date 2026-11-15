@@ -9,9 +9,17 @@ class GestureIdsTest {
 
     @Test
     fun everyGesture_hasARealPositiveSystemId_andRoundTrips() {
-        Gesture.entries.forEach {
+        Gesture.entries.filter { it.fingers > 0 }.forEach {
             assertTrue("${it.name} có mã hệ thống không hợp lệ: ${it.systemId}", it.systemId > 0)
             assertEquals(it, Gesture.fromSystemId(it.systemId))
+        }
+    }
+
+    @Test
+    fun hardwareKeyTriggers_useNegativeIds_andNeverComeFromTheSystem() {
+        Gesture.entries.filter { it.fingers == 0 }.forEach {
+            assertTrue("${it.name} phải có mã âm", it.systemId < 0)
+            assertNull(it.name, Gesture.fromSystemId(it.systemId))
         }
     }
 

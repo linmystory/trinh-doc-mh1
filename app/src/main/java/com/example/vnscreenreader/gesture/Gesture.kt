@@ -9,8 +9,19 @@ enum class Gesture(
     val systemId: Int,
     private val labelKey: S,
     val isTwoStep: Boolean = false,
-    /** Số ngón tay; cử chỉ 2-4 ngón cần cờ flagRequestMultiFingerGestures (và chế độ khám phá bằng cảm ứng). */
+    /**
+     * Số ngón tay; cử chỉ 2-4 ngón cần cờ flagRequestMultiFingerGestures (và chế độ khám phá bằng cảm ứng).
+     * 0 = KHÔNG phải cử chỉ màn hình mà là phím cứng (phím âm lượng, nút tai nghe): [systemId] âm, hệ thống không bao giờ gửi,
+     * chỉ để dùng chung bảng gán hành động, gán theo ứng dụng và màn hình cài đặt.
+     */
     val fingers: Int = 1,
+    /**
+     * Hệ thống tự xử lý cử chỉ này: chuyển nguyên cho ứng dụng/Android như thao tác MỘT ngón (cờ FLAG_REQUEST_2_FINGER_PASSTHROUGH,
+     * xem `ReaderSession.applyServiceFlags`), nên dịch vụ không nhận được và người dùng không gán lại được. Chỉ có bốn cú hai ngón
+     * vuốt. Vẫn nằm trong danh sách để đọc được cấu hình cũ và làm phương án dự phòng: máy nào vẫn gửi cử chỉ này tới dịch vụ thì
+     * [GestureMapping.defaults] vẫn cuộn/chuyển trang như trước.
+     */
+    val passedToSystem: Boolean = false,
 ) {
     SWIPE_UP(AccessibilityService.GESTURE_SWIPE_UP, S.G_SWIPE_UP),
     SWIPE_DOWN(AccessibilityService.GESTURE_SWIPE_DOWN, S.G_SWIPE_DOWN),
@@ -36,10 +47,10 @@ enum class Gesture(
     TWO_FINGER_TAP(AccessibilityService.GESTURE_2_FINGER_SINGLE_TAP, S.G_F2_TAP, fingers = 2),
     TWO_FINGER_DOUBLE_TAP(AccessibilityService.GESTURE_2_FINGER_DOUBLE_TAP, S.G_F2_DOUBLE, fingers = 2),
     TWO_FINGER_TRIPLE_TAP(AccessibilityService.GESTURE_2_FINGER_TRIPLE_TAP, S.G_F2_TRIPLE, fingers = 2),
-    TWO_FINGER_SWIPE_UP(AccessibilityService.GESTURE_2_FINGER_SWIPE_UP, S.G_F2_UP, fingers = 2),
-    TWO_FINGER_SWIPE_DOWN(AccessibilityService.GESTURE_2_FINGER_SWIPE_DOWN, S.G_F2_DOWN, fingers = 2),
-    TWO_FINGER_SWIPE_LEFT(AccessibilityService.GESTURE_2_FINGER_SWIPE_LEFT, S.G_F2_LEFT, fingers = 2),
-    TWO_FINGER_SWIPE_RIGHT(AccessibilityService.GESTURE_2_FINGER_SWIPE_RIGHT, S.G_F2_RIGHT, fingers = 2),
+    TWO_FINGER_SWIPE_UP(AccessibilityService.GESTURE_2_FINGER_SWIPE_UP, S.G_F2_UP, fingers = 2, passedToSystem = true),
+    TWO_FINGER_SWIPE_DOWN(AccessibilityService.GESTURE_2_FINGER_SWIPE_DOWN, S.G_F2_DOWN, fingers = 2, passedToSystem = true),
+    TWO_FINGER_SWIPE_LEFT(AccessibilityService.GESTURE_2_FINGER_SWIPE_LEFT, S.G_F2_LEFT, fingers = 2, passedToSystem = true),
+    TWO_FINGER_SWIPE_RIGHT(AccessibilityService.GESTURE_2_FINGER_SWIPE_RIGHT, S.G_F2_RIGHT, fingers = 2, passedToSystem = true),
 
     THREE_FINGER_TAP(AccessibilityService.GESTURE_3_FINGER_SINGLE_TAP, S.G_F3_TAP, fingers = 3),
     THREE_FINGER_DOUBLE_TAP(AccessibilityService.GESTURE_3_FINGER_DOUBLE_TAP, S.G_F3_DOUBLE, fingers = 3),
@@ -63,7 +74,16 @@ enum class Gesture(
     FOUR_FINGER_SWIPE_UP(AccessibilityService.GESTURE_4_FINGER_SWIPE_UP, S.G_F4_UP, fingers = 4),
     FOUR_FINGER_SWIPE_DOWN(AccessibilityService.GESTURE_4_FINGER_SWIPE_DOWN, S.G_F4_DOWN, fingers = 4),
     FOUR_FINGER_SWIPE_LEFT(AccessibilityService.GESTURE_4_FINGER_SWIPE_LEFT, S.G_F4_LEFT, fingers = 4),
-    FOUR_FINGER_SWIPE_RIGHT(AccessibilityService.GESTURE_4_FINGER_SWIPE_RIGHT, S.G_F4_RIGHT, fingers = 4);
+    FOUR_FINGER_SWIPE_RIGHT(AccessibilityService.GESTURE_4_FINGER_SWIPE_RIGHT, S.G_F4_RIGHT, fingers = 4),
+    // Phím cứng (v2.14.0). Mặc định xem GestureMapping.defaults().
+    VOLUME_UP_SHORT(-101, S.G_VOL_UP_SHORT, fingers = 0),
+    VOLUME_DOWN_SHORT(-102, S.G_VOL_DOWN_SHORT, fingers = 0),
+    VOLUME_UP_LONG(-103, S.G_VOL_UP_LONG, fingers = 0),
+    VOLUME_DOWN_LONG(-104, S.G_VOL_DOWN_LONG, fingers = 0),
+    VOLUME_BOTH(-105, S.G_VOL_BOTH, fingers = 0),
+    HEADSET_SHORT(-106, S.G_HEADSET_SHORT, fingers = 0),
+    HEADSET_DOUBLE(-107, S.G_HEADSET_DOUBLE, fingers = 0),
+    HEADSET_LONG(-108, S.G_HEADSET_LONG, fingers = 0);
 
     /** Tên hiển thị theo ngôn ngữ hiện hành. */
     val label: String get() = t(labelKey)
@@ -128,6 +148,33 @@ enum class GestureAction(private val labelKey: S) {
     PREVIOUS_CONTAINER(S.GA_PREV_CONTAINER),
     NEXT_WINDOW(S.GA_NEXT_WINDOW),
     PREVIOUS_WINDOW(S.GA_PREV_WINDOW),
+
+    // Thêm ở v2.13.0 (không có gán mặc định; có phím tắt Alt+P / Alt+V).
+    TOGGLE_KEYS_PAUSE(S.GA_KEYS_PAUSE),
+    VOLUME_EXCLUDE_APP(S.GA_VOLUME_APP),
+
+    // Thêm ở v2.14.0.
+    VOLUME_RAISE(S.GA_VOLUME_RAISE),
+    VOLUME_LOWER(S.GA_VOLUME_LOWER),
+    SLIDER_UP(S.GA_SLIDER_UP),
+    SLIDER_DOWN(S.GA_SLIDER_DOWN),
+    SLIDER_TO_END(S.GA_SLIDER_END),
+
+    // Thêm ở v2.15.0.
+    SAY_LOCATION(S.GA_SAY_LOCATION),
+    CLEAR_FIELD(S.GA_CLEAR_FIELD),
+    RESTORE_CLEARED(S.GA_RESTORE_CLEARED),
+
+    // Thêm ở v2.19.0: điều khiển đọc của vuốt một ngón xuống/lên (xem ReadingControl). Mặc định: vuốt xuống = tiến, vuốt lên = lùi,
+    // lên-rồi-xuống = điều khiển kế, xuống-rồi-lên = điều khiển trước. Đang chọn thanh trượt thì tiến = giảm, lùi = tăng.
+    NEXT_BY_CONTROL(S.GA_NEXT_BY_CONTROL),
+    PREVIOUS_BY_CONTROL(S.GA_PREV_BY_CONTROL),
+    NEXT_CONTROL(S.GA_NEXT_CONTROL),
+    PREVIOUS_CONTROL(S.GA_PREV_CONTROL),
+
+    // Thêm ở v2.20.0: phát/tạm dừng nhạc hoặc video đang mở bằng phím media chuẩn (mặc định: hai ngón chạm hai lần, như Bộ trợ
+    // năng Android). Không cần quyền, tác dụng lên ứng dụng đang giữ phiên phát nhạc.
+    MEDIA_PLAY_PAUSE(S.GA_MEDIA_PLAY_PAUSE),
 
     // Duyệt nhanh và cuộn toàn trang (thêm ở v2.10.0; gán mặc định qua [SwipeProfile], không đổi mặc định cũ).
     JUMP_FIRST(S.GA_JUMP_FIRST),

@@ -113,6 +113,29 @@ class SubmenuAndEditTest {
         assertNull(SelectionMath.target(EditOp.PASTE, 10, 0, 0))
     }
 
+    @Test fun cursorOperationsAlreadyAtTheGoalAreNoOps() {
+        // TextView trả false cho ACTION_SET_SELECTION khi vùng chọn không đổi: những trường hợp này phải báo "xong", không gửi lại.
+        assertTrue(SelectionMath.isNoOp(EditOp.CURSOR_START, 10, 0, 0))
+        assertTrue(SelectionMath.isNoOp(EditOp.CURSOR_END, 10, 10, 10))
+        assertTrue(SelectionMath.isNoOp(EditOp.SELECT_ALL, 10, 0, 10))
+        assertTrue(SelectionMath.isNoOp(EditOp.SELECT_TO_START, 10, 4, 0)) // đã chọn từ điểm neo 4 về đầu
+        assertTrue(SelectionMath.isNoOp(EditOp.SELECT_TO_END, 10, 4, 10))
+        // Chưa ở đích: vẫn phải thực hiện.
+        assertFalse(SelectionMath.isNoOp(EditOp.CURSOR_START, 10, 4, 4))
+        assertFalse(SelectionMath.isNoOp(EditOp.CURSOR_END, 10, 0, 0))
+        assertFalse(SelectionMath.isNoOp(EditOp.SELECT_ALL, 10, 0, 0))
+        assertFalse(SelectionMath.isNoOp(EditOp.SELECT_ALL, 10, 3, 10))
+        assertFalse(SelectionMath.isNoOp(EditOp.CURSOR_START, 10, -1, -1)) // chưa biết con trỏ ở đâu: cứ đặt
+        // Ô trống (kể cả đang hiện gợi ý, khi đó độ dài chữ thật là 0): con trỏ vốn ở cả đầu lẫn cuối.
+        EditOp.entries.filter { it != EditOp.PASTE && it != EditOp.CUT }.forEach {
+            assertTrue("$it trên ô trống", SelectionMath.isNoOp(it, 0, -1, -1))
+            assertTrue("$it trên ô trống", SelectionMath.isNoOp(it, 0, 0, 0))
+        }
+        // Dán và cắt không phải thao tác vùng chọn.
+        assertFalse(SelectionMath.isNoOp(EditOp.PASTE, 10, 0, 0))
+        assertFalse(SelectionMath.isNoOp(EditOp.CUT, 0, 0, 0))
+    }
+
     @Test fun passwordOnlyAllowsPaste() {
         EditOp.entries.forEach { assertEquals(it == EditOp.PASTE, EditPolicy.allowedOnPassword(it)) }
     }

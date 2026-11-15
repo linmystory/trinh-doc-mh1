@@ -45,4 +45,15 @@ object SelectionMath {
         EditOp.SELECT_ALL -> 0 to length
         EditOp.PASTE, EditOp.CUT -> null
     }
+
+    /**
+     * Thao tác con trỏ/vùng chọn [op] đã đúng sẵn nên không cần làm gì: ô trống (con trỏ vốn ở cả đầu lẫn cuối) hoặc vùng chọn
+     * hiện có ([selStart], [selEnd]) đã bằng đích của [target]. Quan trọng vì TextView trả về false cho ACTION_SET_SELECTION khi
+     * vùng chọn không đổi: nếu cứ gửi thì "về đầu ô" lúc con trỏ đã ở đầu bị báo nhầm là không thực hiện được. PASTE/CUT không phải
+     * thao tác vùng chọn nên luôn false.
+     */
+    fun isNoOp(op: EditOp, length: Int, selStart: Int, selEnd: Int): Boolean {
+        val goal = target(op, length, selStart, selEnd) ?: return false
+        return length <= 0 || (selStart == goal.first && selEnd == goal.second)
+    }
 }

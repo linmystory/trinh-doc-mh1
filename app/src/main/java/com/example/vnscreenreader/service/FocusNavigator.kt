@@ -6,6 +6,8 @@ import android.os.Bundle
 import android.os.SystemClock
 import android.view.accessibility.AccessibilityNodeInfo
 import com.example.vnscreenreader.core.AutoOcrPolicy
+import com.example.vnscreenreader.core.CaretMath
+import com.example.vnscreenreader.core.CaretMove
 import com.example.vnscreenreader.core.CustomLabelStore
 import com.example.vnscreenreader.core.AutoScrollPicker
 import com.example.vnscreenreader.core.ActionHintKind
@@ -15,11 +17,13 @@ import com.example.vnscreenreader.core.FocusIndex
 import com.example.vnscreenreader.core.FocusTrace
 import com.example.vnscreenreader.core.FocusTraceBuffer
 import com.example.vnscreenreader.core.QuickNav
+import com.example.vnscreenreader.core.ReadingControl
 import com.example.vnscreenreader.core.ReadingMode
 import com.example.vnscreenreader.core.ReadingModeSearch
 import com.example.vnscreenreader.core.TraversalOrder
 import com.example.vnscreenreader.core.SpeechDetail
 import com.example.vnscreenreader.core.Verbosity
+import com.example.vnscreenreader.gesture.AppGestureStore
 import com.example.vnscreenreader.node.isLinkLike
 import com.example.vnscreenreader.core.FocusLocator
 import com.example.vnscreenreader.core.FocusTracker
@@ -32,6 +36,7 @@ import com.example.vnscreenreader.core.TextGranularity
 import com.example.vnscreenreader.core.EditOp
 import com.example.vnscreenreader.core.EditPolicy
 import com.example.vnscreenreader.core.SelectionMath
+import com.example.vnscreenreader.core.SliderMath
 import com.example.vnscreenreader.core.NearbyControlPicker
 import com.example.vnscreenreader.core.SwipeGeometry
 import com.example.vnscreenreader.core.TechInfo
@@ -55,6 +60,9 @@ class FocusNavigator(
     private val feedback: Feedback = Feedback.None,
     private val speak: (text: String, interrupt: Boolean) -> Unit,
 ) {
+    /** Cử chỉ cuộn đổi giá trị thanh trượt đang chọn thay vì cuộn trang. Do phiên đọc đặt từ cài đặt. */
+    @Volatile var scrollAdjustsSliders: Boolean = true
+
     /** Tiêu điểm chi tiết đang bật: duyệt cả ô tích/nút không nhãn nằm trong khung bấm được. Do phiên đọc đặt. */
     @Volatile var detailedFocus: Boolean = false
         set(value) {
@@ -81,8 +89,18 @@ class FocusNavigator(
      */
     private val traces = FocusTraceBuffer()
     private val clicker = ClickResolver(service)
-    private var cachedNodes: List<AccessibilityNodeInfo> = emptyList()
-    private var cachedAtMs = 0L
+    private val appStore = AppGestureStore(service)
+    // @Volatile: invalidateCache() cũng được gọi từ luồng chính (callback chạm giữ, đổi cài đặt) trong khi luồng nền đọc.
+    @Volatile private var cachedNodes: List<AccessibilityNodeInfo> = emptyList()
+    @Volatile private var cachedAtMs = 0L
+
+    /** Thời điểm (uptimeMillis) chính trình đọc vừa đặt vùng chọn/con trỏ; để không đọc lặp sự kiện do chính nó gây ra. */
+    @Volatile var lastOwnSelectionMs = 0L
+        private set
+
+    /** Thời điểm chính trình đọc vừa nhấn giữ; để không đọc lặp "đã nhấn giữ" khi sự kiện của hệ thống tới. */
+    @Volatile var lastOwnLongClickMs = 0L
+        private set
     @Volatile private var staleSinceMs = 0L
     @Volatile private var lastOwnFocusMs = 0L
     private val cursor = TextCursor()
@@ -112,12 +130,29 @@ class FocusNavigator(
     }
 
     /**
-     * Gọi khi cửa sổ thật sự đổi (TYPE_WINDOW_STATE_CHANGED): bỏ cửa sổ đã chọn bằng "cửa sổ kế/trước" và đưa chế độ đọc
-     * về mặc định. KHÔNG làm việc này trong [reset] vì reset còn được gọi sau khi cuộn hay chạy plugin.
+     * Gọi khi danh sách đã ngừng cuộn một lúc. Hai ngón vuốt là thao tác cuộn gốc của Android (dịch vụ không tự chạy [scroll]),
+     * nên nếu phần tử đang chọn đã cuộn khuất khỏi màn hình (hoặc không còn hợp lệ) thì bỏ nó để lần vuốt kế bắt đầu từ phần
+     * tử đầu tiên đang hiện, y như sau [scroll]. Phần tử vẫn hiện thì giữ nguyên: ứng dụng tự cuộn để đưa phần tử vừa chọn vào
+     * màn hình cũng sinh sự kiện cuộn, và không được làm mất tiêu điểm ở trường hợp đó. Chạy trên luồng xử lý.
+     */
+    fun releaseIfScrolledAway() {
+        val cur = currentNode ?: return
+        val stillVisible = try {
+            cur.refresh() && cur.isVisibleToUser
+        } catch (e: RuntimeException) {
+            false
+        }
+        if (!stillVisible) reset()
+    }
+
+    /**
+     * Gọi khi cửa sổ thật sự đổi (TYPE_WINDOW_STATE_CHANGED): bỏ cửa sổ đã chọn bằng "cửa sổ kế/trước" và đưa chế độ đọc cùng
+     * điều khiển đọc về mặc định (từng phần tử). KHÔNG làm việc này trong [reset] vì reset còn được gọi sau khi cuộn hay chạy plugin.
      */
     fun onWindowChanged() {
         windowOverrideId = null
         readingMode = ReadingMode.ELEMENT
+        readingControl = ReadingControl.ELEMENT
         reset()
     }
 
@@ -133,22 +168,44 @@ class FocusNavigator(
         cachedAtMs = 0L
     }
 
-    fun focusOn(node: AccessibilityNodeInfo, prefix: String? = null) {
+    /** [interrupt] = false: xếp hàng sau lời đang đọc (dùng khi tự chuyển tiêu điểm vào hộp thoại/cửa sổ vừa đọc tiêu đề). */
+    fun focusOn(node: AccessibilityNodeInfo, prefix: String? = null, interrupt: Boolean = true) {
         selectQuietly(node)
         feedback.onFocusChanged()
         val spoken = describeFocus(node)
-        speak(if (prefix.isNullOrBlank()) spoken else "$prefix. $spoken", true)
+        speak(if (prefix.isNullOrBlank()) spoken else "$prefix. $spoken", interrupt)
         onFocused(node)
     }
 
     /** Chọn phần tử (bỏ qua việc đọc): dùng khi còn đang tìm, chỉ đọc khi đã đến phần tử cuối cùng. */
     private fun selectQuietly(node: AccessibilityNodeInfo) {
         lastOwnFocusMs = SystemClock.uptimeMillis()
+        // Sang phần tử khác thì luôn bắt đầu lại vị trí đơn vị chữ, kể cả khi hai phần tử có chữ giống hệt nhau (danh sách nút "Xóa").
+        if (node != currentNode) cursor.reset()
         currentNode = node
         rememberTrace(node)
         cursor.bind(nodeText(node))
         node.performAction(AccessibilityNodeInfo.ACTION_ACCESSIBILITY_FOCUS)
         highlight(node)
+    }
+
+    /** Vết của phần tử chọn gần nhất (để nhớ vị trí theo cửa sổ); null nếu chưa chọn gì. */
+    fun latestTrace(): FocusTrace? = traces.latest()
+
+    /** Chọn phần tử đầu tiên của cửa sổ đang hoạt động (hộp thoại vừa mở). false nếu cửa sổ chưa có phần tử nào. */
+    fun focusFirst(interrupt: Boolean): Boolean {
+        val first = visibleNodes()?.firstOrNull() ?: return false
+        focusOn(first, interrupt = interrupt)
+        return true
+    }
+
+    /** Tìm lại phần tử theo [trace] đã nhớ (khớp mạnh: mã, nhãn) và chọn nó. false nếu không còn thấy. */
+    fun restoreFromTrace(trace: FocusTrace, interrupt: Boolean): Boolean {
+        val nodes = visibleNodes() ?: return false
+        val index = locateByTrace(nodes, listOf(trace))
+        if (index < 0) return false
+        focusOn(nodes[index], interrupt = interrupt)
+        return true
     }
 
     private fun rememberTrace(node: AccessibilityNodeInfo) {
@@ -213,6 +270,14 @@ class FocusNavigator(
             moveByMode(forward)
             return
         }
+        moveElement(forward)
+    }
+
+    /**
+     * Sang phần tử kế/trước theo thứ tự đọc, KHÔNG xét [readingMode]: dùng cho điều khiển đọc "Phần tử" của vuốt một ngón
+     * xuống/lên và cho việc sang phần tử bên cạnh khi điều khiển theo đơn vị chữ đã hết chữ ([moveToNeighbour]).
+     */
+    fun moveElement(forward: Boolean) {
         val nodes = visibleNodes()
         if (nodes == null) {
             speak(t(S.MSG_CANNOT_READ_SCREEN), true)
@@ -245,6 +310,13 @@ class FocusNavigator(
         val node = if (selected.refresh()) selected else relocateCurrent() ?: run {
             release()
             return ActivateOutcome.GONE
+        }
+        // Ứng dụng người dùng đã chọn "chạm thẳng": gửi cú chạm thật vào giữa phần tử trước (ACTION_CLICK không có tác dụng ở
+        // một số ứng dụng tự vẽ giao diện); chạm không phát được thì rơi về cách thường bên dưới.
+        if (appStore.isRawTap(node.packageName?.toString()) && clicker.tapCenter(node)) {
+            feedback.onActivated()
+            invalidateCache()
+            return ActivateOutcome.TAPPED
         }
         val candidates = clicker.candidates(node)
         if (candidates.any { it.performAction(AccessibilityNodeInfo.ACTION_CLICK) }) {
@@ -484,7 +556,124 @@ class FocusNavigator(
         )
     }
 
+    /**
+     * Nút có khoảng giá trị VÀ chỉnh được ([SliderMath.isAdjustable]). Thanh tiến trình chỉ-đọc cũng có khoảng giá trị nhưng
+     * không có hành động nào: không phải thanh trượt, để vuốt xuống/lên đi tiếp theo điều khiển đọc thay vì đứng yên ở đó.
+     */
+    private fun isAdjustableRange(node: AccessibilityNodeInfo): Boolean =
+        node.rangeInfo != null && SliderMath.isAdjustable(
+            enabled = node.isEnabled,
+            actionIds = node.actionList.map { it.id },
+            setProgressId = AccessibilityNodeInfo.AccessibilityAction.ACTION_SET_PROGRESS.id,
+            scrollForwardId = AccessibilityNodeInfo.ACTION_SCROLL_FORWARD,
+            scrollBackwardId = AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD,
+        )
+
+    /** Thanh trượt của phần tử đang chọn: chính nó hoặc cha trực tiếp (nút bao quanh) có khoảng giá trị và chỉnh được. */
+    private fun sliderOf(node: AccessibilityNodeInfo): AccessibilityNodeInfo? =
+        node.takeIf { isAdjustableRange(it) } ?: node.parent?.takeIf { isAdjustableRange(it) }
+
+    /**
+     * Tăng/giảm giá trị thanh trượt đang chọn một bước (≈5%). Trả về false nếu phần tử đang chọn không phải thanh trượt
+     * (người gọi quyết định báo lỗi hay làm việc khác). Dùng ACTION_SET_PROGRESS nếu có, không thì cuộn tới/lui của chính nó.
+     */
+    fun adjustRange(direction: Int): Boolean {
+        val cur = currentFresh() ?: return false
+        val slider = sliderOf(cur) ?: return false
+        val info = slider.rangeInfo ?: return false
+        val isInt = info.type == AccessibilityNodeInfo.RangeInfo.RANGE_TYPE_INT
+        val next = SliderMath.next(info.current, info.min, info.max, direction, isInt)
+        val setProgress = AccessibilityNodeInfo.AccessibilityAction.ACTION_SET_PROGRESS
+        if (slider.actionList.any { it.id == setProgress.id } && next != info.current) {
+            val args = Bundle().apply { putFloat(AccessibilityNodeInfo.ACTION_ARGUMENT_PROGRESS_VALUE, next) }
+            slider.performAction(setProgress.id, args)
+        } else {
+            slider.performAction(
+                if (direction >= 0) AccessibilityNodeInfo.ACTION_SCROLL_FORWARD else AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD,
+            )
+        }
+        invalidateCache()
+        SystemClock.sleep(SLIDER_SETTLE_MS) // ứng dụng cần một chút để cập nhật giá trị mới
+        slider.refresh()
+        speak(describeFocus(slider), true)
+        return true
+    }
+
+    /**
+     * Kéo thanh trượt đang chọn tới cuối (bên phải) theo lệnh của người dùng. Thanh chuẩn có ACTION_SET_PROGRESS thì đặt thẳng giá
+     * trị lớn nhất; còn núm kéo (ví dụ "kéo sang phải để xác nhận") thì thực hiện một cú kéo từ tâm núm tới mép phải đường trượt.
+     * Chỉ kéo thẳng tới cuối, không nhìn ảnh.
+     */
+    fun dragToEnd() {
+        val cur = currentFresh()
+        if (cur == null) {
+            speak(t(S.MSG_SLIDER_NONE), true)
+            return
+        }
+        val slider = sliderOf(cur)
+        val info = slider?.rangeInfo
+        val setProgress = AccessibilityNodeInfo.AccessibilityAction.ACTION_SET_PROGRESS
+        if (slider != null && info != null && slider.actionList.any { it.id == setProgress.id }) {
+            val args = Bundle().apply { putFloat(AccessibilityNodeInfo.ACTION_ARGUMENT_PROGRESS_VALUE, info.max) }
+            if (slider.performAction(setProgress.id, args)) {
+                invalidateCache()
+                SystemClock.sleep(SLIDER_SETTLE_MS)
+                slider.refresh()
+                speak(describeFocus(slider), true)
+                return
+            }
+        }
+        val handle = Rect().also { cur.getBoundsInScreen(it) }
+        val track = trackBoundsOf(cur, handle)
+        if (handle.isEmpty || track == null) {
+            speak(t(S.MSG_SLIDER_FAILED), true)
+            return
+        }
+        val endX = SliderMath.dragEndX(handle.centerX(), handle.width(), track.right)
+        if (endX == null) {
+            speak(t(S.MSG_SLIDER_DONE), true) // đã ở cuối
+            return
+        }
+        val path = android.graphics.Path().apply {
+            moveTo(handle.exactCenterX(), handle.exactCenterY())
+            lineTo(endX.toFloat(), handle.exactCenterY())
+        }
+        val gesture = android.accessibilityservice.GestureDescription.Builder()
+            .addStroke(android.accessibilityservice.GestureDescription.StrokeDescription(path, 0, DRAG_DURATION_MS))
+            .build()
+        val done = t(S.MSG_SLIDER_DONE)
+        val failed = t(S.MSG_SLIDER_FAILED)
+        val accepted = service.dispatchGesture(
+            gesture,
+            object : AccessibilityService.GestureResultCallback() {
+                override fun onCompleted(g: android.accessibilityservice.GestureDescription?) {
+                    invalidateCache()
+                    speak(done, true)
+                }
+
+                override fun onCancelled(g: android.accessibilityservice.GestureDescription?) {
+                    speak(failed, true)
+                }
+            },
+            null,
+        )
+        if (!accepted) speak(failed, true)
+    }
+
+    /** Đường trượt của núm [handle]: tổ tiên gần nhất (tối đa 4 cấp) đủ rộng (≥ 3 lần núm) và chứa tâm núm. */
+    private fun trackBoundsOf(node: AccessibilityNodeInfo, handle: Rect): Rect? {
+        var parent = node.parent
+        repeat(TRACK_LEVELS) {
+            val p = parent ?: return null
+            val r = Rect().also { p.getBoundsInScreen(it) }
+            if (!r.isEmpty && r.width() >= handle.width() * 3 && r.contains(handle.centerX(), handle.centerY())) return r
+            parent = p.parent
+        }
+        return null
+    }
+
     fun scroll(forward: Boolean) {
+        if (scrollAdjustsSliders && adjustRange(if (forward) 1 else -1)) return
         val root = service.rootInActiveWindow
         if (root == null) {
             speak(t(S.MSG_CANNOT_READ_SCREEN), true)
@@ -551,6 +740,7 @@ class FocusNavigator(
             return
         }
         val node = currentFresh() ?: return
+        lastOwnLongClickMs = SystemClock.uptimeMillis()
         // 1) Hành động nhấn giữ của khung (hoặc cha). 2) Context click (menu ngữ cảnh chuột phải). 3) Giả lập chạm giữ.
         val target = NodeCollector.findAncestorOrSelf(node) { it.isLongClickable }
         val done = (target != null && target.performAction(AccessibilityNodeInfo.ACTION_LONG_CLICK)) ||
@@ -615,8 +805,34 @@ class FocusNavigator(
     private fun nodeText(node: AccessibilityNodeInfo): String =
         if (node.isPassword) "" else (node.text ?: node.contentDescription)?.toString().orEmpty()
 
-    /** Đổi đơn vị đọc (đoạn → câu → từ → ký tự) và trả về đơn vị mới. */
-    fun cycleGranularity(): TextGranularity = cursor.cycle()
+    /**
+     * Đổi đơn vị đọc (đoạn → câu → từ → ký tự) và trả về đơn vị mới. Điều khiển đọc đi theo đơn vị mới, nên vuốt một ngón xuống/lên
+     * lập tức di chuyển theo đơn vị đó.
+     */
+    fun cycleGranularity(): TextGranularity {
+        val unit = cursor.cycle()
+        readingControl = ReadingControl.forUnit(unit)
+        return unit
+    }
+
+    /**
+     * Điều khiển đọc của vuốt một ngón xuống/lên; [ReadingControl.ELEMENT] = từng phần tử. Do người dùng đổi bằng cử chỉ
+     * ([cycleReadingControl]) hoặc bằng "đổi đơn vị đọc" ([cycleGranularity]); về mặc định khi cửa sổ đổi ([onWindowChanged]).
+     */
+    @Volatile var readingControl: ReadingControl = ReadingControl.ELEMENT
+        private set
+
+    /**
+     * Chuyển sang điều khiển đọc kế/trước theo vòng tròn và trả về điều khiển mới. Điều khiển theo đơn vị chữ cũng đặt lại đơn vị
+     * của con trỏ chữ, nên "sao chép đơn vị" và ba ngón vuốt xuống/lên dùng đúng đơn vị đang chọn. Người gọi đọc tên điều khiển.
+     */
+    fun cycleReadingControl(forward: Boolean): ReadingControl {
+        val control = if (forward) readingControl.next() else readingControl.previous()
+        readingControl = control
+        control.unit?.let { cursor.select(it) }
+        com.example.vnscreenreader.core.Diag.log("CONTROL") { "control=$control" }
+        return control
+    }
 
     /** Di chuyển tới đơn vị kế/trước của phần tử đang chọn; null nếu chưa chọn phần tử hoặc không có chữ. */
     fun moveUnit(forward: Boolean): UnitMove? {
@@ -624,8 +840,49 @@ class FocusNavigator(
         val node = currentFresh() ?: return UnitMove.Changed // đã đọc "phần tử đã thay đổi" và reset
         cursor.bind(nodeText(node))
         val move = cursor.move(forward)
-        if (move is UnitMove.End && cursor.current() == null) return null
+        if (move is UnitMove.End && cursor.isEmpty) return null
         return move
+    }
+
+    /**
+     * Sang phần tử kế/trước khi điều khiển đọc theo đơn vị chữ đã hết chữ (đọc cả phần tử mới như vuốt phải/trái). Lùi sang
+     * phần tử trước thì đặt con trỏ chữ ở CUỐI phần tử đó: vuốt lên tiếp đọc đơn vị cuối cùng thay vì nhảy qua cả phần tử.
+     */
+    fun moveToNeighbour(forward: Boolean) {
+        val before = currentNode
+        moveElement(forward)
+        if (!forward && currentNode != before) cursor.parkAtEnd()
+    }
+
+    /**
+     * Nhảy tới phần tử cùng loại [mode] kế/trước mà KHÔNG đổi [readingMode] (điều khiển đọc "Điều khiển" của vuốt một ngón
+     * xuống/lên dùng đường này). Cách tìm, cuộn và đọc giống hệt chế độ đọc cũ.
+     */
+    fun moveToMode(mode: ReadingMode, forward: Boolean) = moveByMode(forward, mode)
+
+    /**
+     * Dời con trỏ THẬT trong ô nhập đang chọn theo [unit] về phía [forward] bằng ACTION_SET_SELECTION (vuốt một ngón xuống/lên khi
+     * đang ở ô nhập, như chuẩn của Bộ trợ năng Android). Vị trí gốc là đầu cuối của vùng chọn hiện có; chưa biết vị trí con trỏ thì
+     * bắt đầu từ đầu chữ (tiến) hoặc cuối chữ (lùi). Kết quả:
+     *  - [CaretMove.Moved]: đã dời, kèm đoạn chữ vừa đi qua để đọc;
+     *  - [CaretMove.Edge]: hết chữ theo hướng này hoặc ô trống/đang hiện gợi ý, người gọi sang phần tử bên cạnh để khỏi kẹt trong ô;
+     *  - [CaretMove.Unavailable]: không phải ô nhập, là ô mật khẩu ([EditPolicy]: không bao giờ lộ chữ), chưa chọn gì hoặc hệ thống
+     *    từ chối, người gọi đi theo điều khiển như thường.
+     * Việc tự đặt vùng chọn được ghi nhận ([lastOwnSelectionMs]) để sự kiện "vùng chọn đổi" dội lại không bị đọc thêm lần nữa.
+     */
+    fun moveCaret(unit: TextGranularity, forward: Boolean): CaretMove {
+        // Dùng chung đường tìm ô nhập với "xóa tất cả": chưa chọn gì, phần tử đã đổi, không phải ô nhập hay ô mật khẩu đều là
+        // "không dời được" (người gọi đi theo điều khiển như thường).
+        val (target, blocked) = editTargetOrResult()
+        if (target == null || blocked != null) return CaretMove.Unavailable
+        val text = realText(target)
+        val reported = target.textSelectionEnd
+        val caret = if (reported >= 0) reported else if (forward) 0 else text.length
+        val destination = CaretMath.target(text, caret, unit, forward) ?: return CaretMove.Edge
+        // Ô đang giữ tiêu điểm nhập thì không gửi lại ACTION_FOCUS: một số ứng dụng chọn lại toàn bộ chữ mỗi lần được yêu cầu.
+        if (!target.isFocused) target.performAction(AccessibilityNodeInfo.ACTION_FOCUS)
+        if (!setSelection(target, destination, destination)) return CaretMove.Unavailable
+        return CaretMove.Moved(CaretMath.traversed(text, caret, destination))
     }
 
     /** Đơn vị đang đọc, null nếu chưa di chuyển. Không bao giờ trả chữ của ô mật khẩu. */
@@ -642,21 +899,83 @@ class FocusNavigator(
         val node = currentFresh() ?: return EditResult.FAILED
         val target = NodeCollector.findAncestorOrSelf(node) { it.isEditable } ?: return EditResult.NOT_EDITABLE
         if (target.isPassword && !EditPolicy.allowedOnPassword(op)) return EditResult.PASSWORD
-        target.performAction(AccessibilityNodeInfo.ACTION_FOCUS)
+        // Ô đang giữ tiêu điểm nhập thì không gửi lại ACTION_FOCUS (như [moveCaret]): một số ứng dụng chọn lại toàn bộ chữ mỗi lần
+        // được yêu cầu, khiến "dán" ngay sau đó ghi đè cả ô.
+        if (!target.isFocused) target.performAction(AccessibilityNodeInfo.ACTION_FOCUS)
         val ok = when (op) {
             EditOp.PASTE -> target.performAction(AccessibilityNodeInfo.ACTION_PASTE)
             EditOp.CUT -> target.performAction(AccessibilityNodeInfo.ACTION_CUT)
             else -> {
-                val length = target.text?.length ?: 0
-                val range = SelectionMath.target(op, length, target.textSelectionStart, target.textSelectionEnd)
-                range != null && setSelection(target, range.first, range.second)
+                // Độ dài chữ THẬT: ô trống đang hiện gợi ý có text = gợi ý, dùng độ dài đó sẽ đặt vùng chọn quá cuối chữ và bị từ chối.
+                val length = realText(target).length
+                val start = target.textSelectionStart
+                val end = target.textSelectionEnd
+                val range = SelectionMath.target(op, length, start, end)
+                when {
+                    range == null -> false
+                    // Đã đúng vị trí (vd. "về đầu ô" khi con trỏ đang ở đầu): báo xong, không gửi lại vì TextView trả false khi
+                    // vùng chọn không đổi.
+                    SelectionMath.isNoOp(op, length, start, end) -> true
+                    else -> setSelection(target, range.first, range.second)
+                }
             }
         }
         if (ok) invalidateCache()
         return if (ok) EditResult.DONE else EditResult.FAILED
     }
 
+    enum class ClearResult { DONE, EMPTY, NO_SELECTION, NOT_EDITABLE, PASSWORD, FAILED, RESTORED, NOTHING_TO_RESTORE, NOT_EMPTY }
+
+    /** Chữ vừa bị "xóa tất cả" để còn khôi phục; chỉ nằm trong bộ nhớ, không bao giờ lấy từ ô mật khẩu. */
+    @Volatile private var clearedText: String? = null
+
+    private fun editTargetOrResult(): Pair<AccessibilityNodeInfo?, ClearResult?> {
+        if (currentNode == null) return null to ClearResult.NO_SELECTION
+        val node = currentFresh() ?: return null to ClearResult.FAILED
+        val target = NodeCollector.findAncestorOrSelf(node) { it.isEditable } ?: return null to ClearResult.NOT_EDITABLE
+        if (target.isPassword) return null to ClearResult.PASSWORD
+        return target to null
+    }
+
+    /** Chữ thật của ô (rỗng nếu chỉ đang hiện gợi ý "hint"). */
+    private fun realText(target: AccessibilityNodeInfo): String =
+        if (target.isShowingHintText) "" else target.text?.toString().orEmpty()
+
+    private fun setFieldText(target: AccessibilityNodeInfo, text: String): Boolean {
+        target.performAction(AccessibilityNodeInfo.ACTION_FOCUS)
+        val args = Bundle().apply { putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, text) }
+        val ok = target.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args)
+        if (ok) invalidateCache()
+        return ok
+    }
+
+    /**
+     * Xóa TẤT CẢ chữ trong ô nhập đang chọn (ACTION_SET_TEXT rỗng, không đụng clipboard) và nhớ chữ cũ trong bộ nhớ để
+     * [restoreCleared]. Ô mật khẩu bị chặn theo [EditPolicy]: không xóa, không nhớ.
+     */
+    fun clearField(): ClearResult {
+        val (target, error) = editTargetOrResult()
+        if (target == null) return error ?: ClearResult.FAILED
+        val before = realText(target)
+        if (before.isEmpty()) return ClearResult.EMPTY
+        if (!setFieldText(target, "")) return ClearResult.FAILED
+        clearedText = before.take(MAX_RESTORE_CHARS)
+        return ClearResult.DONE
+    }
+
+    /** Đặt lại chữ vừa xóa, CHỈ khi ô đang trống (không ghi đè chữ mới gõ). */
+    fun restoreCleared(): ClearResult {
+        val saved = clearedText ?: return ClearResult.NOTHING_TO_RESTORE
+        val (target, error) = editTargetOrResult()
+        if (target == null) return error ?: ClearResult.FAILED
+        if (realText(target).isNotEmpty()) return ClearResult.NOT_EMPTY
+        if (!setFieldText(target, saved)) return ClearResult.FAILED
+        clearedText = null
+        return ClearResult.RESTORED
+    }
+
     private fun setSelection(node: AccessibilityNodeInfo, start: Int, end: Int): Boolean {
+        lastOwnSelectionMs = SystemClock.uptimeMillis()
         val args = android.os.Bundle().apply {
             putInt(AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_START_INT, start)
             putInt(AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_END_INT, end)
@@ -706,8 +1025,7 @@ class FocusNavigator(
     }
 
     /** Khớp mạnh theo bộ đệm vết (xem [TraceLocator]); -1 nếu không khớp. */
-    private fun locateByTrace(nodes: List<AccessibilityNodeInfo>): Int {
-        val history = traces.newestFirst()
+    private fun locateByTrace(nodes: List<AccessibilityNodeInfo>, history: List<FocusTrace> = traces.newestFirst()): Int {
         if (history.isEmpty() || nodes.isEmpty()) return -1
         val labels = HashMap<Int, String>()
         return FocusLocator.relocate(
@@ -817,11 +1135,10 @@ class FocusNavigator(
     }
 
     /**
-     * Nhảy tới phần tử cùng loại với [readingMode] kế/trước. Hết màn hình thì cuộn và tìm tiếp (tối đa
+     * Nhảy tới phần tử cùng loại với [mode] (mặc định [readingMode]) kế/trước. Hết màn hình thì cuộn và tìm tiếp (tối đa
      * [MAX_MODE_SCROLLS] lần), cuộn trong im lặng để chỉ đọc phần tử cuối cùng tìm được.
      */
-    private fun moveByMode(forward: Boolean) {
-        val mode = readingMode
+    private fun moveByMode(forward: Boolean, mode: ReadingMode = readingMode) {
         var nodes: List<AccessibilityNodeInfo> = visibleNodes() ?: run {
             speak(t(S.MSG_CANNOT_READ_SCREEN), true)
             return
@@ -1051,11 +1368,16 @@ class FocusNavigator(
         if (node == currentNode) return
         currentNode = node
         rememberTrace(node)
+        cursor.reset() // phần tử khác: vị trí đơn vị chữ cũ không còn ý nghĩa
         cursor.bind(nodeText(node))
         highlight(node)
     }
 
     private companion object {
+        const val MAX_RESTORE_CHARS = 20_000
+        const val SLIDER_SETTLE_MS = 120L
+        const val DRAG_DURATION_MS = 450L
+        const val TRACK_LEVELS = 4
         const val CACHE_TTL_MS = 800L
         const val MAX_PARENT_LOOKUP = 12
         const val AUTO_SCROLL_SETTLE_MS = 300L

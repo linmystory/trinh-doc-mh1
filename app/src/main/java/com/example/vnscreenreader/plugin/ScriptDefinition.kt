@@ -152,16 +152,20 @@ object ScriptParser {
             mode = mode,
             action = action,
             className = optPattern(obj, "className"),
-            message = optPattern(obj, "message")?.also {
-                require(it.length <= MAX_MESSAGE_LENGTH) { t(S.SCRIPT_ERR_MESSAGE, MAX_MESSAGE_LENGTH) }
-            },
+            message = optPattern(obj, "message", MAX_MESSAGE_LENGTH) { t(S.SCRIPT_ERR_MESSAGE, MAX_MESSAGE_LENGTH) },
         )
     }
 
-    private fun optPattern(obj: JSONObject, key: String): String? {
+    /** Giới hạn mặc định là độ dài mẫu; riêng "message" được dài hơn ([MAX_MESSAGE_LENGTH]) nên truyền giới hạn và lời báo lỗi của nó. */
+    private fun optPattern(
+        obj: JSONObject,
+        key: String,
+        maxLength: Int = MAX_PATTERN_LENGTH,
+        tooLong: () -> String = { t(S.SCRIPT_ERR_PATTERN, key, MAX_PATTERN_LENGTH) },
+    ): String? {
         if (!obj.has(key) || obj.isNull(key)) return null
         val value = obj.getString(key).trim()
-        require(value.length <= MAX_PATTERN_LENGTH) { t(S.SCRIPT_ERR_PATTERN, key, MAX_PATTERN_LENGTH) }
+        require(value.length <= maxLength, tooLong)
         return value.ifEmpty { null }
     }
 }

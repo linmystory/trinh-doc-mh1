@@ -65,7 +65,11 @@ class SpeechEngine(
             val firstMissing = missingBy.values.firstOrNull { it.first }
             (firstMissing != null) to (firstMissing?.second ?: locale)
         }
-        onVoiceStatus?.invoke(anyMissing, shown)
+        try {
+            onVoiceStatus?.invoke(anyMissing, shown)
+        } catch (e: RuntimeException) {
+            android.util.Log.w("SpeechEngine", "Lỗi khi báo trạng thái giọng", e)
+        }
     }
 
     /** true khi một công cụ đang dùng không có giọng cho ngôn ngữ của nó. */
@@ -88,6 +92,7 @@ class SpeechEngine(
             it.planner = planner
             val key = if (appLocale) "first" else "second"
             it.onVoiceStatus = { missing, locale -> reportVoiceStatus(key, missing, locale) }
+            it.onFallback = { speak(t(S.MSG_TTS_FALLBACK), interrupt = true) }
         }
 
     /**
@@ -199,7 +204,13 @@ class SpeechEngine(
      */
     private fun armWatchdogLocked(token: Int, chars: Int) {
         cancelWatchdog()
-        val task = Runnable { onRunFinished(token) }
+        val task = Runnable {
+            try {
+                onRunFinished(token)
+            } catch (e: RuntimeException) {
+                android.util.Log.w("SpeechEngine", "Lỗi ở bộ canh giờ đọc", e)
+            }
+        }
         watchdog = task
         mainHandler.postDelayed(task, WATCHDOG_BASE_MS + chars * WATCHDOG_PER_CHAR_MS)
     }
@@ -240,6 +251,13 @@ class SpeechEngine(
         }
         engines.forEach { it.updateVoice(newRate, newPitch) }
     }
+
+    /**
+     * Đang có lời chờ hoặc đang phát: dùng để chọn luồng âm khi chỉnh âm lượng. Chế độ một công cụ đi thẳng vào công cụ
+     * (không qua [RunScheduler]) nên phải hỏi cả công cụ, không chỉ hàng đợi đoạn.
+     */
+    val isSpeaking: Boolean
+        get() = synchronized(lock) { scheduler.pendingMessages() > 0 || listOfNotNull(primary, second).any { it.isSpeaking } }
 
     fun stop() {
         val engines = synchronized(lock) {

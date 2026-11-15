@@ -64,6 +64,22 @@ class TextUnitsTest {
     }
 
     @Test
+    fun nonBreakingAndOtherUnicodeSpacesSeparateWords() {
+        // Trang web hay nối từ bằng &nbsp; (U+00A0); các dấu cách Unicode khác cũng phải tách từ như dấu cách thường.
+        assertEquals(listOf("Hà", "Nội"), TextUnits.split("Hà Nội", TextGranularity.WORD))
+        assertEquals(listOf("10", "km"), TextUnits.split("10 km", TextGranularity.WORD)) // dấu cách không ngắt hẹp
+        assertEquals(listOf("a", "b", "c"), TextUnits.split("a b　c", TextGranularity.WORD))
+        // Cụm toàn dấu cách Unicode không phải là một "từ" (trước đây U+00A0 đứng riêng thành một từ rỗng khi duyệt).
+        assertEquals(listOf("Trang", "chủ", "|", "Giới", "thiệu"), TextUnits.split("Trang chủ  |  Giới thiệu", TextGranularity.WORD))
+        assertEquals(emptyList<String>(), TextUnits.split("   　", TextGranularity.WORD))
+        // Vị trí (range) vẫn khớp với chuỗi gốc, kể cả sau dấu cách không ngắt.
+        val text = "x yz"
+        assertEquals(listOf(0..0, 2..3), TextUnits.ranges(text, TextGranularity.WORD))
+        // Dấu cách ASCII, tab, xuống dòng không đổi hành vi.
+        assertEquals(listOf("xin", "chào", "bạn"), TextUnits.split("xin\nchào \t bạn", TextGranularity.WORD))
+    }
+
+    @Test
     fun granularityCycleCoversAllAndWraps() {
         var g = TextGranularity.PARAGRAPH
         val seen = mutableListOf<TextGranularity>()

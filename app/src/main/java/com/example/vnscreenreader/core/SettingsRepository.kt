@@ -37,10 +37,6 @@ class SettingsRepository(context: Context) {
         set(value) = prefs.edit { putBoolean(KEY_SPEAK_EMOJI, value) }
 
     /**
-     * Đọc ký tự đang gõ trong ô mật khẩu và KHÔNG che ô mật khẩu khỏi OCR/mô tả ảnh. Mặc định TẮT (chỉ báo
-     * "đã nhập ký tự") để không lộ mật khẩu khi có người nghe.
-     */
-    /**
      * Tiêu điểm chi tiết: đưa cả các view mà ứng dụng đánh dấu "không quan trọng với trợ năng" vào cây (ví dụ ô tích
      * không gắn nhãn cạnh dòng điều khoản). Mặc định TẮT vì thêm nhiều điểm dừng và chậm hơn.
      */
@@ -48,6 +44,10 @@ class SettingsRepository(context: Context) {
         get() = prefs.getBoolean(KEY_DETAILED_FOCUS, false)
         set(value) = prefs.edit { putBoolean(KEY_DETAILED_FOCUS, value) }
 
+    /**
+     * Đọc ký tự đang gõ trong ô mật khẩu và KHÔNG che ô mật khẩu khỏi OCR/mô tả ảnh. Mặc định TẮT (chỉ báo
+     * "đã nhập ký tự") để không lộ mật khẩu khi có người nghe.
+     */
     var speakPasswords: Boolean
         get() = prefs.getBoolean(KEY_SPEAK_PASSWORDS, false)
         set(value) = prefs.edit { putBoolean(KEY_SPEAK_PASSWORDS, value) }
@@ -84,6 +84,121 @@ class SettingsRepository(context: Context) {
     var ttsVoiceMissing: Boolean
         get() = prefs.getBoolean(KEY_VOICE_MISSING, false)
         set(value) = prefs.edit { putBoolean(KEY_VOICE_MISSING, value) }
+    /** Nhập phím bằng cách nhấc tay (rê tới phím rồi nhấc). Mặc định TẮT: chỉ người quen kiểu gõ này mới bật. */
+    var liftToType: Boolean
+        get() = prefs.getBoolean(KEY_LIFT_TO_TYPE, false)
+        set(value) = prefs.edit { putBoolean(KEY_LIFT_TO_TYPE, value) }
+
+    /** Đọc Toast (tin nhắn nổi ngắn) kể cả khi tắt đọc thông báo. Mặc định BẬT. */
+    var readToasts: Boolean
+        get() = prefs.getBoolean(KEY_READ_TOASTS, true)
+        set(value) = prefs.edit { putBoolean(KEY_READ_TOASTS, value) }
+
+    /** Phím tắt bàn phím ngoài (Alt/Windows + phím). Mặc định BẬT; chỉ chặn các tổ hợp đã gán, phím khác gõ bình thường. */
+    var keyboardShortcuts: Boolean
+        get() = prefs.getBoolean(KEY_KEYBOARD_SHORTCUTS, true)
+        set(value) = prefs.edit { putBoolean(KEY_KEYBOARD_SHORTCUTS, value) }
+
+    /**
+     * Phím âm lượng làm phím tắt khi màn hình sáng (bấm nhanh vẫn chỉnh âm lượng). Mặc định TẮT: dịch vụ chiếm phím âm lượng thì
+     * phím tắt hỗ trợ tiếp cận của chính Android (giữ hai phím âm lượng) không dùng được lúc màn hình sáng, mà đó là cách thoát
+     * đáng tin nhất khi cần tắt dịch vụ.
+     */
+    var volumeKeyNav: Boolean
+        get() = prefs.getBoolean(KEY_VOLUME_NAV, false)
+        set(value) = prefs.edit { putBoolean(KEY_VOLUME_NAV, value) }
+
+    /** Đọc người gọi khi điện thoại đổ chuông (cần quyền trạng thái điện thoại + nhật ký cuộc gọi; có quyền danh bạ thì đọc tên thay cho số). Mặc định TẮT. */
+    var announceCalls: Boolean
+        get() = prefs.getBoolean(KEY_ANNOUNCE_CALLS, false)
+        set(value) = prefs.edit { putBoolean(KEY_ANNOUNCE_CALLS, value) }
+
+    /** Cho phép hành động "Nói vị trí hiện tại của tôi" (cần quyền vị trí). Mặc định TẮT. */
+    var locationEnabled: Boolean
+        get() = prefs.getBoolean(KEY_LOCATION, false)
+        set(value) = prefs.edit { putBoolean(KEY_LOCATION, value) }
+
+    /** Nút tai nghe (KEYCODE_HEADSETHOOK) điều khiển trình đọc: bấm một/hai lần/giữ. Mặc định TẮT. */
+    var headsetKey: Boolean
+        get() = prefs.getBoolean(KEY_HEADSET, false)
+        set(value) = prefs.edit { putBoolean(KEY_HEADSET, value) }
+
+    /** Đang chọn một thanh trượt thì cử chỉ cuộn đổi giá trị của nó thay vì cuộn trang. Mặc định BẬT. */
+    var scrollAdjustsSliders: Boolean
+        get() = prefs.getBoolean(KEY_SCROLL_SLIDERS, true)
+        set(value) = prefs.edit { putBoolean(KEY_SCROLL_SLIDERS, value) }
+
+    /** Danh sách gói ứng dụng KHÔNG dùng điều hướng bằng phím âm lượng (chuỗi cách nhau bằng dấu phẩy, xem [PackageSet]). */
+    var volumeExcludedApps: String
+        get() = prefs.getString(KEY_VOLUME_EXCLUDED, "").orEmpty()
+        set(value) = prefs.edit { putString(KEY_VOLUME_EXCLUDED, value) }
+
+    /** Hộp thoại/bảng dưới mở ra thì đọc tiêu đề rồi chuyển tới phần tử đầu tiên. Mặc định BẬT. */
+    var focusDialogs: Boolean
+        get() = prefs.getBoolean(KEY_FOCUS_DIALOGS, true)
+        set(value) = prefs.edit { putBoolean(KEY_FOCUS_DIALOGS, value) }
+
+    /** Quay lại cửa sổ đã rời thì chuyển tới phần tử đã chọn lần trước. Mặc định TẮT. */
+    var rememberFocus: Boolean
+        get() = prefs.getBoolean(KEY_REMEMBER_FOCUS, false)
+        set(value) = prefs.edit { putBoolean(KEY_REMEMBER_FOCUS, value) }
+
+    /** Báo "Đã tắt/bật màn hình". Giọng đọc luôn dừng khi tắt màn hình, bất kể công tắc này. Mặc định TẮT. */
+    var announceScreen: Boolean
+        get() = prefs.getBoolean(KEY_ANNOUNCE_SCREEN, false)
+        set(value) = prefs.edit { putBoolean(KEY_ANNOUNCE_SCREEN, value) }
+
+    /** Đọc từng ký tự khi gõ. Mặc định BẬT (hành vi cũ). */
+    var echoChars: Boolean
+        get() = prefs.getBoolean(KEY_ECHO_CHARS, true)
+        set(value) = prefs.edit { putBoolean(KEY_ECHO_CHARS, value) }
+
+    /** Đọc từ vừa gõ xong (sau dấu cách/dấu câu). Mặc định TẮT. */
+    var echoWords: Boolean
+        get() = prefs.getBoolean(KEY_ECHO_WORDS, false)
+        set(value) = prefs.edit { putBoolean(KEY_ECHO_WORDS, value) }
+
+    /** Đọc "Chữ hoa" trước chữ cái viết hoa khi gõ (cần bật đọc từng ký tự). Mặc định TẮT. */
+    var speakCapitals: Boolean
+        get() = prefs.getBoolean(KEY_SPEAK_CAPITALS, false)
+        set(value) = prefs.edit { putBoolean(KEY_SPEAK_CAPITALS, value) }
+
+    /** Sau khi danh sách ngừng cuộn, đọc "Mục 5 đến 9 trên 30". Mặc định TẮT. */
+    var speakListRange: Boolean
+        get() = prefs.getBoolean(KEY_LIST_RANGE, false)
+        set(value) = prefs.edit { putBoolean(KEY_LIST_RANGE, value) }
+
+    /** Độ trễ chạm (ms): ngón tay phải dừng ở phần tử chừng này thì mới đọc, để lướt nhanh không bị đọc dồn. 0 = đọc ngay. */
+    var touchDelayMs: Int
+        get() = prefs.getInt(KEY_TOUCH_DELAY, 0).coerceIn(0, MAX_TOUCH_DELAY_MS)
+        set(value) = prefs.edit { putInt(KEY_TOUCH_DELAY, value.coerceIn(0, MAX_TOUCH_DELAY_MS)) }
+
+    // Đọc thông báo: hoàn cảnh yên lặng (đều mặc định TẮT để không đổi hành vi cũ) và hai danh sách từ khóa.
+    var notifQuietFinger: Boolean
+        get() = prefs.getBoolean(KEY_NQ_FINGER, false)
+        set(value) = prefs.edit { putBoolean(KEY_NQ_FINGER, value) }
+
+    var notifQuietCall: Boolean
+        get() = prefs.getBoolean(KEY_NQ_CALL, false)
+        set(value) = prefs.edit { putBoolean(KEY_NQ_CALL, value) }
+
+    var notifQuietDnd: Boolean
+        get() = prefs.getBoolean(KEY_NQ_DND, false)
+        set(value) = prefs.edit { putBoolean(KEY_NQ_DND, value) }
+
+    var notifQuietMedia: Boolean
+        get() = prefs.getBoolean(KEY_NQ_MEDIA, false)
+        set(value) = prefs.edit { putBoolean(KEY_NQ_MEDIA, value) }
+
+    /** Thông báo chứa từ trong danh sách này KHÔNG bao giờ được đọc (mỗi dòng một từ khóa). */
+    var notifBlacklist: String
+        get() = prefs.getString(KEY_NB, "").orEmpty()
+        set(value) = prefs.edit { putString(KEY_NB, value.take(KeywordList.MAX_RAW_CHARS)) }
+
+    /** Thông báo chứa từ trong danh sách này LUÔN được đọc (trừ khi bị danh sách chặn). */
+    var notifWhitelist: String
+        get() = prefs.getString(KEY_NW, "").orEmpty()
+        set(value) = prefs.edit { putString(KEY_NW, value.take(KeywordList.MAX_RAW_CHARS)) }
 
     var hapticEnabled: Boolean
         get() = prefs.getBoolean(KEY_HAPTIC, true)
@@ -157,6 +272,30 @@ class SettingsRepository(context: Context) {
         private const val KEY_ACTION_HINTS = "speak_action_hints"
         private const val KEY_VERBOSITY = "verbosity"
         private const val KEY_CRASH_LOG = "crash_log_enabled"
+        private const val KEY_LIFT_TO_TYPE = "lift_to_type"
+        private const val KEY_TOUCH_DELAY = "touch_delay_ms"
+        private const val KEY_READ_TOASTS = "read_toasts"
+        private const val KEY_KEYBOARD_SHORTCUTS = "keyboard_shortcuts"
+        private const val KEY_VOLUME_NAV = "volume_key_nav"
+        private const val KEY_VOLUME_EXCLUDED = "volume_excluded_apps"
+        private const val KEY_HEADSET = "headset_key"
+        private const val KEY_ANNOUNCE_CALLS = "announce_calls"
+        private const val KEY_LOCATION = "location_enabled"
+        private const val KEY_SCROLL_SLIDERS = "scroll_adjust_sliders"
+        private const val KEY_FOCUS_DIALOGS = "focus_dialogs"
+        private const val KEY_REMEMBER_FOCUS = "remember_focus"
+        private const val KEY_ANNOUNCE_SCREEN = "announce_screen"
+        private const val KEY_ECHO_CHARS = "echo_chars"
+        private const val KEY_ECHO_WORDS = "echo_words"
+        private const val KEY_SPEAK_CAPITALS = "speak_capitals"
+        private const val KEY_LIST_RANGE = "speak_list_range"
+        private const val KEY_NQ_FINGER = "notif_quiet_finger"
+        private const val KEY_NQ_CALL = "notif_quiet_call"
+        private const val KEY_NQ_DND = "notif_quiet_dnd"
+        private const val KEY_NQ_MEDIA = "notif_quiet_media"
+        private const val KEY_NB = "notif_blacklist"
+        private const val KEY_NW = "notif_whitelist"
+        const val MAX_TOUCH_DELAY_MS = 600
         private const val KEY_SPEAK_EMOJI = "speak_emoji"
         private const val KEY_DETAILED_FOCUS = "detailed_focus"
         private const val KEY_AUTO_OCR = "auto_ocr_unlabeled"

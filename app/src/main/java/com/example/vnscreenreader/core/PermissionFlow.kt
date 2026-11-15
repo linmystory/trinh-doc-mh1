@@ -11,12 +11,35 @@ data class PermissionFeature(
 )
 
 /**
- * Danh sách tính năng cần quyền. Rỗng CÓ CHỦ Ý: hiện chưa có tính năng nào cần quyền nên ứng dụng không khai báo và
- * không xin quyền nào (ngoài rung). Thêm tính năng mới = thêm một mục ở đây VÀ khai báo quyền tương ứng trong manifest;
- * test `ManifestPermissionsTest` buộc hai việc này đi cùng nhau.
+ * Danh sách tính năng cần quyền. Mỗi tính năng TẮT mặc định và chỉ xin quyền khi người dùng bật nó. Thêm tính năng mới =
+ * thêm một mục ở đây VÀ khai báo quyền tương ứng trong manifest; test `ManifestPermissionsTest` buộc hai việc này đi cùng nhau.
  */
 object PermissionFeatures {
-    val all: List<PermissionFeature> = emptyList()
+    /** Đọc người gọi: biết khi nào đổ chuông (READ_PHONE_STATE) và xem số gọi đến (READ_CALL_LOG, bắt buộc từ Android 9). */
+    val caller = PermissionFeature(
+        id = "caller",
+        permissions = listOf("android.permission.READ_PHONE_STATE", "android.permission.READ_CALL_LOG"),
+        name = S.PERM_NAME_CALLER,
+        rationale = S.PERM_CALLER_RATIONALE,
+    )
+
+    /** Đọc tên người gọi từ danh bạ. */
+    val contacts = PermissionFeature(
+        id = "contacts",
+        permissions = listOf("android.permission.READ_CONTACTS"),
+        name = S.PERM_NAME_CONTACTS,
+        rationale = S.PERM_CONTACTS_RATIONALE,
+    )
+
+    /** Nói vị trí hiện tại: GPS (chính xác) và vị trí gần đúng (Android 12+ yêu cầu xin cả hai). */
+    val location = PermissionFeature(
+        id = "location",
+        permissions = listOf("android.permission.ACCESS_FINE_LOCATION", "android.permission.ACCESS_COARSE_LOCATION"),
+        name = S.PERM_NAME_LOCATION,
+        rationale = S.PERM_LOCATION_HERE_RATIONALE,
+    )
+
+    val all: List<PermissionFeature> = listOf(caller, contacts, location)
 }
 
 /** Bước kế tiếp của luồng xin quyền. */

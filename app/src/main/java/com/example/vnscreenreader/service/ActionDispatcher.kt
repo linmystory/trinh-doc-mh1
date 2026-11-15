@@ -5,10 +5,15 @@ import android.content.ActivityNotFoundException
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Intent
+import android.media.AudioManager
 import android.os.BatteryManager
+import android.view.KeyEvent
+import com.example.vnscreenreader.core.CaretMove
 import com.example.vnscreenreader.core.SettingsRepository
+import com.example.vnscreenreader.core.ReadingControl
 import com.example.vnscreenreader.core.ReadingMode
 import com.example.vnscreenreader.core.SpeechFormats
+import com.example.vnscreenreader.core.SpeechRate
 import com.example.vnscreenreader.core.UnitMove
 import com.example.vnscreenreader.menu.MenuKind
 import java.time.LocalTime
@@ -28,12 +33,21 @@ internal class ActionDispatcher(
     private val ai: AiAssistant,
     private val settings: SettingsRepository,
     private val openMenu: (MenuKind) -> Unit,
+    private val toggleKeysPause: () -> Unit = {},
+    private val toggleVolumeForApp: () -> Unit = {},
+    private val adjustVolume: (Int) -> Unit = {},
+    private val sayLocation: () -> Unit = {},
 ) {
     fun dispatch(action: GestureAction) {
         when (action) {
             GestureAction.NONE -> Unit
             GestureAction.NEXT_ELEMENT -> navigator.move(forward = true)
             GestureAction.PREVIOUS_ELEMENT -> navigator.move(forward = false)
+            GestureAction.NEXT_BY_CONTROL -> stepByControl(forward = true)
+            GestureAction.PREVIOUS_BY_CONTROL -> stepByControl(forward = false)
+            GestureAction.NEXT_CONTROL -> cycleControl(forward = true)
+            GestureAction.PREVIOUS_CONTROL -> cycleControl(forward = false)
+            GestureAction.MEDIA_PLAY_PAUSE -> mediaPlayPause()
             GestureAction.ACTIVATE -> activate()
             GestureAction.SCROLL_FORWARD -> navigator.scroll(forward = true)
             GestureAction.SCROLL_BACKWARD -> navigator.scroll(forward = false)
@@ -86,6 +100,16 @@ internal class ActionDispatcher(
             GestureAction.PREVIOUS_CONTAINER -> navigator.moveContainer(forward = false)
             GestureAction.NEXT_WINDOW -> navigator.moveWindow(forward = true)
             GestureAction.PREVIOUS_WINDOW -> navigator.moveWindow(forward = false)
+            GestureAction.TOGGLE_KEYS_PAUSE -> toggleKeysPause()
+            GestureAction.VOLUME_EXCLUDE_APP -> toggleVolumeForApp()
+            GestureAction.VOLUME_RAISE -> adjustVolume(1)
+            GestureAction.VOLUME_LOWER -> adjustVolume(-1)
+            GestureAction.SLIDER_UP -> if (!navigator.adjustRange(1)) speech.speak(t(S.MSG_SLIDER_NONE), true)
+            GestureAction.SLIDER_DOWN -> if (!navigator.adjustRange(-1)) speech.speak(t(S.MSG_SLIDER_NONE), true)
+            GestureAction.SLIDER_TO_END -> navigator.dragToEnd()
+            GestureAction.SAY_LOCATION -> sayLocation()
+            GestureAction.CLEAR_FIELD -> speakClear(navigator.clearField())
+            GestureAction.RESTORE_CLEARED -> speakClear(navigator.restoreCleared())
             GestureAction.DESCRIBE_TECHNICAL ->
                 speech.speak(navigator.technicalInfo() ?: t(S.MSG_NOTHING_SELECTED), true)
             GestureAction.JUMP_FIRST -> navigator.jumpEdge(first = true)
@@ -172,19 +196,98 @@ internal class ActionDispatcher(
             if (percent in 0..100) append(". ").append(SpeechFormats.battery(percent, battery?.isCharging == true))
             // Chế độ đọc khác mặc định ảnh hưởng cách vuốt nên luôn nhắc ở đây.
             if (navigator.readingMode != ReadingMode.ELEMENT) append(". ").append(t(S.MSG_MODE_SET, navigator.readingMode.label))
+            // Điều khiển đọc khác "phần tử" đổi ý nghĩa của vuốt một ngón xuống/lên nên cũng nhắc.
+            val control = navigator.readingControl
+            if (control != ReadingControl.ELEMENT) append(". ").append(t(S.MSG_CONTROL_SET, control.label))
         }
         speech.speak(text, true)
     }
 
-    private fun moveUnit(forward: Boolean) {
-        val text = when (val move = navigator.moveUnit(forward)) {
-            is UnitMove.At -> if (move.text.isBlank()) SpeechFormats.spell(move.text) else move.text
+    /**
+     * [crossElements] = true (điều khiển đọc theo đơn vị chữ): hết chữ, đầu chữ hoặc phần tử không có chữ thì sang phần tử
+     * kế/trước thay vì chỉ báo "Hết văn bản". Ba ngón vuốt xuống/lên vẫn dừng lại và báo, như trước.
+     */
+    private fun moveUnit(forward: Boolean, crossElements: Boolean = false) {
+        val move = navigator.moveUnit(forward)
+        if (crossElements && ReadingControl.crossesElement(move)) {
+            navigator.moveToNeighbour(forward)
+            return
+        }
+        val text = when (move) {
+            is UnitMove.At -> spoken(move.text)
             UnitMove.End -> t(S.MSG_UNIT_END)
             UnitMove.Start -> t(S.MSG_UNIT_START)
             UnitMove.Changed -> return // navigator đã báo "phần tử đã thay đổi"
             null -> t(S.MSG_NO_TEXT)
         }
         speech.speak(text, true)
+    }
+
+    /**
+     * Vuốt một ngón xuống ([forward] = true) / lên, theo thứ tự ưu tiên (đúng cách các trình đọc màn hình chuẩn làm):
+     *  1. Đang chọn thanh trượt: chỉnh giá trị (xuống giảm, lên tăng), bất kể điều khiển đọc nào.
+     *  2. Đang ở ô nhập (không phải mật khẩu) và điều khiển là chữ hoặc "phần tử": dời con trỏ THẬT theo đơn vị của điều khiển
+     *     (mặc định là ký tự) và đọc đoạn vừa đi qua; hết chữ thì sang phần tử kế/trước để không kẹt trong ô.
+     *  3. Còn lại: di chuyển theo điều khiển (phần tử, tiêu đề, điều khiển, liên kết, từng đơn vị chữ) hoặc chỉnh tốc độ đọc.
+     */
+    private fun stepByControl(forward: Boolean) {
+        if (navigator.adjustRange(ReadingControl.sliderDirection(forward))) return
+        val control = navigator.readingControl
+        control.caretUnit?.let { unit ->
+            when (val caret = navigator.moveCaret(unit, forward)) {
+                is CaretMove.Moved -> {
+                    speech.speak(spoken(caret.text), true)
+                    return
+                }
+                CaretMove.Edge -> {
+                    navigator.moveToNeighbour(forward)
+                    return
+                }
+                CaretMove.Unavailable -> Unit // không phải ô nhập: đi theo điều khiển như thường
+            }
+        }
+        when (control) {
+            ReadingControl.ELEMENT -> navigator.moveElement(forward)
+            ReadingControl.HEADING -> navigator.quickMove(FocusNavigator.QuickKind.HEADING, forward)
+            ReadingControl.LINK -> navigator.quickMove(FocusNavigator.QuickKind.LINK, forward)
+            ReadingControl.CONTROL -> navigator.moveToMode(ReadingMode.CONTROL, forward)
+            ReadingControl.SPEECH_RATE -> adjustSpeechRate(ReadingControl.sliderDirection(forward))
+            ReadingControl.CHARACTER, ReadingControl.WORD, ReadingControl.SENTENCE, ReadingControl.PARAGRAPH ->
+                moveUnit(forward, crossElements = true)
+        }
+    }
+
+    /**
+     * Chữ để đọc ra cho một đoạn: đoạn chỉ gồm khoảng trắng/xuống dòng thì đọc TÊN của nó (qua [SpeechFormats.spell]) thay vì để
+     * bộ đọc im lặng khiến người dùng tưởng không có gì.
+     */
+    private fun spoken(text: String): String = if (text.isBlank()) SpeechFormats.spell(text) else text
+
+    /**
+     * Điều khiển đọc "Tốc độ đọc": [direction] dương = nhanh hơn, âm = chậm hơn, mỗi bước 10% trong khoảng của thanh trượt ở Cài đặt
+     * giọng đọc. Áp ngay vào bộ đọc rồi đọc tốc độ mới bằng chính tốc độ đó; đã ở giới hạn thì đọc lại tốc độ hiện tại.
+     */
+    private fun adjustSpeechRate(direction: Int) {
+        val next = SpeechRate.step(settings.speechRate, direction)
+        settings.speechRate = next
+        speech.updateVoice(next, settings.pitch)
+        speech.speak(t(S.MSG_RATE_SET, SpeechRate.percent(next)), true)
+    }
+
+    /**
+     * Phát/tạm dừng nhạc hoặc video bằng phím media chuẩn (giống nút trên tai nghe): gửi một cặp nhấn/nhả KEYCODE_MEDIA_PLAY_PAUSE tới
+     * ứng dụng đang giữ phiên phát. Không cần quyền nào; không có phiên phát thì không có gì xảy ra.
+     */
+    private fun mediaPlayPause() {
+        val audio = service.getSystemService(AudioManager::class.java) ?: return
+        audio.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE))
+        audio.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE))
+    }
+
+    /** Chuyển sang điều khiển đọc kế/trước theo vòng tròn và đọc tên điều khiển mới. */
+    private fun cycleControl(forward: Boolean) {
+        val control = navigator.cycleReadingControl(forward)
+        speech.speak(t(S.MSG_CONTROL_SET, control.label), true)
     }
 
     /** Sao chép đơn vị đang đọc; chưa chọn đơn vị nào thì sao chép cả phần tử (giống nút "Sao chép chữ"). */
@@ -215,6 +318,23 @@ internal class ActionDispatcher(
         val next = !settings.detailedFocus
         settings.detailedFocus = next
         speech.speak(if (next) t(S.MSG_DETAILED_ON) else t(S.MSG_DETAILED_OFF), true)
+    }
+
+    private fun speakClear(result: FocusNavigator.ClearResult) {
+        speech.speak(
+            when (result) {
+                FocusNavigator.ClearResult.DONE -> t(S.MSG_CLEAR_DONE)
+                FocusNavigator.ClearResult.EMPTY -> t(S.MSG_CLEAR_EMPTY)
+                FocusNavigator.ClearResult.NO_SELECTION -> t(S.MSG_NOTHING_SELECTED)
+                FocusNavigator.ClearResult.NOT_EDITABLE -> t(S.MSG_NOT_EDITABLE)
+                FocusNavigator.ClearResult.PASSWORD -> t(S.MSG_PASSWORD_NO_ACTION)
+                FocusNavigator.ClearResult.FAILED -> t(S.MSG_CLEAR_FAILED)
+                FocusNavigator.ClearResult.RESTORED -> t(S.MSG_RESTORE_DONE)
+                FocusNavigator.ClearResult.NOTHING_TO_RESTORE -> t(S.MSG_RESTORE_NONE)
+                FocusNavigator.ClearResult.NOT_EMPTY -> t(S.MSG_RESTORE_NOT_EMPTY)
+            },
+            true,
+        )
     }
 
     private fun editText(op: EditOp) {

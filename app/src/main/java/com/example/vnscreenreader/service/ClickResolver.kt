@@ -33,7 +33,8 @@ internal class ClickResolver(private val service: AccessibilityService) {
     }
 
     /** Phần tử nằm trong nội dung web (có tổ tiên là WebView/GeckoView)? */
-    fun isInsideWeb(node: AccessibilityNodeInfo): Boolean = chainOf(node).any { NodeCollector.isWebRoot(it) }
+    fun isInsideWeb(node: AccessibilityNodeInfo): Boolean =
+        chainOf(node).any { NodeCollector.isWebRoot(it) || NodeCollector.hasHtmlNavigation(it) }
 
     fun isWebRoot(node: AccessibilityNodeInfo): Boolean = NodeCollector.isWebRoot(node)
 

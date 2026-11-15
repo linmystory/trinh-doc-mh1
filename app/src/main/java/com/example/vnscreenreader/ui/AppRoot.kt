@@ -2,6 +2,12 @@ package com.example.vnscreenreader.ui
 
 import androidx.activity.compose.BackHandler
 import androidx.annotation.StringRes
+import com.example.vnscreenreader.core.SettingsSearch
+import com.example.vnscreenreader.core.SearchEntry
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.material3.OutlinedTextField
+import android.content.Context
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -22,6 +28,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -51,13 +58,16 @@ private enum class Section(
     STATUS("status", R.string.grp_basic, R.string.sec_status, R.string.sec_status_sum),
     VOICE("voice", R.string.grp_voice, R.string.sec_voice, R.string.sec_voice_sum),
     FEEDBACK("feedback", R.string.grp_voice, R.string.sec_feedback, R.string.sec_feedback_sum),
+    NOTIFICATIONS("notifications", R.string.grp_voice, R.string.sec_notif, R.string.sec_notif_sum),
     GESTURES("gestures", R.string.grp_control, R.string.sec_gestures, R.string.sec_gestures_sum),
+    APP_GESTURES("appgestures", R.string.grp_control, R.string.sec_appgest, R.string.sec_appgest_sum),
     GESTURE_TEST("gesturetest", R.string.grp_control, R.string.sec_gesttest, R.string.sec_gesttest_sum),
     MENUS("menus", R.string.grp_control, R.string.sec_menus, R.string.sec_menus_sum),
     READING("reading", R.string.grp_advanced, R.string.sec_reading, R.string.sec_reading_sum),
     LABELS("labels", R.string.grp_advanced, R.string.sec_labels, R.string.sec_labels_sum),
     PERMISSIONS("permissions", R.string.grp_advanced, R.string.sec_perms, R.string.sec_perms_sum),
     LOG("log", R.string.grp_advanced, R.string.sec_log, R.string.sec_log_sum),
+    BACKUP("backup", R.string.grp_advanced, R.string.sec_backup, R.string.sec_backup_sum),
     PLUGINS("plugins", R.string.grp_extend, R.string.sec_plugins, R.string.sec_plugins_sum),
     HELP("help", R.string.grp_help, R.string.sec_help, R.string.sec_help_sum);
 
@@ -121,42 +131,78 @@ fun AppRoot() {
 
 @Composable
 private fun SectionList(selected: Section?, onSelect: (Section) -> Unit, modifier: Modifier) {
+    val context = LocalContext.current
+    val config = LocalConfiguration.current
+    var query by rememberSaveable { mutableStateOf("") }
+    // Chỉ mục tính lại khi đổi ngôn ngữ; tìm kiếm không phân biệt hoa thường và dấu.
+    val index = remember(config) { buildSearchIndex(context) }
+    val matches = remember(query, index) { SettingsSearch.search(index, query) }
     Column(
         modifier = modifier.verticalScroll(rememberScrollState()).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Text(stringResource(R.string.app_name), color = HighContrastYellow, fontSize = 28.sp, modifier = Modifier.padding(bottom = 4.dp))
-        var lastGroup: Int? = null
-        Section.entries.forEach { section ->
-            if (section.group != lastGroup) {
-                lastGroup = section.group
-                Text(
-                    text = stringResource(section.group),
-                    color = HighContrastGreen,
-                    fontSize = 18.sp,
-                    modifier = Modifier.padding(top = 8.dp).semantics { heading() },
-                )
+        OutlinedTextField(
+            value = query,
+            onValueChange = { query = it.take(MAX_QUERY_CHARS) },
+            label = { Text(stringResource(R.string.ss_label)) },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        if (query.isNotBlank()) {
+            PrimaryButton(stringResource(R.string.ss_clear)) { query = "" }
+            val found = matches.mapNotNull { key -> Section.fromKey(key) }
+            if (found.isEmpty()) {
+                Text(stringResource(R.string.ss_none), color = Color.White, fontSize = 18.sp)
             }
-            val isSelected = section == selected
-            val title = stringResource(section.title)
-            val summary = stringResource(section.summary)
-            val openState = stringResource(R.string.ui_state_open)
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 72.dp)
-                    .border(2.dp, if (isSelected) HighContrastYellow else Color.DarkGray, RoundedCornerShape(12.dp))
-                    .clickable(role = Role.Button) { onSelect(section) }
-                    .padding(16.dp)
-                    .semantics {
-                        contentDescription = "$title. $summary"
-                        if (isSelected) stateDescription = openState
-                    },
-            ) {
-                Text(title, color = Color.White, fontSize = 20.sp)
-                Text(summary, color = Color.LightGray, fontSize = 15.sp)
+            found.forEach { section -> SectionCard(section, section == selected, onSelect) }
+        } else {
+            var lastGroup: Int? = null
+            Section.entries.forEach { section ->
+                if (section.group != lastGroup) {
+                    lastGroup = section.group
+                    Text(
+                        text = stringResource(section.group),
+                        color = HighContrastGreen,
+                        fontSize = 18.sp,
+                        modifier = Modifier.padding(top = 8.dp).semantics { heading() },
+                    )
+                }
+                SectionCard(section, section == selected, onSelect)
             }
         }
+    }
+}
+
+@Composable
+private fun SectionCard(section: Section, isSelected: Boolean, onSelect: (Section) -> Unit) {
+    val title = stringResource(section.title)
+    val summary = stringResource(section.summary)
+    val openState = stringResource(R.string.ui_state_open)
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 72.dp)
+            .border(2.dp, if (isSelected) HighContrastYellow else Color.DarkGray, RoundedCornerShape(12.dp))
+            .clickable(role = Role.Button) { onSelect(section) }
+            .padding(16.dp)
+            .semantics {
+                contentDescription = "$title. $summary"
+                if (isSelected) stateDescription = openState
+            },
+    ) {
+        Text(title, color = Color.White, fontSize = 20.sp)
+        Text(summary, color = Color.LightGray, fontSize = 15.sp)
+    }
+}
+
+private const val MAX_QUERY_CHARS = 80
+
+private fun buildSearchIndex(context: Context): List<SearchEntry> = Section.entries.flatMap { section ->
+    buildList {
+        add(SearchEntry(section.key, context.getString(section.title), true))
+        add(SearchEntry(section.key, context.getString(section.summary), false))
+        SETTINGS_INDEX[section.key]?.forEach { add(SearchEntry(section.key, context.getString(it.id), it.isTitle)) }
     }
 }
 
@@ -172,7 +218,10 @@ private fun SectionContent(section: Section) {
         Section.LABELS -> LabelsScreen()
         Section.PERMISSIONS -> PermissionsScreen()
         Section.LOG -> LogScreen()
+        Section.BACKUP -> BackupScreen()
+        Section.NOTIFICATIONS -> NotificationScreen()
         Section.GESTURES -> GestureSettingsScreen()
+        Section.APP_GESTURES -> AppGesturesScreen()
         Section.PLUGINS -> PluginManagerScreen()
         Section.HELP -> HelpScreen()
     }

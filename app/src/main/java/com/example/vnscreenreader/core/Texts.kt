@@ -16,8 +16,22 @@ object Texts {
     @Volatile
     var provider: TextProvider = FallbackTexts
 
-    fun get(key: S, vararg args: Any): String = provider.get(key, args)
+    fun get(key: S, vararg args: Any): String = lookup(key, args)
+
+    /**
+     * Tra chuỗi mà không bao giờ ném lỗi: thiếu tài nguyên hoặc sai định dạng không được làm hỏng luồng đọc.
+     * Lùi về chuỗi tiếng Việt dự phòng, cuối cùng mới là tên khóa (vẫn đọc được và lộ ra ngay khi kiểm thử).
+     */
+    internal fun lookup(key: S, args: Array<out Any>): String = try {
+        provider.get(key, args)
+    } catch (e: RuntimeException) {
+        try {
+            FallbackTexts.get(key, args)
+        } catch (e2: RuntimeException) {
+            key.name
+        }
+    }
 }
 
 /** Viết tắt cho [Texts.get]. */
-fun t(key: S, vararg args: Any): String = Texts.provider.get(key, args)
+fun t(key: S, vararg args: Any): String = Texts.lookup(key, args)
