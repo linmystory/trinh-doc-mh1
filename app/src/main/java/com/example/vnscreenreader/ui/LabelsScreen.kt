@@ -17,6 +17,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
@@ -31,6 +32,7 @@ import com.example.vnscreenreader.R
 @Composable
 fun LabelsScreen() {
     val context = LocalContext.current
+    val resources = LocalResources.current // đổi theo cấu hình/ngôn ngữ, khác LocalContext.current.resources
     val store = remember { CustomLabelStore(context) }
     DisposableEffect(Unit) { onDispose { store.close() } }
     var entries by remember { mutableStateOf(store.load().entries()) }
@@ -40,7 +42,7 @@ fun LabelsScreen() {
         BodyText(
             stringResource(R.string.lb_intro),
         )
-        BodyText(context.resources.getQuantityString(R.plurals.lb_limits, CustomLabels.MAX_LABELS, CustomLabels.MAX_LABELS))
+        BodyText(resources.getQuantityString(R.plurals.lb_limits, CustomLabels.MAX_LABELS, CustomLabels.MAX_LABELS))
         if (entries.isEmpty()) {
             BodyText(stringResource(R.string.lb_empty))
         }

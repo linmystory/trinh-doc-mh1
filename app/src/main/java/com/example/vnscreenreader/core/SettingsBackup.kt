@@ -1,6 +1,7 @@
 package com.example.vnscreenreader.core
 
 import android.content.Context
+import androidx.core.content.edit
 
 /** Một giá trị cài đặt trong tệp sao lưu. [type]: b = boolean, i = int, f = float, s = chuỗi. */
 class BackupEntry(val file: String, val key: String, val type: Char, val value: String)
@@ -161,18 +162,19 @@ object SettingsBackupIO {
     fun apply(context: Context, entries: List<BackupEntry>): Int {
         var applied = 0
         for ((file, group) in entries.groupBy { it.file }) {
-            val editor = context.applicationContext.getSharedPreferences(file, Context.MODE_PRIVATE).edit()
-            for (e in group) {
-                when (e.type) {
-                    'b' -> editor.putBoolean(e.key, e.value.toBoolean())
-                    'i' -> e.value.toIntOrNull()?.let { editor.putInt(e.key, it) } ?: continue
-                    'f' -> e.value.toFloatOrNull()?.let { editor.putFloat(e.key, it) } ?: continue
-                    's' -> editor.putString(e.key, e.value)
-                    else -> continue
+            // edit { } của KTX: gom mọi thay đổi của một tệp rồi apply() một lần (vòng lặp nằm TRONG lambda nên `continue` vẫn đúng chỗ).
+            context.applicationContext.getSharedPreferences(file, Context.MODE_PRIVATE).edit {
+                for (e in group) {
+                    when (e.type) {
+                        'b' -> putBoolean(e.key, e.value.toBoolean())
+                        'i' -> e.value.toIntOrNull()?.let { putInt(e.key, it) } ?: continue
+                        'f' -> e.value.toFloatOrNull()?.let { putFloat(e.key, it) } ?: continue
+                        's' -> putString(e.key, e.value)
+                        else -> continue
+                    }
+                    applied++
                 }
-                applied++
             }
-            editor.apply()
         }
         return applied
     }

@@ -2,6 +2,8 @@ package com.example.vnscreenreader.ui
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -31,7 +33,7 @@ fun ReadingScreen() {
     var autoOcr by remember { mutableStateOf(settings.autoOcrUnlabeled) }
     var detailed by remember { mutableStateOf(settings.detailedFocus) }
     var diagOn by remember { mutableStateOf(settings.diagnosticsEnabled) }
-    var diagLines by remember { mutableStateOf(Diag.lineCount()) }
+    var diagLines by remember { mutableIntStateOf(Diag.lineCount()) }
     var actionHints by remember { mutableStateOf(settings.speakActionHints) }
     var verbosity by remember { mutableStateOf(settings.verbosity) }
     var liftToType by remember { mutableStateOf(settings.liftToType) }
@@ -60,7 +62,7 @@ fun ReadingScreen() {
         location = true
         settings.locationEnabled = true
     }
-    var touchDelay by remember { mutableStateOf(settings.touchDelayMs.toFloat()) }
+    var touchDelay by remember { mutableFloatStateOf(settings.touchDelayMs.toFloat()) }
     val msTemplate = stringResource(R.string.rd_touch_delay_value)
 
     ScreenColumn(stringResource(R.string.rd_title)) {

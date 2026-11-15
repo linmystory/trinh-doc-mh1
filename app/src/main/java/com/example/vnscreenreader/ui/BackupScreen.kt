@@ -16,6 +16,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
@@ -40,6 +41,8 @@ private const val MAX_BACKUP_BYTES = 1_700_000
 @Composable
 fun BackupScreen() {
     val context = LocalContext.current
+    // Chuỗi dựng lúc bấm/lúc có kết quả phải lấy từ LocalResources (đổi theo ngôn ngữ/cấu hình), không từ LocalContext.current.getString().
+    val resources = LocalResources.current
     var status by remember { mutableStateOf<String?>(null) }
     var pending by remember { mutableStateOf<BackupCodec.Decoded?>(null) }
     val scope = rememberCoroutineScope()
@@ -62,8 +65,8 @@ fun BackupScreen() {
                     }
                 }
                 when {
-                    decoded == null -> status = context.getString(R.string.bk_io_failed)
-                    !decoded.valid || decoded.entries.isEmpty() -> status = context.getString(R.string.bk_failed)
+                    decoded == null -> status = resources.getString(R.string.bk_io_failed)
+                    !decoded.valid || decoded.entries.isEmpty() -> status = resources.getString(R.string.bk_failed)
                     else -> pending = decoded
                 }
             }
@@ -89,9 +92,9 @@ fun BackupScreen() {
                 TextButton(onClick = {
                     status = try {
                         val applied = SettingsBackupIO.apply(context, toRestore.entries)
-                        context.getString(R.string.bk_restored, applied, toRestore.skipped + (toRestore.entries.size - applied))
+                        resources.getString(R.string.bk_restored, applied, toRestore.skipped + (toRestore.entries.size - applied))
                     } catch (e: RuntimeException) {
-                        context.getString(R.string.bk_io_failed)
+                        resources.getString(R.string.bk_io_failed)
                     }
                     pending = null
                 }) { Text(stringResource(R.string.bk_confirm_ok), fontSize = 18.sp) }

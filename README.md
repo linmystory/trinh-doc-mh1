@@ -66,9 +66,22 @@ Cử chỉ mở trình đơn hiển thị ở mục **Trình đơn** trong ứng
   mục đầu tiên (không đọc tên và số mục trước); cử chỉ không dùng được trong trình đơn chỉ nhắc ngắn một lần.
 - Cài đặt **Đọc hướng dẫn thao tác** (Đọc, mặc định bật): tắt thì trình đơn chỉ đọc tên mục, không đọc vị trí và lời nhắc.
 
+## Bản 2.20.3: sửa 4 lỗi lint do CI báo
+
+Báo cáo CI của bản 2.20.2: bản dựng đạt, **638/638 bài kiểm thử đạt**, nhưng `lintDebug` báo **4 lỗi**, 5 cảnh báo, 2 gợi ý (4 lỗi làm bước lint đỏ). **Không đổi hành vi ứng dụng**:
+
+- **4 lỗi `LocalContextGetResourceValueCall`** (màn **Sao lưu**): các thông báo kết quả ("đã lưu", "đã khôi phục", "không đọc/ghi được tệp") lấy chuỗi bằng `LocalContext.current.getString()`, không đổi theo ngôn ngữ/cấu hình nếu cấu hình đổi lúc màn đang mở. Nay lấy qua `LocalResources.current` (đúng cách Compose khuyến nghị).
+- Cảnh báo `LocalContextResourcesRead` (màn **Nhãn**): `context.resources` → `LocalResources.current`.
+- Gợi ý `AutoboxingStateCreation` (màn **Đọc**): hai ô nhớ số dùng `mutableIntStateOf` / `mutableFloatStateOf` (không đóng gói số mỗi lần ghi).
+- Cảnh báo `UseKtx`: hàm khôi phục cài đặt (`SettingsBackupIO.apply`) dùng `SharedPreferences.edit { }`; cùng hành vi (gom thay đổi từng tệp rồi `apply()` một lần).
+- Cảnh báo `ObsoleteSdkInt`: thư mục biểu tượng `mipmap-anydpi-v26` đổi thành `mipmap-anydpi` (minSdk 35 nên hậu tố `-v26` là thừa). Nội dung hai tệp giữ nguyên. Nếu kho GitHub của bạn còn thư mục cũ thì có thể xóa; để lại không gây hại (cùng nội dung), chỉ còn đúng cảnh báo đó.
+- **Android Gradle Plugin 9.5.0 → 9.5.1** (bản vá; lint báo có bản mới; trang phát hành chính thức ghi 9.5.1 không có lỗi công khai nào được sửa, yêu cầu tối thiểu như 9.5.0).
+- Cố ý **giữ** cảnh báo `OldTargetApi` (`targetSdk = 36`): Google Play yêu cầu API 36; nâng 37 cần thử hành vi mới của Android 17 trên máy thật trước.
+- Kiểm thử: 638 bài JVM vẫn đạt. Compose và lint **không chạy được** ở môi trường soạn thảo, nên các sửa ở `ui/` mới được đối chiếu với tài liệu API (`LocalResources: ProvidableCompositionLocal<Resources>`), chưa biên dịch; lần chạy CI kế tiếp là bước kiểm chứng thật.
+
 ## Bản 2.20.2: nâng công cụ build
 
-Chỉ đổi cấu hình build, **không đổi mã ứng dụng** (638 bài kiểm thử JVM vẫn đạt):
+Chỉ đổi cấu hình build, **không đổi mã ứng dụng** (638 bài kiểm thử JVM vẫn đạt; CI đã xác nhận bản dựng và 638/638 bài đạt với AGP 9.5.0 + Gradle 9.9.1):
 
 - **Android Gradle Plugin 9.4.0 → 9.5.0** (ổn định từ 10/2026; yêu cầu tối thiểu Gradle 9.6, JDK 17, compileSdk tối đa 37: dự án đã thỏa).
 - **Gradle 9.8.2 → 9.9.1**, giữ ghim checksum SHA-256 của bản phân phối `gradle-9.9.1-bin.zip`. 9.9.1 là bản vá bảo mật (ra 10/11/2026) theo ghi chú phát hành của Gradle.
@@ -546,7 +559,7 @@ Việc còn lại: chạy bản debug với en-XA/ar-XB, cỡ chữ lớn nhất
 ## Công nghệ (cập nhật 11/2026)
 | Thành phần | Phiên bản |
 |---|---|
-| Android Gradle Plugin | 9.5.0 (Kotlin tích hợp sẵn, không còn plugin `kotlin-android`) |
+| Android Gradle Plugin | 9.5.1 (Kotlin tích hợp sẵn, không còn plugin `kotlin-android`) |
 | Gradle | 9.9.1 |
 | Kotlin / Compose compiler plugin | 2.4.21 |
 | Compose BOM | 2026.09.00 |
