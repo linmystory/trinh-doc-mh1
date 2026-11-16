@@ -66,6 +66,21 @@ Cử chỉ mở trình đơn hiển thị ở mục **Trình đơn** trong ứng
   mục đầu tiên (không đọc tên và số mục trước); cử chỉ không dùng được trong trình đơn chỉ nhắc ngắn một lần.
 - Cài đặt **Đọc hướng dẫn thao tác** (Đọc, mặc định bật): tắt thì trình đơn chỉ đọc tên mục, không đọc vị trí và lời nhắc.
 
+## Bản 2.20.4: vuốt một ngón phải/trái tự cuộn tiếp khi hết màn hình
+
+Lỗi được báo: vuốt một ngón **phải** (phần tử kế) / **trái** (phần tử trước) chỉ đi hết các phần tử đang hiện trên màn hình rồi dừng, không tự cuộn để đi tiếp dù phía dưới (hoặc phía trên) vẫn còn nội dung. Sửa dựa trên phân tích mã nguồn, **chưa thử được trên máy thật** (xem "Giới hạn" bên dưới):
+
+- **Cuộn trước khi rời danh sách**: khi phần tử kế nằm NGOÀI vùng cuộn đang đứng (thanh dưới, nút nổi, tiêu đề cố định...) mà vùng đó còn cuộn được theo hướng vuốt, ứng dụng cuộn vùng đó trước rồi mới sang phần tử ngoài vùng. Trước đây chỉ cuộn khi cả cửa sổ đã hết phần tử, nên thanh dưới luôn bị tới trước và phần còn lại của danh sách bị bỏ qua.
+- **Chờ nội dung dừng hẳn** thay vì chờ cố định 0,3 + 0,5 giây: thăm dò mỗi 0,12 giây (tối đa 1,5 giây mỗi lần cuộn), xong khi hai lần thăm dò liên tiếp cho cùng một danh sách khác trước khi cuộn. Danh sách trượt có hiệu ứng (~0,6 giây) và trang web cập nhật chậm không còn bị chọn nhầm lúc nội dung chưa kịp đổi.
+- **Chọn phần tử mới theo vị trí + nhãn** (không chỉ nhãn): đo quãng nội dung đã trượt từ các phần tử giống nhau trước/sau, rồi chỉ coi là "đã thấy" những phần tử trùng nhãn VÀ đúng chỗ dự kiến. Nhờ vậy: mục trùng chữ (nút "Thích" ở mỗi bài, giá tiền) không bị bỏ sót; thanh dính đứng yên không bị chọn; đoạn văn dài bị cắt ở mép không bị đọc lại.
+- **Hàng kiểu thẻ** (khung bấm được, chữ nằm ở phần tử con) trước đây coi là không nhãn nên không nhận ra hàng nào đã đọc; nay dùng chữ gộp của các con làm nhãn so khớp.
+- Nếu một lần cuộn chưa lộ ra phần tử có nhãn nào (ví dụ chỉ thêm ảnh) thì cuộn tiếp, tối đa 3 lần.
+- **Không cuộn nhầm**: chỉ cuộn khung nội dung dọc. Bộ chọn giá trị (NumberPicker, TimePicker, thanh trượt: cuộn là đổi giá trị) và băng chuyền/bộ chuyển trang chỉ cuộn ngang bị bỏ qua. Các lệnh cuộn do người dùng chủ động (hai ngón vuốt, cử chỉ "Cuộn") giữ nguyên.
+- **Nhớ vùng đã hết** 5 giây: cuộn xong mà không có gì mới thì các lần vuốt kế đi thẳng sang phần tử kế, không chờ vô ích. Cuộn tay hoặc đổi màn hình thì xóa nhớ.
+- Nhật ký chẩn đoán (Cài đặt → Đọc → "Sao chép nhật ký") có thêm dòng thẻ `AUTOSCROLL` ghi số liệu mỗi lần tự cuộn (số phần tử trước/sau, quãng trượt, số phần tử đã thấy, kết quả). **Không ghi nội dung chữ trên màn hình.** Nếu vẫn lỗi, gửi các dòng này kèm tên ứng dụng và màn hình đang dùng.
+- Kiểm thử: 672 bài JVM đạt (34 bài mới cho phần chọn phần tử sau cuộn, nhận biết ổn định, nhớ vùng đã hết). Phần gọi hệ thống (đọc cây giao diện, thực hiện cuộn) **không kiểm thử được ngoài máy thật**.
+- Giới hạn đã biết: danh sách toàn mục GIỐNG HỆT nhau (cùng chữ, cùng hộp) không đo được quãng trượt; tiêu đề dính ĐỔI chữ khi cuộn (tên mục hiện hành) vẫn bị coi là phần tử mới; ứng dụng cập nhật giao diện chậm hơn 1,5 giây sau khi cuộn sẽ bị coi là "chưa đổi"; khung báo cuộn được mà không phản hồi hành động cuộn thì vẫn dùng cú vuốt giả lập như trước (chỉ khi đã hết phần tử của cả cửa sổ).
+
 ## Bản 2.20.3: sửa 4 lỗi lint do CI báo
 
 Báo cáo CI của bản 2.20.2: bản dựng đạt, **638/638 bài kiểm thử đạt**, nhưng `lintDebug` báo **4 lỗi**, 5 cảnh báo, 2 gợi ý (4 lỗi làm bước lint đỏ). **Không đổi hành vi ứng dụng**:

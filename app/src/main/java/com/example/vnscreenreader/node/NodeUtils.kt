@@ -13,6 +13,7 @@ import com.example.vnscreenreader.core.ListPositions
 import com.example.vnscreenreader.core.HoverPolicy
 import com.example.vnscreenreader.core.NodeSnapshot
 import com.example.vnscreenreader.core.ScrollCandidate
+import com.example.vnscreenreader.core.ScrollEdge
 import com.example.vnscreenreader.core.ScrollOrdering
 import com.example.vnscreenreader.core.TraversalBudget
 
@@ -99,6 +100,9 @@ object NodeCollector {
      */
     const val MAX_NODES = TraversalBudget.DEFAULT_MAX_VISIBLE
     const val MAX_ANCESTOR_DEPTH = 12
+
+    /** Số cấp tối đa đi ngược lên để tìm khung cuộn bao quanh một phần tử: cây trang web rất sâu nên rộng hơn [MAX_ANCESTOR_DEPTH]. */
+    private const val MAX_SCROLL_ANCESTOR_DEPTH = 40
     private const val MAX_HOVER_ANCESTOR_DEPTH = 4
     private const val MERGE_MAX_PARTS = 6
     private const val MERGE_MAX_DEPTH = 4
@@ -340,6 +344,46 @@ object NodeCollector {
     fun scrollTargets(from: AccessibilityNodeInfo?, root: AccessibilityNodeInfo, forward: Boolean): List<AccessibilityNodeInfo> {
         val wanted = scrollActions(forward)
         return scrollTargetsBy(from, root) { node -> node.actionList.any { a -> a.id in wanted } }
+    }
+
+    /**
+     * Như [scrollTargets] nhưng chỉ giữ khung NỘI DUNG cuộn DỌC (danh sách, trang): bỏ bộ chọn giá trị (NumberPicker, thanh trượt...)
+     * vì với chúng "cuộn" là ĐỔI GIÁ TRỊ đang chỉnh, và bỏ băng chuyền/bộ chuyển trang chỉ cuộn ngang (vuốt hết màn hình không được
+     * lật trang ngang). Dùng cho việc app tự cuộn hộ khi vuốt hết màn hình; các lệnh cuộn người dùng chủ động vẫn dùng [scrollTargets].
+     */
+    fun contentScrollTargets(from: AccessibilityNodeInfo?, root: AccessibilityNodeInfo, forward: Boolean): List<AccessibilityNodeInfo> {
+        val wanted = scrollActions(forward)
+        return scrollTargetsBy(from, root) { node -> isVerticalContentScroller(node, wanted) }
+    }
+
+    /**
+     * Khung cuộn DỌC gần nhất BAO QUANH [node] (không tính chính nó) còn cuộn được theo hướng yêu cầu ([isVerticalContentScroller]);
+     * null nếu không có. Đi ngược lên tối đa [MAX_SCROLL_ANCESTOR_DEPTH] cấp.
+     */
+    fun verticalScrollAncestor(node: AccessibilityNodeInfo, forward: Boolean): AccessibilityNodeInfo? {
+        val wanted = scrollActions(forward)
+        var current: AccessibilityNodeInfo? = node.parent
+        var depth = 1
+        while (current != null && depth <= MAX_SCROLL_ANCESTOR_DEPTH) {
+            if (current.isScrollable && isVerticalContentScroller(current, wanted)) return current
+            current = current.parent
+            depth++
+        }
+        return null
+    }
+
+    /** [node] còn hành động cuộn trong [wanted], không phải khung chỉ cuộn ngang, không phải bộ chọn giá trị. Chỉ đọc trường cục bộ (không IPC). */
+    private fun isVerticalContentScroller(node: AccessibilityNodeInfo, wanted: IntArray): Boolean {
+        val ids = node.actionList.map { it.id }
+        return ids.any { it in wanted } &&
+            !ScrollEdge.isHorizontalOnly(
+                ids,
+                AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_LEFT.id,
+                AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_RIGHT.id,
+                AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_UP.id,
+                AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_DOWN.id,
+            ) &&
+            ScrollEdge.isContentScroller(node.className, node.rangeInfo != null)
     }
 
     /**

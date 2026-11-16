@@ -9,7 +9,11 @@ import com.example.vnscreenreader.core.AutoOcrPolicy
 import com.example.vnscreenreader.core.CaretMath
 import com.example.vnscreenreader.core.CaretMove
 import com.example.vnscreenreader.core.CustomLabelStore
-import com.example.vnscreenreader.core.AutoScrollPicker
+import com.example.vnscreenreader.core.ScrollContinuation
+import com.example.vnscreenreader.core.ScrollEdge
+import com.example.vnscreenreader.core.ScrollExhaustion
+import com.example.vnscreenreader.core.ScrollItem
+import com.example.vnscreenreader.core.ScrollSettle
 import com.example.vnscreenreader.core.ActionHintKind
 import com.example.vnscreenreader.core.ClickTargetPolicy
 import com.example.vnscreenreader.core.ActionHints
@@ -88,6 +92,9 @@ class FocusNavigator(
      * liệu: nút cũ bị tái chế thì tìm lại theo vết thay vì quay về phần tử đầu tiên. Chỉ [reset] mới xóa vết.
      */
     private val traces = FocusTraceBuffer()
+
+    /** Vùng cuộn vừa cuộn mà không lộ ra phần tử mới: vuốt kế đi thẳng sang phần tử kế thay vì chờ cuộn lại vô ích ([reset] xóa). */
+    private val exhaustion = ScrollExhaustion(EXHAUSTED_TTL_MS)
     private val clicker = ClickResolver(service)
     private val appStore = AppGestureStore(service)
     // @Volatile: invalidateCache() cũng được gọi từ luồng chính (callback chạm giữ, đổi cài đặt) trong khi luồng nền đọc.
@@ -127,6 +134,7 @@ class FocusNavigator(
     fun reset() {
         release()
         traces.clear()
+        exhaustion.clear() // nội dung đã đổi (cuộn tay, trang mới): "đã hết" trước đó không còn đúng
     }
 
     /**
@@ -296,6 +304,13 @@ class FocusNavigator(
             feedback.onBoundary()
             speak(if (forward) t(S.MSG_LAST_ELEMENT) else t(S.MSG_FIRST_ELEMENT), true)
             return
+        }
+        // Sắp rời khỏi một danh sách/trang còn cuộn được (phần tử kế nằm NGOÀI vùng: thanh dưới, nút nổi, tiêu đề cố định): cuộn tiếp vùng
+        // đó trước rồi mới sang phần tử ngoài vùng. Cuộn không lộ ra gì (hết thật) thì đi tiếp như thường.
+        // `current` có thể là "khe" ngoài danh sách (vị trí suy ra từ vết sau khi giao diện đổi): khi đó không có phần tử đang chọn thật.
+        if (current in nodes.indices) {
+            val container = containerToScrollFirst(nodes, current, forward)
+            if (container != null && autoScrollAndSelect(nodes, forward, within = container)) return
         }
         focusOn(nodes[target])
     }
@@ -1054,52 +1069,236 @@ class FocusNavigator(
     private fun currentQuiet(): AccessibilityNodeInfo? = currentNode?.takeIf { it.refresh() }
 
     /**
-     * Đã tới phần tử cuối/đầu của màn hình: cuộn một lần rồi chọn phần tử mới đầu tiên (tiến) hoặc cuối cùng (lùi).
-     * Trả về true nếu đã chọn được; false nếu không có vùng cuộn, cuộn không được hoặc không có phần tử mới.
-     * Chờ ngắn để giao diện ổn định (chạy trên luồng xử lý nền duy nhất).
+     * Ảnh một vùng cuộn tại một thời điểm: các phần tử có tâm nằm trong hộp vùng, theo thứ tự đọc. [items] là số liệu thô để so trước/sau
+     * khi cuộn, [nodes] (cùng chỉ số) là nút để chọn.
      */
-    private fun autoScrollAndSelect(oldNodes: List<AccessibilityNodeInfo>, forward: Boolean, quiet: Boolean = false): Boolean {
-        val root = activeRoot() ?: return false
-        val targets = NodeCollector.scrollTargets(currentQuiet(), root, forward)
-        val oldLabels = oldNodes.map { labelKey(it) }
-        val anchor = currentQuiet()?.let { labelKey(it) }.orEmpty()
-        val area = Rect()
-        // Chiến lược 1: hành động cuộn của chính khung.
-        val scrolledTarget = targets.firstOrNull { target ->
-            NodeCollector.scrollActions(forward).any { target.performAction(it) }
-        }
-        if (scrolledTarget != null) {
-            scrolledTarget.getBoundsInScreen(area)
-            if (pickAfterScroll(area, oldLabels, anchor, forward, attempts = 2, quiet = quiet)) return true
-        }
-        // Chiến lược 2 (dự phòng): hành động báo thành công nhưng không đổi gì (view tự vẽ, lúc được lúc không), hoặc khung
-        // "cuộn được" mà không có hành động nào: giả lập cú vuốt dọc. Ở cuối danh sách thật, khung không còn hành động
-        // tiến nên không rơi vào đây.
-        val stuck = if (scrolledTarget != null) area else NodeCollector.stuckScrollableBounds(root)
-        if (stuck == null || stuck.isEmpty) return false
-        val line = SwipeGeometry.vertical(stuck.left, stuck.top, stuck.right, stuck.bottom, forward) ?: return false
-        if (!swipeBlocking(line)) return false
-        return pickAfterScroll(stuck, oldLabels, anchor, forward, attempts = 2, quiet = quiet)
+    private class AreaView(val items: List<ScrollItem>, val nodes: List<AccessibilityNodeInfo>)
+
+    /** Kết cục của việc cuộn một khung để lộ phần tử mới (xem [scrollAndPick]). */
+    private enum class ScrollOutcome {
+        /** Đã chọn được phần tử mới. */
+        SELECTED,
+
+        /** Khung không nhận hành động cuộn nào: thử khung khác. */
+        REFUSED,
+
+        /** Khung nhận hành động nhưng nội dung không đổi (hết thật, view tự vẽ, hoặc cập nhật quá chậm). */
+        UNCHANGED,
+
+        /** Nội dung có đổi nhưng không lộ ra phần tử mới nào (hết danh sách, hoặc mới chỉ thêm ảnh không nhãn). */
+        NOTHING_NEW,
     }
 
-    /** Chờ giao diện ổn định rồi chọn phần tử kế trong vùng vừa cuộn; thử lại nếu danh sách tải dần. */
-    private fun pickAfterScroll(area: Rect, oldLabels: List<String>, anchor: String, forward: Boolean, attempts: Int, quiet: Boolean = false): Boolean {
-        repeat(attempts) { attempt ->
-            SystemClock.sleep(if (attempt == 0) AUTO_SCROLL_SETTLE_MS else AUTO_SCROLL_RETRY_MS)
-            invalidateCache()
-            val fresh = visibleNodes() ?: return false
-            val inside = fresh.map { n ->
-                val r = Rect().also { n.getBoundsInScreen(it) }
-                !area.isEmpty && Rect.intersects(area, r) && area.contains(r.centerX(), r.centerY())
-            }
-            val index = AutoScrollPicker.pickWithin(oldLabels, fresh.map { labelKey(it) }, inside, anchor, forward)
-            if (index != null) {
-                if (quiet) selectQuietly(fresh[index]) else focusOn(fresh[index])
-                return true
+    /**
+     * Vùng cuộn DỌC mà lần vuốt này sắp RỜI khỏi: phần tử đang chọn ([current]) nằm trong vùng, vùng còn cuộn được theo hướng vuốt, và
+     * KHÔNG còn phần tử nào nằm trong vùng ở phía trước (tiến) / phía sau (lùi) phần tử đó, tức phần tử kế nằm ngoài danh sách (thanh
+     * dưới, nút nổi, tiêu đề cố định...). Theo thông lệ của trình đọc màn hình: cuộn hết danh sách trước rồi mới sang phần tử ngoài danh sách. null nếu không phải
+     * trường hợp đó, hoặc vùng vừa được cuộn mà không lộ ra gì ([EXHAUSTED_TTL_MS]).
+     */
+    private fun containerToScrollFirst(nodes: List<AccessibilityNodeInfo>, current: Int, forward: Boolean): AccessibilityNodeInfo? {
+        val container = NodeCollector.verticalScrollAncestor(nodes[current], forward) ?: return null
+        val box = boxOf(container) ?: return null
+        if (exhaustion.isExhausted(scrollKey(container, forward), SystemClock.uptimeMillis())) return null
+        val rest = if (forward) nodes.subList(current + 1, nodes.size) else nodes.subList(0, current)
+        val r = Rect()
+        val center = IntArray(4)
+        for (n in rest) {
+            n.getBoundsInScreen(r)
+            center[0] = r.left
+            center[1] = r.top
+            center[2] = r.right
+            center[3] = r.bottom
+            if (ScrollEdge.containsCenter(box, center)) return null // vùng còn phần tử phía trước: cứ đi tiếp như thường
+        }
+        return container
+    }
+
+    /**
+     * Hết phần tử ở rìa vùng nhìn thấy: cuộn rồi chọn phần tử MỚI đầu tiên (tiến) hoặc cuối cùng (lùi). [within] = vùng cuộn cần cuộn
+     * (lần vuốt sắp rời khỏi vùng đó); null = thử các khung nội dung theo thứ tự ưu tiên. [rounds] = số lần cuộn liên tiếp tối đa khi
+     * lần cuộn trước chưa lộ ra phần tử mới (vd mới chỉ thêm ảnh không nhãn). Trả về true nếu đã chọn được; false nếu không có vùng cuộn,
+     * cuộn không được hoặc không có phần tử mới. Chạy trên luồng xử lý nền duy nhất và CÓ CHỜ (xem [awaitScrolled]); tổng thời gian bị
+     * chặn bởi [AUTO_SCROLL_TOTAL_MS]. Chỉ ghi nhật ký con số, không ghi nội dung chữ.
+     */
+    private fun autoScrollAndSelect(
+        oldNodes: List<AccessibilityNodeInfo>,
+        forward: Boolean,
+        quiet: Boolean = false,
+        within: AccessibilityNodeInfo? = null,
+        rounds: Int = MAX_SCROLL_ROUNDS,
+    ): Boolean {
+        val root = activeRoot() ?: return false
+        val start = nodesBeforeScroll(oldNodes) ?: return false
+        val targets = if (within != null) listOf(within) else NodeCollector.contentScrollTargets(currentQuiet(), root, forward)
+        com.example.vnscreenreader.core.Diag.log("AUTOSCROLL") { "start fwd=$forward within=${within != null} targets=${targets.size} rounds=$rounds" }
+        val deadline = SystemClock.uptimeMillis() + AUTO_SCROLL_TOTAL_MS
+        var swipeBox: IntArray? = null
+        var tried = 0
+        for (target in targets) {
+            if (tried >= MAX_SCROLL_CANDIDATES || SystemClock.uptimeMillis() > deadline) break
+            val box = boxOf(target) ?: continue
+            val key = scrollKey(target, forward)
+            if (exhaustion.isExhausted(key, SystemClock.uptimeMillis())) continue
+            tried++
+            val outcome = scrollAndPick(target, box, start, forward, quiet, rounds, deadline)
+            com.example.vnscreenreader.core.Diag.log("AUTOSCROLL") { "outcome=$outcome tried=$tried" }
+            when (outcome) {
+                ScrollOutcome.SELECTED -> return true
+                ScrollOutcome.REFUSED -> Unit // khung không nhận hành động cuộn: thử khung kế
+                ScrollOutcome.UNCHANGED -> {
+                    // Nhận hành động mà không đổi gì: nhớ để lần vuốt kế khỏi chờ lại. Chỉ khi tìm ở cấp cả cửa sổ mới thử thêm cú vuốt
+                    // dự phòng bên dưới; khi sắp rời một vùng, "không đổi" thường chỉ là đã hết, không giả lập vuốt (có thể kéo-làm-mới).
+                    exhaustion.mark(key, SystemClock.uptimeMillis())
+                    if (within == null && swipeBox == null) swipeBox = box
+                }
+                ScrollOutcome.NOTHING_NEW -> {
+                    // Đã cuộn đủ số lần cho phép mà không lộ ra gì. Tìm theo chế độ chỉ cuộn một lần nên chưa đủ căn cứ để nhớ là đã hết.
+                    if (rounds > 1) exhaustion.mark(key, SystemClock.uptimeMillis())
+                    return false
+                }
             }
         }
-        return false
+        // Dự phòng: giả lập cú vuốt dọc cho khung nhận hành động mà không đổi gì, hoặc khung "cuộn được" mà không báo hành động nào (view
+        // tự vẽ). Chỉ khi tìm ở cấp cả cửa sổ mới dò khung không có hành động; với vùng đã biết ([within]) chỉ thử đúng vùng đó.
+        val stuck = swipeBox ?: if (within == null) stuckBox(root) else null
+        if (stuck == null) return false
+        val swipeKey = boxKey(stuck, forward)
+        if (exhaustion.isExhausted(swipeKey, SystemClock.uptimeMillis())) return false
+        val line = SwipeGeometry.vertical(stuck[0], stuck[1], stuck[2], stuck[3], forward) ?: return false
+        val before = areaView(start, stuck)
+        if (!swipeBlocking(line)) return false
+        val after = awaitScrolled(stuck, before.items)
+        if (after == null) {
+            exhaustion.mark(swipeKey, SystemClock.uptimeMillis())
+            return false
+        }
+        return pickNew(before, after, stuck, forward, quiet, "swipe")
     }
+
+    /**
+     * Cuộn [target] bằng hành động của chính khung, tối đa [rounds] lần, đến khi lộ ra phần tử mới thì chọn nó. Sau mỗi lần cuộn CHỜ nội
+     * dung đổi rồi dừng hẳn ([awaitScrolled]) thay vì chờ cố định, rồi đối chiếu vị trí + nhãn trước/sau ([ScrollContinuation]) để bỏ
+     * qua phần đã thấy, thanh dính và mục trùng chữ. [start] = danh sách phần tử ngay trước lần cuộn đầu.
+     */
+    private fun scrollAndPick(
+        target: AccessibilityNodeInfo,
+        box: IntArray,
+        start: List<AccessibilityNodeInfo>,
+        forward: Boolean,
+        quiet: Boolean,
+        rounds: Int,
+        deadline: Long,
+    ): ScrollOutcome {
+        var before = areaView(start, box)
+        for (round in 0 until rounds) {
+            if (round > 0 && (SystemClock.uptimeMillis() > deadline || !canScroll(target, forward))) return ScrollOutcome.NOTHING_NEW
+            if (!NodeCollector.scrollActions(forward).any { target.performAction(it) }) {
+                return if (round == 0) ScrollOutcome.REFUSED else ScrollOutcome.NOTHING_NEW
+            }
+            val after = awaitScrolled(box, before.items)
+                ?: return if (round == 0) ScrollOutcome.UNCHANGED else ScrollOutcome.NOTHING_NEW
+            if (pickNew(before, after, box, forward, quiet, "action")) return ScrollOutcome.SELECTED
+            before = after
+        }
+        return ScrollOutcome.NOTHING_NEW
+    }
+
+    /** Đối chiếu ảnh trước/sau khi cuộn rồi chọn phần tử mới; false nếu không có phần tử mới nào. */
+    private fun pickNew(before: AreaView, after: AreaView, box: IntArray, forward: Boolean, quiet: Boolean, via: String): Boolean {
+        val match = ScrollContinuation.analyze(before.items, after.items, box, forward)
+        com.example.vnscreenreader.core.Diag.log("AUTOSCROLL") {
+            "via=$via fwd=$forward before=${before.items.size} after=${after.items.size} shift=${match.shift} old=${match.old} pinned=${match.pinned} pick=${match.index}"
+        }
+        val index = match.index ?: return false
+        val node = after.nodes[index]
+        if (quiet) selectQuietly(node) else focusOn(node)
+        return true
+    }
+
+    /**
+     * Chờ vùng [box] đổi nội dung rồi DỪNG hẳn sau một lần cuộn: thăm dò mỗi [AUTO_SCROLL_POLL_MS] đến tối đa [AUTO_SCROLL_MAX_WAIT_MS],
+     * xong khi hai lần thăm dò liên tiếp cho cùng một danh sách khác trước khi cuộn ([ScrollSettle]). Hết hạn mà vẫn đang đổi thì dùng
+     * ảnh mới nhất; không đổi gì cả (hoặc không đọc được cây giao diện) thì null.
+     */
+    private fun awaitScrolled(box: IntArray, before: List<ScrollItem>): AreaView? {
+        val settle = ScrollSettle(before)
+        val deadline = SystemClock.uptimeMillis() + AUTO_SCROLL_MAX_WAIT_MS
+        var changedView: AreaView? = null
+        while (true) {
+            SystemClock.sleep(AUTO_SCROLL_POLL_MS)
+            invalidateCache()
+            val nodes = visibleNodes() ?: return changedView
+            val view = areaView(nodes, box)
+            val stable = settle.offer(view.items)
+            changedView = if (settle.changed) view else null
+            if (stable) return view
+            if (SystemClock.uptimeMillis() >= deadline) return changedView
+        }
+    }
+
+    /**
+     * Nhãn để đối chiếu phần tử trước/sau khi cuộn: nhãn riêng ([labelKey]); khung bấm được không có chữ riêng (thẻ/hàng trong danh sách,
+     * rất phổ biến) thì dùng chữ gộp của các con hiển thị ([NodeCollector.mergedLabel]). Nếu để rỗng, mọi hàng kiểu thẻ đều "không nhãn"
+     * nên không thể nhận ra hàng nào đã thấy. Ô mật khẩu luôn rỗng. Chỉ so sánh trong bộ nhớ, không ghi ra nhật ký.
+     */
+    private fun scrollLabel(node: AccessibilityNodeInfo): String {
+        val own = labelKey(node)
+        if (own.isNotEmpty() || node.isPassword) return own
+        return NodeCollector.mergedLabel(node)
+    }
+
+    /** Ảnh các phần tử có tâm nằm trong [box] (nhãn theo [scrollLabel]; bỏ chữ của ô mật khẩu). */
+    private fun areaView(nodes: List<AccessibilityNodeInfo>, box: IntArray): AreaView {
+        val items = ArrayList<ScrollItem>()
+        val inside = ArrayList<AccessibilityNodeInfo>()
+        val r = Rect()
+        val center = IntArray(4)
+        for (n in nodes) {
+            n.getBoundsInScreen(r)
+            center[0] = r.left
+            center[1] = r.top
+            center[2] = r.right
+            center[3] = r.bottom
+            if (!ScrollEdge.containsCenter(box, center)) continue
+            items += ScrollItem(scrollLabel(n), r.left, r.top, r.right, r.bottom)
+            inside += n
+        }
+        return AreaView(items, inside)
+    }
+
+    /**
+     * Danh sách phần tử NGAY TRƯỚC khi cuộn: dùng lại [oldNodes] nếu nó còn là bộ đệm mới (chưa hết hạn, chưa có sự kiện đổi nội dung nào
+     * sau lần nạp), ngược lại nạp lại để ảnh "trước" đúng với màn hình thật.
+     */
+    private fun nodesBeforeScroll(oldNodes: List<AccessibilityNodeInfo>): List<AccessibilityNodeInfo>? {
+        val now = SystemClock.uptimeMillis()
+        if (cachedNodes === oldNodes && cachedAtMs > staleSinceMs && now - cachedAtMs < CACHE_TTL_MS) return oldNodes
+        invalidateCache()
+        return visibleNodes()
+    }
+
+    /** Khung còn hành động cuộn theo hướng [forward] sau khi làm mới (khung đã hết chỗ cuộn thì không còn hành động đó). */
+    private fun canScroll(node: AccessibilityNodeInfo, forward: Boolean): Boolean {
+        if (!node.refresh()) return false
+        val wanted = NodeCollector.scrollActions(forward)
+        return node.actionList.any { it.id in wanted }
+    }
+
+    /** Hộp (trái, trên, phải, dưới) của [node] theo toạ độ màn hình; null nếu rỗng. */
+    private fun boxOf(node: AccessibilityNodeInfo): IntArray? {
+        val r = Rect().also { node.getBoundsInScreen(it) }
+        return if (r.isEmpty) null else intArrayOf(r.left, r.top, r.right, r.bottom)
+    }
+
+    private fun stuckBox(root: AccessibilityNodeInfo): IntArray? =
+        NodeCollector.stuckScrollableBounds(root)?.takeUnless { it.isEmpty }?.let { intArrayOf(it.left, it.top, it.right, it.bottom) }
+
+    /** Khóa để nhớ khung cuộn đã hết ([ScrollExhaustion]): mã của nút + hướng. Hai bit thấp: hướng, loại khóa (0 = nút, 2 = hộp). */
+    private fun scrollKey(node: AccessibilityNodeInfo, forward: Boolean): Long =
+        (node.hashCode().toLong() shl 2) or (if (forward) 1L else 0L)
+
+    private fun boxKey(box: IntArray, forward: Boolean): Long =
+        (box.contentHashCode().toLong() shl 2) or 2L or (if (forward) 1L else 0L)
 
     /** Phát cú vuốt và CHỜ nó kết thúc (chỉ gọi từ luồng xử lý nền, không phải luồng chính). */
     private fun swipeBlocking(line: SwipeGeometry.Line): Boolean {
@@ -1157,7 +1356,7 @@ class FocusNavigator(
                 return
             }
             val outOfBudget = scrolls >= MAX_MODE_SCROLLS || SystemClock.uptimeMillis() > deadline
-            if (outOfBudget || !autoScrollAndSelect(snapshot, forward, quiet = true)) {
+            if (outOfBudget || !autoScrollAndSelect(snapshot, forward, quiet = true, rounds = 1)) {
                 origin?.takeIf { it.refresh() }?.let { selectQuietly(it) }
                 feedback.onBoundary()
                 speak(t(S.MSG_MODE_NONE, mode.label), true)
@@ -1381,7 +1580,16 @@ class FocusNavigator(
         const val CACHE_TTL_MS = 800L
         const val MAX_PARENT_LOOKUP = 12
         const val AUTO_SCROLL_SETTLE_MS = 300L
-        const val AUTO_SCROLL_RETRY_MS = 500L
+
+        /** Chu kỳ thăm dò và hạn chờ tối đa mỗi lần cuộn (xem [awaitScrolled]); tổng thời gian một lần vuốt tự cuộn bị chặn bởi [AUTO_SCROLL_TOTAL_MS]. */
+        const val AUTO_SCROLL_POLL_MS = 120L
+        const val AUTO_SCROLL_MAX_WAIT_MS = 1500L
+        const val AUTO_SCROLL_TOTAL_MS = 5000L
+
+        /** Số khung cuộn tối đa thử mỗi lần, số lần cuộn liên tiếp tối đa khi chưa lộ ra phần tử mới, thời gian nhớ khung đã hết. */
+        const val MAX_SCROLL_CANDIDATES = 3
+        const val MAX_SCROLL_ROUNDS = 3
+        const val EXHAUSTED_TTL_MS = 5000L
         const val MAX_MODE_SCROLLS = 4
         const val MODE_SEARCH_BUDGET_MS = 4000L
         val WINDOW_TYPES = setOf(
