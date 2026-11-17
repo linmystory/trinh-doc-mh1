@@ -598,10 +598,9 @@
     <string name="msg_keys_resumed">Teclado y teclas de volumen reanudados</string>
     <string name="msg_volume_app_off">Navegación con teclas de volumen desactivada en %1$s</string>
     <string name="msg_volume_app_on">Navegación con teclas de volumen activada en %1$s</string>
-    <string name="rd_screen_title">Anunciar encendido y apagado de pantalla</string>
-    <string name="rd_screen_desc">La voz siempre se detiene al apagar la pantalla. Activado: también dice Pantalla apagada y Pantalla encendida. Desactivado por defecto.</string>
+    <string name="rd_screen_title">Anunciar la hora al encender la pantalla y su apagado</string>
+    <string name="rd_screen_desc">La voz siempre se detiene al apagar la pantalla. Activado: al encender la pantalla lee la hora actual y al apagarla dice Pantalla apagada. Desactivado por defecto.</string>
     <string name="msg_screen_off">Pantalla apagada</string>
-    <string name="msg_screen_on">Pantalla encendida</string>
     <string name="rd_dialog_focus_title">Mover el foco a los cuadros de diálogo</string>
     <string name="rd_dialog_focus_desc">Al abrirse un cuadro de diálogo u hoja inferior, lee su título y pasa a su primer elemento, salvo que ya haya elegido otro. Activado por defecto.</string>
     <string name="rd_focus_memory_title">Recordar la posición por ventana</string>

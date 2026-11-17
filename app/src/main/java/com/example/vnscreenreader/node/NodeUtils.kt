@@ -15,6 +15,8 @@ import com.example.vnscreenreader.core.NodeSnapshot
 import com.example.vnscreenreader.core.ScrollCandidate
 import com.example.vnscreenreader.core.ScrollEdge
 import com.example.vnscreenreader.core.ScrollOrdering
+import com.example.vnscreenreader.core.StopFacts
+import com.example.vnscreenreader.core.StopSelection
 import com.example.vnscreenreader.core.TraversalBudget
 
 fun AccessibilityNodeInfo.toSnapshot(): NodeSnapshot = NodeSnapshot(
@@ -104,8 +106,14 @@ object NodeCollector {
     /** Số cấp tối đa đi ngược lên để tìm khung cuộn bao quanh một phần tử: cây trang web rất sâu nên rộng hơn [MAX_ANCESTOR_DEPTH]. */
     private const val MAX_SCROLL_ANCESTOR_DEPTH = 40
     private const val MAX_HOVER_ANCESTOR_DEPTH = 4
-    private const val MERGE_MAX_PARTS = 6
-    private const val MERGE_MAX_DEPTH = 4
+
+    /**
+     * Số nút tối đa khi dựng cây con để gộp chữ ([mergedLabel]) — chỉ để chặn thời gian trên cây khổng lồ; số MẢNH chữ gộp được
+     * do [StopSelection.MERGE_MAX_PARTS] quyết định (khung nhiều chữ hơn không còn là khối gộp). [MERGE_READ_MAX_PARTS] là trần an toàn
+     * khi gộp cho nút bất kỳ (không phải điểm dừng do [collect] chọn), cao hơn hẳn để không cắt chữ.
+     */
+    private const val MERGE_NODE_BUDGET = 300
+    private const val MERGE_READ_MAX_PARTS = 30
     private const val MAX_LIST_LOOKUP = 8
     private const val MAX_ITEM_INDEX_LOOKUP = 4
     private const val ITEM_INDEX_ROW_STEP = 10_000
@@ -129,74 +137,115 @@ object NodeCollector {
     }
 
     /**
-     * Các phần tử đáng dừng lại khi vuốt, theo thứ tự đọc. Mục tiêu: KHÔNG bao giờ dừng ở phần tử "rỗng".
-     *  - Phần tử có nhãn riêng (text/contentDescription): giữ.
-     *  - Khung chứa nhấn được/screen-reader-focusable KHÔNG có nhãn riêng: giữ làm MỘT mục. Có chữ con thì đọc gộp
-     *    (xem [mergedLabel]); không có thì đọc "không có nhãn" để người dùng vẫn nhấn được nút chưa gắn nhãn.
-     *    Các con chỉ-để-đọc của nó bị bỏ để không đọc lặp hai lần.
-     *  - Ô nhập/công tắc chưa gắn nhãn: giữ (quan trọng, phải tới được).
-     *  - Còn lại (khung bố cục thuần túy, ảnh trang trí không nhấn được) bị bỏ qua nhưng vẫn duyệt các con.
-     * Các con có thể tương tác (nút bấm lồng trong thẻ) luôn được giữ.
-     * [detailed] = tiêu điểm chi tiết: thêm các nút bấm được không nhãn bị khung cha "nuốt" (ô tích bị giấu).
-     * Thời gian O(số nút duyệt) với trần [MAX_NODES].
+     * Kết quả [collect]: các điểm dừng theo thứ tự đọc, và [complete] = false khi có nút con không lấy được (cây đang đổi hoặc hệ thống
+     * không trả nút) nên danh sách CÓ THỂ thiếu phần tử — nơi gọi không nên giữ nó trong bộ đệm.
      */
-    fun collect(root: AccessibilityNodeInfo, maxNodes: Int = MAX_NODES, detailed: Boolean = false): List<AccessibilityNodeInfo> {
-        val result = ArrayList<AccessibilityNodeInfo>()
-        val stack = ArrayDeque<Pair<AccessibilityNodeInfo, Boolean>>() // (nút, đã được cha gộp nhãn)
-        stack.addLast(root to false)
-        val budget = TraversalBudget(maxNodes)
-        while (stack.isNotEmpty() && budget.canContinue) {
-            val (node, consumed) = stack.removeLast()
-            budget.record(node.isVisibleToUser)
-            if (!node.isVisibleToUser) continue
+    class Collected(val nodes: List<AccessibilityNodeInfo>, val complete: Boolean)
 
-            val own = hasOwnLabel(node)
-            val interactive = node.isClickable || node.isCheckable || node.isEditable
-            var childrenConsumed = consumed
-            when {
-                own && (!consumed || interactive) -> {
-                    result += node
-                    childrenConsumed = true
-                }
-                // Khung nhấn được không nhãn riêng: luôn là một điểm dừng (có chữ con thì đọc gộp, không thì
-                // đọc "không có nhãn") để người dùng vẫn tới và nhấn được nút chưa gắn nhãn.
-                !own && (node.isClickable || node.isScreenReaderFocusable) && !consumed -> {
-                    result += node
-                    childrenConsumed = true
-                }
-                !own && (node.isEditable || node.isCheckable) -> result += node
-                // Tiêu điểm chi tiết: ô tích/nút không nhãn nằm trong khung bấm được vẫn là một điểm dừng riêng.
-                detailed && !own && node.isClickable -> result += node
-            }
+    /**
+     * Các phần tử đáng dừng lại khi vuốt, theo thứ tự đọc. Mục tiêu: KHÔNG bỏ sót phần tử nào người dùng cần nghe hay nhấn, và không
+     * đọc một chữ hai lần. Quy tắc chi tiết (thuần, có kiểm thử) nằm ở [StopSelection]; ở đây chỉ dựng cây phẳng các nút đang hiển thị
+     * (tiền thứ tự, trần [maxNodes] nút hiển thị) kèm sự thật cục bộ của từng nút rồi gọi nó. Tóm tắt:
+     *  - Nút nhấn/tích/gõ/chỉnh được: luôn là điểm dừng riêng (không nhãn thì đọc gộp chữ con hoặc "không có nhãn"); chữ KHÔNG thao tác
+     *    bên dưới nó được gộp vào nhãn của nó.
+     *  - Nút chỉ có chữ: điểm dừng, KHÔNG nuốt con (khung có `contentDescription` không làm mất chữ bên dưới nữa).
+     *  - Khung bố cục, khung bọc quanh các nút khác, khung bấm được chứa quá nhiều chữ: không phải điểm dừng, các con tự là điểm dừng.
+     * Thời gian O(số nút duyệt), bộ nhớ O(số nút hiển thị).
+     */
+    fun collect(root: AccessibilityNodeInfo, maxNodes: Int = MAX_NODES): Collected {
+        val tree = buildTree(root, TraversalBudget(maxNodes), rootMustBeVisible = true)
+        val stops = StopSelection.select(tree.parent, tree.facts)
+        val nodes = ArrayList<AccessibilityNodeInfo>(stops.size)
+        for (index in stops) nodes += tree.nodes[index]
+        return Collected(nodes, tree.complete)
+    }
+
+    /** Cây phẳng các nút hiển thị theo tiền thứ tự: [parent] là chỉ số cha (-1 ở gốc), [facts] là sự thật cục bộ của từng nút. */
+    private class FlatTree(
+        val nodes: List<AccessibilityNodeInfo>,
+        val parent: IntArray,
+        val facts: List<StopFacts>,
+        val complete: Boolean,
+    )
+
+    /**
+     * Duyệt sâu trước (ngăn xếp tường minh, không đệ quy) trong ngân sách [budget]. Nút ẨN bị bỏ cùng cả nhánh của nó. [rootMustBeVisible] = false
+     * thì gốc luôn được giữ dù ẩn (gộp chữ cho một nút đã biết).
+     */
+    private fun buildTree(root: AccessibilityNodeInfo, budget: TraversalBudget, rootMustBeVisible: Boolean): FlatTree {
+        val nodes = ArrayList<AccessibilityNodeInfo>()
+        val parents = ArrayList<Int>()
+        val facts = ArrayList<StopFacts>()
+        val stack = ArrayDeque<Pair<AccessibilityNodeInfo, Int>>() // (nút, chỉ số cha trong cây phẳng)
+        var complete = true
+
+        fun visit(node: AccessibilityNodeInfo, parentIndex: Int) {
+            val index = nodes.size
+            nodes += node
+            parents += parentIndex
+            facts += factsOf(node)
             for (i in node.childCount - 1 downTo 0) {
-                node.getChild(i)?.let { stack.addLast(it to childrenConsumed) }
+                val child = node.getChild(i)
+                if (child == null) complete = false else stack.addLast(child to index)
             }
         }
-        return result
+
+        val rootVisible = root.isVisibleToUser
+        budget.record(rootVisible)
+        if (rootVisible || !rootMustBeVisible) visit(root, -1)
+        while (stack.isNotEmpty() && budget.canContinue) {
+            val (node, parentIndex) = stack.removeLast()
+            val visible = node.isVisibleToUser
+            budget.record(visible)
+            if (visible) visit(node, parentIndex)
+        }
+        return FlatTree(nodes, parents.toIntArray(), facts, complete)
+    }
+
+    private fun factsOf(node: AccessibilityNodeInfo): StopFacts {
+        val range = node.rangeInfo != null
+        return StopFacts(
+            hasLabel = hasOwnLabel(node),
+            hasAuxLabel = !node.hintText.isNullOrBlank() || !node.tooltipText.isNullOrBlank(),
+            clickable = node.isClickable,
+            screenReaderFocusable = node.isScreenReaderFocusable,
+            checkable = node.isCheckable,
+            editable = node.isEditable,
+            range = range,
+            // Chỉ tra danh sách hành động khi có RangeInfo (thanh trượt/tiến trình): với hầu hết nút việc này được bỏ qua.
+            adjustable = range && node.actionList.any { it.id == AccessibilityNodeInfo.AccessibilityAction.ACTION_SET_PROGRESS.id },
+            structural = node.isScrollable || node.collectionInfo != null,
+        )
     }
 
     private fun hasOwnLabel(node: AccessibilityNodeInfo): Boolean =
         !node.text.isNullOrBlank() || !node.contentDescription.isNullOrBlank()
 
+    /** Chữ riêng của nút để đọc: `contentDescription` trước rồi `text` (cùng thứ tự như lời đọc phần tử); ô mật khẩu không bao giờ lộ chữ. */
+    private fun labelText(node: AccessibilityNodeInfo): String? {
+        if (node.isPassword) return null
+        val description = node.contentDescription?.toString()?.trim()
+        if (!description.isNullOrEmpty()) return description
+        return node.text?.toString()?.trim()?.takeIf { it.isNotEmpty() }
+    }
+
     /**
-     * Nhãn gộp của một khung chứa không có nhãn riêng: chữ của các con hiển thị (tối đa [MERGE_MAX_PARTS] mảnh,
-     * sâu tối đa [MERGE_MAX_DEPTH] cấp), nối bằng ", ". Rỗng nếu không có chữ nào.
+     * Nhãn gộp của một khung không có nhãn riêng: chữ của các nút bên dưới theo thứ tự đọc, nối bằng ", " (xem [StopSelection.mergeParts]).
+     * Mặc định chỉ gồm phần chữ mà điểm dừng này đọc THAY cho mình: nút thao tác bên trong (nhấn/tích/gõ/chỉnh) là điểm dừng riêng nên
+     * không bị đọc lặp, và khung cuộn/danh sách bên trong là ranh giới. [everything] = true gộp mọi chữ hiển thị bên dưới (vùng thông báo
+     * trực tiếp, kiểm tra "bên dưới có chữ không"). Rỗng nếu không có chữ nào.
      */
-    fun mergedLabel(node: AccessibilityNodeInfo): String {
-        val parts = ArrayList<String>(MERGE_MAX_PARTS)
-        val stack = ArrayDeque<Pair<AccessibilityNodeInfo, Int>>()
-        for (i in node.childCount - 1 downTo 0) node.getChild(i)?.let { stack.addLast(it to 1) }
-        while (stack.isNotEmpty() && parts.size < MERGE_MAX_PARTS) {
-            val (child, depth) = stack.removeLast()
-            if (!child.isVisibleToUser) continue
-            val label = (child.text ?: child.contentDescription)?.toString()?.trim()
-            if (!label.isNullOrEmpty()) {
-                parts += label
-                continue // đã có nhãn: không đọc thêm các con của nó
-            }
-            if (depth < MERGE_MAX_DEPTH) {
-                for (i in child.childCount - 1 downTo 0) child.getChild(i)?.let { stack.addLast(it to depth + 1) }
-            }
+    fun mergedLabel(node: AccessibilityNodeInfo, everything: Boolean = false): String {
+        if (node.childCount == 0) return ""
+        val tree = buildTree(node, TraversalBudget(MERGE_NODE_BUDGET, MERGE_NODE_BUDGET * 4), rootMustBeVisible = false)
+        val picks = StopSelection.mergeParts(tree.parent, tree.facts, everything)
+        if (picks.isEmpty()) return ""
+        // Gộp "mọi chữ" (vùng thông báo trực tiếp): giữ ngắn như một khối gộp; một danh sách dài đánh dấu trực tiếp không được đọc cả loạt.
+        val limit = if (everything) StopSelection.MERGE_MAX_PARTS else MERGE_READ_MAX_PARTS
+        val parts = ArrayList<String>(minOf(picks.size, limit))
+        for (index in picks) {
+            if (parts.size >= limit) break
+            labelText(tree.nodes[index])?.let { parts += it }
         }
         return parts.joinToString(", ")
     }

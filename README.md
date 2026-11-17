@@ -66,6 +66,34 @@ Cử chỉ mở trình đơn hiển thị ở mục **Trình đơn** trong ứng
   mục đầu tiên (không đọc tên và số mục trước); cử chỉ không dùng được trong trình đơn chỉ nhắc ngắn một lần.
 - Cài đặt **Đọc hướng dẫn thao tác** (Đọc, mặc định bật): tắt thì trình đơn chỉ đọc tên mục, không đọc vị trí và lời nhắc.
 
+## Bản 2.20.6: bật màn hình thì đọc giờ, tắt màn hình vẫn báo "Đã tắt màn hình"
+
+Công tắc **Báo giờ khi bật màn hình, báo khi tắt màn hình** (Cài đặt → Đọc; khóa lưu giữ nguyên là `announce_screen`, nên ai đã bật rồi thì không phải bật lại; mặc định vẫn tắt):
+
+- **Bật màn hình**: đọc **giờ hiện tại** ("Bây giờ là 15 giờ 28 phút", cùng câu với cử chỉ "cho biết giờ"), không còn đọc "Đã bật màn hình". Giờ lấy ngay lúc đọc.
+- **Tắt màn hình**: giữ nguyên, đọc "Đã tắt màn hình" (giọng đọc luôn dừng khi tắt màn hình, bất kể công tắc).
+- **Đang đổ chuông hoặc trong cuộc gọi** (kể cả gọi qua mạng, chế độ âm thanh khác bình thường): KHÔNG đọc giờ khi bật màn hình, vì màn hình bật lại mỗi lần rời tai nghe và lời đọc giờ sẽ chen vào lời báo người gọi hoặc cuộc nói chuyện. Lời "Đã tắt màn hình" giữ như cũ.
+- Chuỗi "Đã bật màn hình" không còn dùng nên đã xóa; tên và mô tả công tắc đã cập nhật ở cả 8 ngôn ngữ (bản dịch ngoài tiếng Việt và tiếng Anh do máy dịch).
+- Kiểm thử: 718 bài JVM đạt (8 bài mới cho lời báo bật/tắt màn hình). Việc nghe broadcast bật/tắt màn hình và phát giọng **không kiểm thử được ngoài máy thật**.
+- Giới hạn đã biết: nếu ngay sau khi bật màn hình hệ thống gửi sự kiện đổi cửa sổ (màn hình khóa) và ứng dụng đọc nó theo cách ngắt lời, lời đọc giờ có thể bị cắt giữa chừng. Nếu gặp, báo lại kèm máy và kiểu khóa màn hình.
+
+## Bản 2.20.5: rà soát phần đọc phần tử, sửa các chỗ làm thiếu phần tử khi vuốt
+
+Yêu cầu: rà lại phần đọc các phần tử trên màn hình, nơi đôi khi vẫn còn thiếu. Rà theo mã nguồn (không có máy thật nên **chưa thử được trên máy thật**), tìm các chỗ có thể làm mất phần tử và sửa những chỗ có bằng chứng từ mã:
+
+- **Khung có chữ nhưng không bấm được không còn nuốt các con.** Trước đây mọi nút có `text`/`contentDescription` đều "nuốt" hết chữ không thao tác bên dưới: một khung bố cục, danh sách, WebView hay nhóm có `contentDescription` làm mất toàn bộ chữ bên dưới khi vuốt. Nay chỉ nút bấm/tích/gõ được có nhãn (và khung tự khai báo là một khối đọc) mới gộp chữ con; khung chữ thường là một điểm dừng nhưng các con vẫn là điểm dừng riêng.
+- **Nút con bấm được trong thẻ không còn bị giấu.** Nút kiểu "Thích/Bình luận" (khung bấm được chứa biểu tượng và chữ) và nút biểu tượng chưa gắn nhãn nằm trong thẻ bấm được trước đây chỉ tới được khi bật "Tiêu điểm chi tiết"; nay luôn là điểm dừng riêng (nhờ đó còn gắn được nhãn tự gán). Thẻ cũng không đọc lặp chữ của các nút con này.
+- **Khung bấm được chứa nhiều chữ.** Trước đây chỉ đọc 6 chữ đầu, sâu 4 cấp, phần còn lại mất hẳn (điển hình: khung gốc cả màn hình đặt "bấm được"). Nay gộp được tới 12 mảnh chữ; nhiều hơn thì khung chỉ là bố cục và từng chữ là một điểm dừng. Nhấn một chữ vẫn kích hoạt khung bấm được bao quanh nó.
+- **Khung chỉ bọc quanh các nút khác** (bấm được, không có chữ riêng) không còn là điểm dừng "không có nhãn" thừa.
+- **Thanh trượt/tiến trình chưa gắn nhãn, và ô chỉ có gợi ý hay chú thích** trước đây không tới được bằng vuốt (chạm vào thì nghe được); nay là điểm dừng khi chúng không nằm trong khối đã gộp.
+- **Nhãn gộp khi đọc** dùng cùng quy tắc với phần chọn điểm dừng (một nguồn duy nhất), nên chữ đã bị gộp thì chắc chắn được đọc, và nút thao tác bên trong không bị đọc lặp. Vùng thông báo trực tiếp vẫn gộp mọi chữ bên dưới như cũ.
+- **Cây giao diện thiếu nút con** (hệ thống trả null khi ứng dụng đang vẽ lại): nạp lại một lần sau 80 ms; danh sách còn khuyết không được giữ trong bộ đệm 0,8 giây như trước.
+- **Ô nhập đã có chữ** đọc thêm tên ô (nhãn gắn kèm, gợi ý) sau vai trò, ví dụ "Nguyễn Văn A, ô nhập, Họ tên". Trước đây tên ô rơi mất nên các ô điền sẵn không phân biệt được với nhau.
+- Nhật ký chẩn đoán có thêm thẻ `COLLECT` (số điểm dừng, danh sách có đầy đủ không). **Không ghi nội dung chữ trên màn hình.**
+- Kiểm thử: 710 bài JVM đạt (38 bài mới: 35 cho quy tắc chọn điểm dừng, gồm 4.000 cây ngẫu nhiên kiểm "không mất chữ vô cớ, không đọc lặp, nút thao tác luôn tới được"; 3 cho lời đọc ô nhập). Đã thử đảo lại hành vi cũ thì bài ngẫu nhiên báo lỗi. Phần gọi hệ thống (dựng cây từ `AccessibilityNodeInfo`) **không kiểm thử được ngoài máy thật**.
+- **Thay đổi cần biết:** số điểm dừng mỗi màn hình thay đổi (thường nhiều hơn ở màn có khung có nhãn hoặc nút con trong thẻ). Công tắc "Tiêu điểm chi tiết" nay chỉ còn bật cờ hệ thống đưa cả view bị ứng dụng đánh dấu "không quan trọng" vào cây; việc chọn điểm dừng không còn phụ thuộc nó.
+- Giới hạn đã biết: ứng dụng tự vẽ không qua cây trợ năng (game, canvas, ảnh chứa chữ) vẫn không có phần tử để đọc, dùng OCR; view bị đánh dấu "không quan trọng với trợ năng" vẫn cần "Tiêu điểm chi tiết"; trang rất dài vẫn bị cắt ở 1.500 nút hiển thị mỗi lần nạp. Nếu vẫn còn thiếu phần tử, gửi tên ứng dụng, màn hình đang dùng và các dòng `COLLECT`/`MOVE` trong nhật ký (Cài đặt → Đọc → "Sao chép nhật ký").
+
 ## Bản 2.20.4: vuốt một ngón phải/trái tự cuộn tiếp khi hết màn hình
 
 Lỗi được báo: vuốt một ngón **phải** (phần tử kế) / **trái** (phần tử trước) chỉ đi hết các phần tử đang hiện trên màn hình rồi dừng, không tự cuộn để đi tiếp dù phía dưới (hoặc phía trên) vẫn còn nội dung. Sửa dựa trên phân tích mã nguồn, **chưa thử được trên máy thật** (xem "Giới hạn" bên dưới):
@@ -310,7 +338,7 @@ Chưa làm: bấm đúp/ba phím âm lượng, phím âm lượng điều khiể
 ## Bản 2.13.0: an toàn phím, màn hình tắt/bật, hộp thoại và nhớ vị trí, tùy chọn gõ phím, phạm vi danh sách
 
 - **Lối thoát cho phím cứng/phím âm lượng**: Alt+P (hoặc cử chỉ "Tạm dừng/tiếp tục phím") tạm dừng cả hai, không lưu (khởi động lại dịch vụ là hoạt động lại). Alt+V (hoặc cử chỉ "Tắt/bật phím âm lượng cho ứng dụng này") ghi ứng dụng đang mở vào danh sách không dùng phím âm lượng (`volume_excluded_apps`). Hai hành động mới đã có trong danh sách cử chỉ, chưa gán mặc định.
-- **Màn hình tắt/bật** (`ACTION_SCREEN_OFF/ON`): luôn dừng giọng đọc, bỏ trạng thái phím đang giữ dở, hủy việc AI/chuyển tiêu điểm đang chờ; công tắc "Báo khi bật và tắt màn hình" (mặc định tắt) báo thêm bằng lời.
+- **Màn hình tắt/bật** (`ACTION_SCREEN_OFF/ON`): luôn dừng giọng đọc, bỏ trạng thái phím đang giữ dở, hủy việc AI/chuyển tiêu điểm đang chờ; công tắc "Báo giờ khi bật màn hình, báo khi tắt màn hình" (mặc định tắt) báo thêm bằng lời: tắt màn hình đọc "Đã tắt màn hình", bật màn hình đọc giờ hiện tại (xem bản 2.20.6).
 - **Tự chuyển tiêu điểm vào hộp thoại** (mặc định bật): cửa sổ có lớp `*Dialog*`/`*BottomSheet*` mở ra thì đọc tiêu đề rồi chọn phần tử đầu tiên, nhưng chỉ khi người dùng chưa tự chọn gì và không đang trong trình đơn.
 - **Nhớ vị trí theo cửa sổ** (mặc định tắt): nhớ phần tử đang chọn khi rời cửa sổ (khóa = gói + tiêu đề, tối đa 8 cửa sổ) và tìm lại bằng vết (mã/nhãn) khi quay về.
 - **Gõ phím**: đọc từng ký tự (mặc định bật, như cũ), đọc từ vừa gõ xong sau dấu cách/dấu câu (mặc định tắt), đọc "Chữ hoa" trước chữ viết hoa (mặc định tắt). Ô mật khẩu không bao giờ đọc từ hay chữ hoa. Chưa làm: đọc từ ví dụ cho chữ cái (cần bảng theo từng ngôn ngữ).

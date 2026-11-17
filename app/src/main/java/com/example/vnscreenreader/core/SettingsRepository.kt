@@ -143,7 +143,7 @@ class SettingsRepository(context: Context) {
         get() = prefs.getBoolean(KEY_REMEMBER_FOCUS, false)
         set(value) = prefs.edit { putBoolean(KEY_REMEMBER_FOCUS, value) }
 
-    /** Báo "Đã tắt/bật màn hình". Giọng đọc luôn dừng khi tắt màn hình, bất kể công tắc này. Mặc định TẮT. */
+    /** Tắt màn hình: báo "Đã tắt màn hình"; bật màn hình: đọc giờ hiện tại. Giọng đọc luôn dừng khi tắt màn hình, bất kể công tắc này. Mặc định TẮT. */
     var announceScreen: Boolean
         get() = prefs.getBoolean(KEY_ANNOUNCE_SCREEN, false)
         set(value) = prefs.edit { putBoolean(KEY_ANNOUNCE_SCREEN, value) }

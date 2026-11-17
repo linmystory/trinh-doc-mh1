@@ -598,10 +598,9 @@
     <string name="msg_keys_resumed">Touches clavier et volume reprises</string>
     <string name="msg_volume_app_off">Navigation par touches de volume désactivée dans %1$s</string>
     <string name="msg_volume_app_on">Navigation par touches de volume activée dans %1$s</string>
-    <string name="rd_screen_title">Annoncer l\'allumage et l\'extinction de l\'écran</string>
-    <string name="rd_screen_desc">La voix s\'arrête toujours à l\'extinction de l\'écran. Activé : annonce aussi Écran éteint et Écran allumé. Désactivé par défaut.</string>
+    <string name="rd_screen_title">Annoncer l\'heure à l\'allumage de l\'écran, et son extinction</string>
+    <string name="rd_screen_desc">La voix s\'arrête toujours à l\'extinction de l\'écran. Activé : lit l\'heure actuelle à l\'allumage de l\'écran et annonce Écran éteint à son extinction. Désactivé par défaut.</string>
     <string name="msg_screen_off">Écran éteint</string>
-    <string name="msg_screen_on">Écran allumé</string>
     <string name="rd_dialog_focus_title">Placer le focus dans les boîtes de dialogue</string>
     <string name="rd_dialog_focus_desc">À l\'ouverture d\'une boîte de dialogue ou d\'une feuille inférieure, lit son titre puis passe à son premier élément, sauf si vous avez déjà choisi autre chose. Activé par défaut.</string>
     <string name="rd_focus_memory_title">Mémoriser la position par fenêtre</string>

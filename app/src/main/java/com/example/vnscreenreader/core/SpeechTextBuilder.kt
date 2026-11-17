@@ -61,12 +61,26 @@ object SpeechTextBuilder {
             val subject = (role ?: t(S.SP_ROLE_ELEMENT)).replaceFirstChar { it.uppercaseChar() }
             listOfNotNull(t(S.SP_UNLABELED, subject), state).joinToString(", ")
         } else {
-            listOfNotNull(label, role.takeUnless { dropRole }, state).joinToString(", ")
+            (listOfNotNull(label, role.takeUnless { dropRole }, state) + fieldNames(node, label)).joinToString(", ")
         }
         val position = detail.position
             ?.takeIf { detail.verbosity == Verbosity.DETAILED }
             ?.let { t(S.SP_POSITION, it.index, it.total) }
         return listOfNotNull(base, position).joinToString(", ")
+    }
+
+    /**
+     * TÊN của ô nhập khi nhãn đọc ra là NỘI DUNG đang gõ: ô đã có chữ thì "chữ" đứng trước tên theo thứ tự nhãn, nên nhãn gắn kèm (`labelFor`) và
+     * gợi ý ("Họ tên", "Số điện thoại" — Material TextInputLayout đặt tên ô ở đây) bị rơi mất, và người dùng không biết ô nào là ô nào.
+     * Chỉ ô nhập; bỏ tên trùng với nhãn đã đọc hoặc trùng nhau (ô rỗng: nhãn đã chính là gợi ý).
+     */
+    private fun fieldNames(node: NodeSnapshot, label: String): List<String> {
+        if (!node.isEditable) return emptyList()
+        val seen = HashSet<String>()
+        seen += label.lowercase()
+        return listOf(node.labeledByText, node.hintText)
+            .mapNotNull { it?.trim()?.takeIf { s -> s.isNotEmpty() } }
+            .filter { seen.add(it.lowercase()) }
     }
 
     /**

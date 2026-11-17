@@ -628,7 +628,6 @@ class ResourceTexts(private val context: Context) : TextProvider {
         S.RD_SCREEN_TITLE -> R.string.rd_screen_title
         S.RD_SCREEN_DESC -> R.string.rd_screen_desc
         S.MSG_SCREEN_OFF -> R.string.msg_screen_off
-        S.MSG_SCREEN_ON -> R.string.msg_screen_on
         S.RD_DIALOG_FOCUS_TITLE -> R.string.rd_dialog_focus_title
         S.RD_DIALOG_FOCUS_DESC -> R.string.rd_dialog_focus_desc
         S.RD_FOCUS_MEMORY_TITLE -> R.string.rd_focus_memory_title

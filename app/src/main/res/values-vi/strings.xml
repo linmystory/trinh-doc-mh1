@@ -598,10 +598,9 @@
     <string name="msg_keys_resumed">Đã tiếp tục phím cứng và phím âm lượng</string>
     <string name="msg_volume_app_off">Đã tắt điều hướng bằng phím âm lượng trong %1$s</string>
     <string name="msg_volume_app_on">Đã bật điều hướng bằng phím âm lượng trong %1$s</string>
-    <string name="rd_screen_title">Báo khi bật và tắt màn hình</string>
-    <string name="rd_screen_desc">Giọng đọc luôn dừng khi tắt màn hình. Bật: đọc thêm Đã tắt màn hình và Đã bật màn hình. Mặc định tắt.</string>
+    <string name="rd_screen_title">Báo giờ khi bật màn hình, báo khi tắt màn hình</string>
+    <string name="rd_screen_desc">Giọng đọc luôn dừng khi tắt màn hình. Bật: khi bật màn hình đọc giờ hiện tại, khi tắt màn hình đọc Đã tắt màn hình. Mặc định tắt.</string>
     <string name="msg_screen_off">Đã tắt màn hình</string>
-    <string name="msg_screen_on">Đã bật màn hình</string>
     <string name="rd_dialog_focus_title">Tự chuyển tiêu điểm vào hộp thoại</string>
     <string name="rd_dialog_focus_desc">Khi hộp thoại hoặc bảng dưới mở ra, đọc tiêu đề rồi chuyển tới phần tử đầu tiên của nó, trừ khi bạn đã tự chọn phần tử khác. Mặc định bật.</string>
     <string name="rd_focus_memory_title">Nhớ vị trí tiêu điểm theo cửa sổ</string>

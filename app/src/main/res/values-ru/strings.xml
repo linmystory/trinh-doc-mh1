@@ -598,10 +598,9 @@
     <string name="msg_keys_resumed">Клавиши клавиатуры и громкости возобновлены</string>
     <string name="msg_volume_app_off">Навигация клавишами громкости выключена в %1$s</string>
     <string name="msg_volume_app_on">Навигация клавишами громкости включена в %1$s</string>
-    <string name="rd_screen_title">Сообщать о включении и выключении экрана</string>
-    <string name="rd_screen_desc">Речь всегда прекращается при выключении экрана. Включено: также сообщает «Экран выключен» и «Экран включён». По умолчанию выключено.</string>
+    <string name="rd_screen_title">Сообщать время при включении экрана и о его выключении</string>
+    <string name="rd_screen_desc">Речь всегда прекращается при выключении экрана. Включено: при включении экрана называет текущее время, при выключении говорит «Экран выключен». По умолчанию выключено.</string>
     <string name="msg_screen_off">Экран выключен</string>
-    <string name="msg_screen_on">Экран включён</string>
     <string name="rd_dialog_focus_title">Переводить фокус в диалоги</string>
     <string name="rd_dialog_focus_desc">При открытии диалога или нижней панели читает заголовок и переходит к первому элементу, если вы ещё ничего не выбрали. По умолчанию включено.</string>
     <string name="rd_focus_memory_title">Запоминать позицию для каждого окна</string>

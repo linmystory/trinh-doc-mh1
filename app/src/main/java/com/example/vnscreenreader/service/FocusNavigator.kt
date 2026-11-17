@@ -67,7 +67,11 @@ class FocusNavigator(
     /** Cử chỉ cuộn đổi giá trị thanh trượt đang chọn thay vì cuộn trang. Do phiên đọc đặt từ cài đặt. */
     @Volatile var scrollAdjustsSliders: Boolean = true
 
-    /** Tiêu điểm chi tiết đang bật: duyệt cả ô tích/nút không nhãn nằm trong khung bấm được. Do phiên đọc đặt. */
+    /**
+     * Tiêu điểm chi tiết đang bật: hệ thống đưa cả view bị ứng dụng đánh dấu "không quan trọng" vào cây trợ năng (cờ dịch vụ do phiên đọc
+     * đặt). Đổi giá trị thì bỏ bộ đệm điểm dừng. Việc chọn điểm dừng không còn phụ thuộc công tắc này: nút bấm được không nhãn nằm trong
+     * khung bấm được luôn là điểm dừng riêng ([StopSelection]).
+     */
     @Volatile var detailedFocus: Boolean = false
         set(value) {
             if (field != value) {
@@ -1515,9 +1519,17 @@ class FocusNavigator(
         val now = SystemClock.uptimeMillis()
         // Bộ đệm chỉ dùng được khi chưa hết hạn VÀ chưa có sự kiện "nội dung đổi/đã cuộn" nào xảy ra sau lần nạp.
         if (cachedNodes.isNotEmpty() && now - cachedAtMs < CACHE_TTL_MS && cachedAtMs > staleSinceMs) return cachedNodes
-        val root = activeRoot() ?: return null
-        cachedNodes = orderByTraversal(NodeCollector.collect(root, detailed = detailedFocus))
-        cachedAtMs = now
+        var collected = NodeCollector.collect(activeRoot() ?: return null)
+        if (!collected.complete) {
+            // Có nút con không lấy được (cây đang đổi, thường ngay lúc ứng dụng vẽ lại): đợi một nhịp ngắn rồi lấy lại cây MỚI một lần
+            // để không để lọt phần tử. Vẫn thiếu thì dùng bản này nhưng không giữ trong bộ đệm.
+            SystemClock.sleep(RECOLLECT_DELAY_MS)
+            activeRoot()?.let { collected = NodeCollector.collect(it) }
+        }
+        cachedNodes = orderByTraversal(collected.nodes)
+        // Danh sách còn thiếu nút thì coi như hết hạn ngay: lần vuốt kế sẽ nạp lại thay vì dùng tiếp bản khuyết trong 800 ms.
+        cachedAtMs = if (collected.complete) now else 0L
+        com.example.vnscreenreader.core.Diag.log("COLLECT") { "stops=${cachedNodes.size} complete=${collected.complete}" }
         return cachedNodes
     }
 
@@ -1578,6 +1590,9 @@ class FocusNavigator(
         const val DRAG_DURATION_MS = 450L
         const val TRACK_LEVELS = 4
         const val CACHE_TTL_MS = 800L
+
+        /** Chờ trước khi nạp lại cây khi lần nạp đầu thiếu nút con (xem [visibleNodes]). */
+        const val RECOLLECT_DELAY_MS = 80L
         const val MAX_PARENT_LOOKUP = 12
         const val AUTO_SCROLL_SETTLE_MS = 300L
 

@@ -34,6 +34,7 @@ import com.example.vnscreenreader.ai.mlkit.MlKitImageLabeler
 import com.example.vnscreenreader.ai.mlkit.MlKitTextRecognizer
 import com.example.vnscreenreader.core.CustomLabelStore
 import com.example.vnscreenreader.core.EventDeduplicator
+import com.example.vnscreenreader.core.ScreenAnnouncement
 import com.example.vnscreenreader.core.SettingsRepository
 import com.example.vnscreenreader.core.SpeechEngine
 import com.example.vnscreenreader.core.SpeechFormats
@@ -43,6 +44,7 @@ import com.example.vnscreenreader.gesture.GestureAnalyzer
 import com.example.vnscreenreader.gesture.GestureMappingStore
 import com.example.vnscreenreader.CoroutineGuard
 import com.example.vnscreenreader.CrashLogger
+import java.time.LocalTime
 import java.util.Locale
 import com.example.vnscreenreader.core.ActionHints
 import com.example.vnscreenreader.core.KeywordList
@@ -331,7 +333,7 @@ internal class ReaderSession(private val service: AccessibilityService) {
             enabled = true,
             node = snapshot,
             hasCustomLabel = !customLabels.find(snapshot.packageName, snapshot.viewId).isNullOrBlank(),
-            hasMergedChildLabel = NodeCollector.mergedLabel(node).isNotBlank(),
+            hasMergedChildLabel = NodeCollector.mergedLabel(node, everything = true).isNotBlank(),
         )
         val bounds = android.graphics.Rect().also { node.getBoundsInScreen(it) }
         ai.onFocusChanged(
@@ -506,7 +508,8 @@ internal class ReaderSession(private val service: AccessibilityService) {
 
     /**
      * Màn hình tắt/bật (luồng chính). Tắt: dừng ngay mọi giọng đọc, bỏ trạng thái phím đang giữ dở (phím nhả khi tắt màn hình
-     * sẽ không bao giờ tới) và hủy việc AI/chuyển tiêu điểm đang chờ. Có công tắc thì báo thêm bằng lời.
+     * sẽ không bao giờ tới) và hủy việc AI/chuyển tiêu điểm đang chờ. Có công tắc thì báo thêm bằng lời: tắt màn hình đọc
+     * "Đã tắt màn hình", bật màn hình đọc giờ hiện tại ([ScreenAnnouncement]).
      */
     private fun onScreenState(on: Boolean) {
         if (closed.get()) return
@@ -517,9 +520,16 @@ internal class ReaderSession(private val service: AccessibilityService) {
                 focusJob?.cancel()
                 ai.cancelAll()
                 if (!on) speech.stop()
-                if (settings.announceScreen) speech.speak(t(if (on) S.MSG_SCREEN_ON else S.MSG_SCREEN_OFF), true)
+                val now = LocalTime.now() // lấy giờ ngay lúc đọc, không phải lúc nhận broadcast
+                ScreenAnnouncement.text(on, settings.announceScreen, callOrRingActive(), now.hour, now.minute)?.let { speech.speak(it, true) }
             }
         }
+    }
+
+    /** Đang đổ chuông hoặc trong cuộc gọi (kể cả gọi qua mạng): chế độ âm thanh khác bình thường. */
+    private fun callOrRingActive(): Boolean {
+        val mode = service.getSystemService(AudioManager::class.java)?.mode ?: return false
+        return mode != AudioManager.MODE_NORMAL
     }
 
     /** Luồng chính. Xóa mọi trạng thái phím dở dang. */
@@ -896,7 +906,7 @@ internal class ReaderSession(private val service: AccessibilityService) {
 
     private fun liveText(node: AccessibilityNodeInfo): String =
         node.text?.toString()?.trim().orEmpty().ifEmpty {
-            node.contentDescription?.toString()?.trim().orEmpty().ifEmpty { NodeCollector.mergedLabel(node).trim() }
+            node.contentDescription?.toString()?.trim().orEmpty().ifEmpty { NodeCollector.mergedLabel(node, everything = true).trim() }
         }
 
     /** Mở trình đơn và đọc phần mở đầu. Gọi trên luồng xử lý. */

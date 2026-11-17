@@ -598,10 +598,9 @@
     <string name="msg_keys_resumed">已恢复键盘和音量键</string>
     <string name="msg_volume_app_off">已在 %1$s 中关闭音量键导航</string>
     <string name="msg_volume_app_on">已在 %1$s 中开启音量键导航</string>
-    <string name="rd_screen_title">播报亮屏和息屏</string>
-    <string name="rd_screen_desc">息屏时朗读总会停止。开启后还会播报“已息屏”和“已亮屏”。默认关闭。</string>
+    <string name="rd_screen_title">亮屏报时，息屏提示</string>
+    <string name="rd_screen_desc">息屏时朗读总会停止。开启后：亮屏时播报当前时间，息屏时播报“已息屏”。默认关闭。</string>
     <string name="msg_screen_off">已息屏</string>
-    <string name="msg_screen_on">已亮屏</string>
     <string name="rd_dialog_focus_title">自动聚焦到对话框</string>
     <string name="rd_dialog_focus_desc">对话框或底部面板打开时，朗读标题并移到其第一个元素；若您已自行选择则不移动。默认开启。</string>
     <string name="rd_focus_memory_title">按窗口记住焦点位置</string>

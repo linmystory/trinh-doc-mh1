@@ -598,10 +598,9 @@
     <string name="msg_keys_resumed">تم استئناف مفاتيح لوحة المفاتيح والصوت</string>
     <string name="msg_volume_app_off">تم إيقاف التنقل بمفاتيح الصوت في %1$s</string>
     <string name="msg_volume_app_on">تم تشغيل التنقل بمفاتيح الصوت في %1$s</string>
-    <string name="rd_screen_title">الإعلان عند تشغيل الشاشة وإيقافها</string>
-    <string name="rd_screen_desc">يتوقف الكلام دائمًا عند إطفاء الشاشة. عند التشغيل: يقول أيضًا الشاشة مطفأة والشاشة مضاءة. متوقف افتراضيًا.</string>
+    <string name="rd_screen_title">إعلان الوقت عند تشغيل الشاشة وإعلان إطفائها</string>
+    <string name="rd_screen_desc">يتوقف الكلام دائمًا عند إطفاء الشاشة. عند التشغيل: يقول الوقت الحالي عند تشغيل الشاشة، ويقول الشاشة مطفأة عند إطفائها. متوقف افتراضيًا.</string>
     <string name="msg_screen_off">الشاشة مطفأة</string>
-    <string name="msg_screen_on">الشاشة مضاءة</string>
     <string name="rd_dialog_focus_title">نقل التركيز إلى مربعات الحوار</string>
     <string name="rd_dialog_focus_desc">عند فتح مربع حوار أو ورقة سفلية يقرأ عنوانه وينتقل إلى أول عنصر فيه ما لم تكن قد اخترت شيئًا. مفعّل افتراضيًا.</string>
     <string name="rd_focus_memory_title">تذكر الموضع لكل نافذة</string>

@@ -598,10 +598,9 @@
     <string name="msg_keys_resumed">Keyboard and volume keys resumed</string>
     <string name="msg_volume_app_off">Volume-key navigation off in %1$s</string>
     <string name="msg_volume_app_on">Volume-key navigation on in %1$s</string>
-    <string name="rd_screen_title">Announce screen on and off</string>
-    <string name="rd_screen_desc">Speech always stops when the screen turns off. On: also say Screen off and Screen on. Off by default.</string>
+    <string name="rd_screen_title">Announce the time when the screen turns on, and screen off</string>
+    <string name="rd_screen_desc">Speech always stops when the screen turns off. On: reads the current time when the screen turns on, and says Screen off when it turns off. Off by default.</string>
     <string name="msg_screen_off">Screen off</string>
-    <string name="msg_screen_on">Screen on</string>
     <string name="rd_dialog_focus_title">Move focus into dialogs</string>
     <string name="rd_dialog_focus_desc">When a dialog or bottom sheet opens, read its title and move to its first element, unless you already chose something. On by default.</string>
     <string name="rd_focus_memory_title">Remember position per window</string>

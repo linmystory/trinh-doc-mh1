@@ -31,6 +31,29 @@ class SpeechTextBuilderTest {
     }
 
     @Test
+    fun filledField_stillReadsItsNameAfterTheText() {
+        // Ô đã có chữ: nhãn đọc ra là NỘI DUNG; tên ô (gợi ý/labelFor) phải còn nghe được, nếu không các ô điền sẵn không phân biệt được.
+        val hinted = NodeSnapshot(text = "Nguyễn Văn A", hintText = "Họ tên", className = "android.widget.EditText", isEditable = true)
+        assertEquals("Nguyễn Văn A, ô nhập, Họ tên", SpeechTextBuilder.buildNodeDescription(hinted))
+        val both = hinted.copy(labeledByText = "Thông tin cá nhân")
+        assertEquals("Nguyễn Văn A, ô nhập, Thông tin cá nhân, Họ tên", SpeechTextBuilder.buildNodeDescription(both))
+    }
+
+    @Test
+    fun fieldName_isNotRepeatedWhenItIsAlreadyTheLabel() {
+        val empty = NodeSnapshot(labeledByText = "Họ tên", hintText = "họ tên", className = "android.widget.EditText", isEditable = true)
+        assertEquals("Họ tên, ô nhập", SpeechTextBuilder.buildNodeDescription(empty))
+        val typedSameAsHint = NodeSnapshot(text = "Họ tên", hintText = "Họ tên", className = "android.widget.EditText", isEditable = true)
+        assertEquals("Họ tên, ô nhập", SpeechTextBuilder.buildNodeDescription(typedSameAsHint))
+    }
+
+    @Test
+    fun hintOfANonEditableViewIsNotAppended() {
+        val node = NodeSnapshot(text = "Chọn ngày", hintText = "Ngày sinh", className = "android.widget.TextView")
+        assertEquals("Chọn ngày", SpeechTextBuilder.buildNodeDescription(node))
+    }
+
+    @Test
     fun password_neverReadsContent() {
         val node = NodeSnapshot(text = "bimat123", isPassword = true, isEditable = true)
         assertEquals("Ô nhập mật khẩu", SpeechTextBuilder.buildNodeDescription(node))
