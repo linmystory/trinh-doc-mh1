@@ -15,11 +15,13 @@ import com.example.vnscreenreader.core.PermissionFlow
 import com.example.vnscreenreader.core.t
 
 /**
- * Mục "Quyền": mỗi tính năng một dòng (tên, trạng thái) và nút mở đúng màn hình quyền của ứng dụng. Trạng thái được
- * làm mới khi quay lại từ Cài đặt hệ thống. Mở mục này KHÔNG bao giờ tự xin quyền.
+ * Phần "Quyền" nằm cuối trang "Trạng thái và quyền" (trước đây là một mục riêng): mỗi tính năng một dòng (tên, trạng thái)
+ * và một nút mở đúng màn hình quyền của ứng dụng. Trạng thái được làm mới khi quay lại từ Cài đặt hệ thống. Hiện phần này
+ * KHÔNG bao giờ tự xin quyền. Hàm chỉ thêm các thành phần vào cột của trang gọi nó (không tự cuộn), nên phải gọi bên trong
+ * [ScreenColumn].
  */
 @Composable
-fun PermissionsScreen() {
+fun PermissionsSection() {
     val context = LocalContext.current
     val features = PermissionFeatures.all
     var granted by remember { mutableStateOf(features.associate { it.id to context.isGranted(it.permissions) }) }
@@ -27,12 +29,12 @@ fun PermissionsScreen() {
         granted = features.associate { it.id to context.isGranted(it.permissions) }
     }
 
-    ScreenColumn(stringResource(R.string.sec_perms)) {
-        BodyText(stringResource(R.string.perm_settings_intro))
-        if (features.isEmpty()) BodyText(stringResource(R.string.perm_none))
-        features.forEach { feature ->
-            BodyText("${t(feature.name)}: ${t(PermissionFlow.statusLabel(granted[feature.id] == true))}")
-            PrimaryButton(stringResource(R.string.perm_open_settings)) { context.openAppSettings() }
-        }
+    SectionHeading(stringResource(R.string.sec_perms))
+    BodyText(stringResource(R.string.perm_settings_intro))
+    if (features.isEmpty()) BodyText(stringResource(R.string.perm_none))
+    features.forEach { feature ->
+        BodyText("${t(feature.name)}: ${t(PermissionFlow.statusLabel(granted[feature.id] == true))}")
     }
+    // Mọi dòng đều mở cùng một màn hình quyền của ứng dụng nên chỉ cần một nút (trước đây lặp lại sau từng dòng).
+    if (features.isNotEmpty()) PrimaryButton(stringResource(R.string.perm_open_settings)) { context.openAppSettings() }
 }

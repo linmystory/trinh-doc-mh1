@@ -17,7 +17,10 @@ object BackupSchema {
     const val APP_GESTURES = "app_gesture_prefs"
     const val LABELS = "custom_labels"
 
-    val FILES: List<String> = listOf(SETTINGS, GESTURES, APP_GESTURES, LABELS)
+    /** Bố cục trình đơn phần tử do người dùng sắp xếp (MenuLayoutStore giữ đúng tên tệp và khóa này; có bài test so khớp). */
+    const val MENU_LAYOUT = "menu_layout_prefs"
+
+    val FILES: List<String> = listOf(SETTINGS, GESTURES, APP_GESTURES, LABELS, MENU_LAYOUT)
 
     private val EXACT: Map<String, Map<String, Char>> = mapOf(
         SETTINGS to mapOf(
@@ -37,6 +40,7 @@ object BackupSchema {
         ),
         GESTURES to mapOf("gesture_mapping" to 's'),
         LABELS to mapOf("labels_json" to 's'),
+        MENU_LAYOUT to mapOf("local_actions" to 's'),
     )
     private const val APP_GESTURE_PREFIX = "ov_"
     private const val APP_TAP_PREFIX = "tap_"

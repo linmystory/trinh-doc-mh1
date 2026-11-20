@@ -62,7 +62,7 @@ class DetailedFocusWiringTest {
     fun newActionsHaveLabels_andAreInMenus() {
         assertNotNull(GestureAction.TOGGLE_DETAILED_FOCUS.label.takeIf { it.isNotBlank() })
         assertNotNull(GestureAction.DESCRIBE_TECHNICAL.label.takeIf { it.isNotBlank() })
-        assertTrue(Menus.globalMore().any { it.action == GestureAction.TOGGLE_DETAILED_FOCUS })
+        assertTrue(GestureAction.TOGGLE_DETAILED_FOCUS in Menus.globalActions())
         assertTrue(Menus.local(emptyList()).any { it.action == GestureAction.DESCRIBE_TECHNICAL })
     }
 }

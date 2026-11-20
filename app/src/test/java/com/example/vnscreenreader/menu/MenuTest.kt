@@ -47,8 +47,10 @@ class MenuStateTest {
     fun menus_haveExpectedContent_andOnlyUniqueActions() {
         val global = Menus.global()
         assertTrue(global.any { it.action == GestureAction.READ_FROM_TOP })
-        assertTrue(Menus.globalMore().any { it.action == GestureAction.OPEN_SETTINGS })
-        assertEquals(global.size, global.map { it.action }.toSet().size)
+        assertTrue(GestureAction.OPEN_SETTINGS in Menus.globalActions())
+        // Các mục mở nhóm không có action: chỉ đếm mục hành động.
+        val globalActions = global.mapNotNull { it.action }
+        assertEquals(globalActions.size, globalActions.toSet().size)
         val local = Menus.local(listOf(CustomAction(0x7f000001, "Xóa tin")))
         assertEquals("Nhấn", local.first().label)
         assertEquals(0x7f000001, local.last().customActionId)

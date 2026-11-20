@@ -41,6 +41,8 @@ fun AccessibilityNodeInfo.toSnapshot(): NodeSnapshot = NodeSnapshot(
     viewId = viewIdResourceName,
     packageName = packageName?.toString(),
     isLink = isLinkLike(),
+    hasRange = rangeInfo != null,
+    isScreenReaderFocusable = isScreenReaderFocusable,
 )
 
 /**
@@ -252,17 +254,21 @@ object NodeCollector {
 
     /**
      * Phần tử cần đọc khi ngón tay chạm vào [source] (sự kiện HOVER_ENTER của chế độ khám phá bằng cảm ứng).
-     * - Chính [source] nếu nó có nội dung/có thể tương tác ([HoverPolicy]).
-     * - Nếu không (ví dụ ảnh con không nhãn nằm trong một nút bấm): nút bấm cha gần nhất.
+     * - Chính [source] nếu nó có nội dung/có thể tương tác/có khoảng giá trị ([HoverPolicy.isReadable]).
+     * - Khối đọc tự khai báo không nhãn ([HoverPolicy.needsMergedText]): chính [source] khi bên dưới có chữ để gộp.
+     * - Nếu không (ví dụ ảnh con không nhãn nằm trong một nút bấm): nút bấm cha gần nhất ([HoverPolicy.isReadableAncestor]).
      * - Trả về null khi chạm vào khoảng trống: không đọc gì.
      */
     fun findHoverTarget(source: AccessibilityNodeInfo): AccessibilityNodeInfo? {
         if (!source.isVisibleToUser) return null
-        if (HoverPolicy.isReadable(source.toSnapshot())) return source
+        val snapshot = source.toSnapshot()
+        if (HoverPolicy.isReadable(snapshot)) return source
+        if (HoverPolicy.needsMergedText(snapshot) && mergedLabel(source).isNotEmpty()) return source
         var current = source.parent
         var depth = 0
         while (current != null && depth < MAX_HOVER_ANCESTOR_DEPTH) {
-            if (current.isVisibleToUser && current.isClickable) return current
+            // Chỉ cần cờ bấm được: dựng ảnh chụp tối giản thay vì toSnapshot() đầy đủ (không tốn lượt gọi hệ thống cho mỗi tổ tiên).
+            if (current.isVisibleToUser && HoverPolicy.isReadableAncestor(NodeSnapshot(isClickable = current.isClickable))) return current
             current = current.parent
             depth++
         }

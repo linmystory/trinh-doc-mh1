@@ -27,25 +27,30 @@ class SubmenuAndEditTest {
             ),
             actions,
         )
-        assertTrue(actions.size <= Menus.MAX_GLOBAL_TOP_ACTIONS)
-        assertEquals(MenuKind.GLOBAL_MORE, g.last().submenu)
+        assertEquals(Menus.MAX_GLOBAL_TOP_ACTIONS, actions.size)
+        // Sau 7 mục quen thuộc: mỗi nhóm một mục mở trình đơn con, theo đúng thứ tự nhóm, và không còn gì khác.
+        assertEquals(MenuGroup.entries.map { it.kind }, g.drop(actions.size).map { it.submenu })
     }
 
-    @Test fun moreSubmenuHasBackAndRest() {
-        val more = Menus.globalMore()
-        assertTrue(more.last().isBack)
-        // Không mục nào của trình đơn chung bị mất hay trùng giữa hai cấp.
-        val all = (Menus.global() + more).mapNotNull { it.action }
-        assertEquals(all.size, all.toSet().size)
-        assertTrue(GestureAction.OPEN_SETTINGS in all && GestureAction.QUICK_SETTINGS in all)
+    @Test fun groupSubmenusListTheirFunctionsAndEndWithBack() {
+        MenuGroup.entries.forEach { group ->
+            val items = Menus.submenu(group.kind)!!
+            assertTrue(group.name, items.last().isBack)
+            assertEquals(group.name, group.actions, items.dropLast(1).map { it.action })
+        }
+        // Chỉ nhóm và "Chỉnh sửa văn bản" của phần tử là trình đơn con; trình đơn gốc thì không.
+        assertNull(Menus.submenu(MenuKind.GLOBAL))
+        assertNull(Menus.submenu(MenuKind.LOCAL))
+        assertNotNull(Menus.submenu(MenuKind.LOCAL_EDIT))
     }
 
     @Test fun backReturnsToParentKeepingSelection() {
         val top = MenuState.open(MenuKind.GLOBAL, Menus.global())
         var s = top
-        repeat(Menus.global().size) { s = s.next() } // dừng ở mục "Khác" (cuối)
-        assertEquals(MenuKind.GLOBAL_MORE, s.current!!.submenu)
-        val child = s.child(MenuKind.GLOBAL_MORE, Menus.globalMore())
+        repeat(Menus.global().size) { s = s.next() } // dừng ở mục cuối: nhóm cuối cùng
+        val lastGroup = MenuGroup.entries.last()
+        assertEquals(lastGroup.kind, s.current!!.submenu)
+        val child = s.child(lastGroup.kind, Menus.submenu(lastGroup.kind)!!)
         assertEquals(-1, child.index)
         assertEquals(s.index, child.back()!!.index)
         assertNull(top.back())

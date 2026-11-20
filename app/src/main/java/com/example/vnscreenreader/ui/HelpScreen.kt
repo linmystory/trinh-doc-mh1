@@ -1,8 +1,10 @@
 package com.example.vnscreenreader.ui
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import com.example.vnscreenreader.R
+import com.example.vnscreenreader.menu.MenuLayout
 
 @Composable
 fun HelpScreen() {
@@ -20,6 +22,9 @@ fun HelpScreen() {
         SectionHeading(stringResource(R.string.hp_swipes_head))
         BodyText(stringResource(R.string.hp_swipes_body))
 
+        SectionHeading(stringResource(R.string.mn_title))
+        BodyText(pluralStringResource(R.plurals.hp_menus_body, MenuLayout.MAX_ITEMS, MenuLayout.MAX_ITEMS))
+
         SectionHeading(stringResource(R.string.hp_keys_head))
         BodyText(stringResource(R.string.hp_keys_nav))
         BodyText(stringResource(R.string.hp_keys_global))
@@ -31,6 +36,18 @@ fun HelpScreen() {
 
         SectionHeading(stringResource(R.string.hp_more_head))
         BodyText(stringResource(R.string.hp_more_body))
+
+        // Hai đoạn giải thích trước đây nằm cuối màn "Chi tiết đọc nội dung", lẫn với các công tắc.
+        SectionHeading(stringResource(R.string.rd_unlabeled_head))
+        BodyText(stringResource(R.string.rd_unlabeled_intro))
+        BodyText(stringResource(R.string.rd_unlabeled_1))
+        BodyText(stringResource(R.string.rd_unlabeled_2))
+        BodyText(stringResource(R.string.rd_unlabeled_3))
+        BodyText(stringResource(R.string.rd_unlabeled_4))
+        BodyText(stringResource(R.string.rd_unlabeled_5))
+
+        SectionHeading(stringResource(R.string.rd_ai_head))
+        BodyText(stringResource(R.string.rd_ai_body))
 
         SectionHeading(stringResource(R.string.hp_perm_head))
         BodyText(stringResource(R.string.hp_perm_body))

@@ -101,6 +101,9 @@ fun StatusScreen() {
         PrimaryButton(stringResource(R.string.st_battery_button)) {
             message = if (openSettings(context, Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)) null else unavailableText
         }
+
+        // Quyền theo từng tính năng (trước đây là một mục riêng ở danh sách chính).
+        PermissionsSection()
     }
 }
 

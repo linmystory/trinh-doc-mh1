@@ -2,13 +2,17 @@ package com.example.vnscreenreader.ui
 
 import android.app.Activity
 import android.content.ActivityNotFoundException
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.widget.Toast
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -24,15 +28,21 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.sp
 import com.example.vnscreenreader.CrashLogger
 import com.example.vnscreenreader.R
+import com.example.vnscreenreader.core.Diag
 import com.example.vnscreenreader.core.SettingsRepository
 
 /** Số ký tự tối đa hiện trên màn hình (giữ giao diện nhẹ) và khi chia sẻ (đủ chứa toàn bộ nhật ký, xem CrashLogLimits). */
 private const val VIEW_MAX_CHARS = 20_000
 private const val SHARE_MAX_CHARS = 90_000
 
+/** Số ký tự nhật ký chẩn đoán tối đa chép vào clipboard (clipboard đi qua Binder nên có giới hạn dung lượng). */
+private const val DIAG_COPY_MAX_CHARS = 100_000
+
 /**
- * Nhật ký lỗi: bật/tắt ghi, xem, chia sẻ (hộp chia sẻ của hệ thống, gửi dạng văn bản nên không cần quyền hay tệp công
- * khai) và xóa (có hỏi lại). Nhật ký chỉ nằm trong bộ nhớ riêng của ứng dụng.
+ * Trang "Nhật ký và hỗ trợ", gồm hai phần cùng mục đích là nhờ người khác tìm lỗi giúp:
+ *  - Nhật ký lỗi: bật/tắt ghi, xem, chia sẻ (hộp chia sẻ của hệ thống, gửi dạng văn bản nên không cần quyền hay tệp công
+ *    khai) và xóa (có hỏi lại). Chỉ nằm trong bộ nhớ riêng của ứng dụng.
+ *  - Nhật ký chẩn đoán: bật/tắt, sao chép và xóa (trước đây nằm lẫn trong màn Đọc nội dung, dưới tiêu đề "Phím").
  */
 @Composable
 fun LogScreen() {
@@ -45,8 +55,14 @@ fun LogScreen() {
     var confirmClear by remember { mutableStateOf(false) }
     var status by remember { mutableStateOf<String?>(null) }
     val clearedText = stringResource(R.string.log_cleared)
+    var diagOn by remember { mutableStateOf(settings.diagnosticsEnabled) }
+    var diagLines by remember { mutableIntStateOf(Diag.lineCount()) }
+    val diagCopiedText = stringResource(R.string.rd_diag_copied)
+    val diagCopyFailedText = stringResource(R.string.rd_diag_copy_failed)
+    val diagClearedText = stringResource(R.string.rd_diag_cleared)
 
     ScreenColumn(stringResource(R.string.sec_log)) {
+        SectionHeading(stringResource(R.string.log_errors_head))
         SettingSwitch(
             title = stringResource(R.string.log_enable_title),
             description = stringResource(R.string.log_enable_desc),
@@ -74,6 +90,34 @@ fun LogScreen() {
         }
         status?.let {
             Text(text = it, color = Color.White, fontSize = 18.sp, modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
+        }
+
+        SectionHeading(stringResource(R.string.log_diag_head))
+        SettingSwitch(
+            title = stringResource(R.string.rd_diag_title),
+            description = stringResource(R.string.rd_diag_desc),
+            checked = diagOn,
+            onCheckedChange = {
+                diagOn = it
+                settings.diagnosticsEnabled = it
+            },
+        )
+        BodyText(stringResource(R.string.rd_diag_lines, diagLines))
+        PrimaryButton(stringResource(R.string.rd_diag_copy)) {
+            val copied = try {
+                val clipboard = context.getSystemService(ClipboardManager::class.java)
+                clipboard?.setPrimaryClip(ClipData.newPlainText("vnscreenreader-diag", Diag.text(DIAG_COPY_MAX_CHARS)))
+                clipboard != null
+            } catch (e: RuntimeException) {
+                false // clipboard từ chối (quá lớn, bị hệ thống chặn...): báo thật, không sập
+            }
+            diagLines = Diag.lineCount()
+            Toast.makeText(context, if (copied) diagCopiedText else diagCopyFailedText, Toast.LENGTH_SHORT).show()
+        }
+        PrimaryButton(stringResource(R.string.rd_diag_clear)) {
+            Diag.clear()
+            diagLines = 0
+            Toast.makeText(context, diagClearedText, Toast.LENGTH_SHORT).show()
         }
     }
 

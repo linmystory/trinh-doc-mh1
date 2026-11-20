@@ -34,6 +34,10 @@ data class NodeSnapshot(
     val packageName: String? = null,
     /** Thẻ liên kết (nội dung web): đọc vai trò "liên kết" và gợi ý "để mở liên kết". */
     val isLink: Boolean = false,
+    /** Có `RangeInfo` (thanh trượt, thanh tiến trình, đánh giá sao), kể cả khi khoảng giá trị rỗng nên [rangePercent] là null. */
+    val hasRange: Boolean = false,
+    /** `isScreenReaderFocusable`: ứng dụng khai báo khung này là MỘT khối đọc (gồm cả chữ của các con). */
+    val isScreenReaderFocusable: Boolean = false,
 )
 
 object SpeechTextBuilder {

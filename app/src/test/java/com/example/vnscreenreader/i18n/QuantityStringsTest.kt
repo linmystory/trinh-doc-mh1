@@ -7,13 +7,16 @@ import org.junit.Test
 
 /**
  * Chuỗi có SỐ LƯỢNG phải là `<plurals>` (tiếng Nga/Ả Rập đổi dạng danh từ theo số). Chuỗi `<string>` chứa `%d` chỉ được
- * phép khi đó không phải số lượng: giờ giấc, vị trí "1 trên 3", mã cử chỉ, phần trăm (pin, âm lượng, tốc độ đọc).
+ * phép khi đó không phải số lượng: giờ giấc, vị trí "1 trên 3", mã cử chỉ, phần trăm (pin, âm lượng, tốc độ đọc), và số đứng
+ * sau dấu hai chấm hay sau chữ "vị trí" mà không kèm danh từ ("Còn lại: 11", "Chức năng đang dùng: 5 trên 12").
  */
 class QuantityStringsTest {
 
     private val notQuantities = setOf("menu_position", "gt_unknown", "status_time_hm", "status_time_exact", "status_battery",
         "sp_position", "rd_diag_lines", "log_summary", "msg_list_range", "msg_volume_pct", "msg_loc_here", "msg_loc_coords", "rd_touch_delay_value", "ag_row", "bk_saved", "bk_restored",
-        "msg_rate_set")
+        "msg_rate_set",
+        // Trình đơn phần tử tùy chỉnh: vị trí mới, vị trí vừa thêm, "Còn lại: N" và "Chức năng đang dùng: N trên M" (không danh từ sau số).
+        "mn_msg_moved", "mn_msg_added", "mn_msg_removed", "mn_counter")
     private val convertedToPlurals = listOf("sp_state_percent", "script_err_depth", "script_err_rules_count", "lb_limits")
 
     private fun resDir(): File? =

@@ -51,7 +51,7 @@ class ReadingControlGestureTest {
     @Test
     fun displacedDefaults_haveNoGestureNow_butStayReachableFromTheMenus() {
         val m = GestureMapping()
-        val global = Menus.global() + Menus.globalMore()
+        val global = Menus.globalActions()
         val local = Menus.local(emptyList())
         // Đọc lại, đổi đơn vị, đọc từ đầu, đơn vị kế/trước: nhường chỗ cho cử chỉ chuẩn nhưng vẫn gọi được từ trình đơn.
         assertTrue(m.gesturesFor(GestureAction.REPEAT_LAST).isEmpty())
@@ -59,8 +59,8 @@ class ReadingControlGestureTest {
         assertTrue(m.gesturesFor(GestureAction.READ_FROM_TOP).isEmpty())
         assertTrue(m.gesturesFor(GestureAction.UNIT_NEXT).isEmpty())
         assertTrue(m.gesturesFor(GestureAction.UNIT_PREVIOUS).isEmpty())
-        assertTrue(global.any { it.action == GestureAction.REPEAT_LAST })
-        assertTrue(global.any { it.action == GestureAction.READ_FROM_TOP })
+        assertTrue(GestureAction.REPEAT_LAST in global)
+        assertTrue(GestureAction.READ_FROM_TOP in global)
         assertTrue(local.any { it.action == GestureAction.CYCLE_GRANULARITY })
         assertTrue(local.any { it.action == GestureAction.UNIT_NEXT })
         assertTrue(local.any { it.action == GestureAction.UNIT_PREVIOUS })
@@ -80,7 +80,7 @@ class ReadingControlGestureTest {
     fun mediaPlayPause_isOnTwoFingerDoubleTap_andInTheMenu() {
         val m = GestureMapping()
         assertEquals(GestureAction.MEDIA_PLAY_PAUSE, m.actionFor(Gesture.TWO_FINGER_DOUBLE_TAP))
-        assertTrue(Menus.globalMore().any { it.action == GestureAction.MEDIA_PLAY_PAUSE })
+        assertTrue(GestureAction.MEDIA_PLAY_PAUSE in Menus.globalActions())
         assertTrue(GestureAction.MEDIA_PLAY_PAUSE.label.isNotBlank())
         // Trong trình đơn đang mở, cử chỉ này không phải thao tác của trình đơn nên không cắt lời đang đọc.
         assertFalse(GestureAction.MEDIA_PLAY_PAUSE in MenuGestures.HANDLED)
@@ -113,7 +113,7 @@ class ReadingControlGestureTest {
         val m = GestureMapping()
         assertTrue(m.gesturesFor(GestureAction.COPY_UNIT).isEmpty())
         assertTrue(m.gesturesFor(GestureAction.RUN_PLUGINS).isEmpty())
-        assertTrue(Menus.globalMore().any { it.action == GestureAction.RUN_PLUGINS })
+        assertTrue(GestureAction.RUN_PLUGINS in Menus.globalActions())
         assertTrue(Menus.local(emptyList()).any { it.action == GestureAction.COPY_UNIT })
     }
 

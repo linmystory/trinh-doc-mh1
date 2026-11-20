@@ -13,16 +13,33 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import com.example.vnscreenreader.R
 import com.example.vnscreenreader.core.KeywordList
+import com.example.vnscreenreader.core.PermissionFeatures
 import com.example.vnscreenreader.core.SettingsRepository
 
 /**
- * Đọc thông báo: công tắc chính (trước đây nằm ở màn Đọc, nay chỉ ở đây để không có hai nơi cho một cài đặt), các hoàn cảnh
- * yên lặng và hai danh sách từ khóa. Quy tắc ưu tiên nằm ở [com.example.vnscreenreader.core.NotificationRules].
+ * Trang "Thông báo và sự kiện": công tắc chính, các hoàn cảnh yên lặng, hai danh sách từ khóa, rồi các sự kiện khác của máy
+ * (người gọi đến, nói vị trí, bật/tắt màn hình; trước đây nằm ở màn Đọc). Quy tắc ưu tiên của thông báo nằm ở
+ * [com.example.vnscreenreader.core.NotificationRules].
  */
 @Composable
 fun NotificationScreen() {
     val context = LocalContext.current
     val settings = remember { SettingsRepository(context) }
+    var callAnnounce by remember { mutableStateOf(settings.announceCalls) }
+    var location by remember { mutableStateOf(settings.locationEnabled) }
+    var screenState by remember { mutableStateOf(settings.announceScreen) }
+    // Chỉ xin quyền khi người dùng BẬT tính năng; từ chối thì công tắc giữ nguyên tắt.
+    // Một công tắc "đọc người gọi": quyền cuộc gọi là bắt buộc; quyền danh bạ là tùy chọn (không cấp thì chỉ đọc số).
+    val askContacts = rememberPermissionRequest(PermissionFeatures.contacts) { }
+    val askCaller = rememberPermissionRequest(PermissionFeatures.caller) {
+        callAnnounce = true
+        settings.announceCalls = true
+        askContacts()
+    }
+    val askLocation = rememberPermissionRequest(PermissionFeatures.location) {
+        location = true
+        settings.locationEnabled = true
+    }
     var master by remember { mutableStateOf(settings.readNotifications) }
     var toasts by remember { mutableStateOf(settings.readToasts) }
     var finger by remember { mutableStateOf(settings.notifQuietFinger) }
@@ -112,6 +129,43 @@ fun NotificationScreen() {
             supportingText = { Text(stringResource(R.string.nt_white_desc)) },
             minLines = 3,
             modifier = Modifier.fillMaxWidth(),
+        )
+
+        SectionHeading(stringResource(R.string.nt_events_head))
+        SettingSwitch(
+            title = stringResource(R.string.rd_call_title),
+            description = stringResource(R.string.rd_call_desc),
+            checked = callAnnounce,
+            onCheckedChange = { on ->
+                if (on) {
+                    askCaller()
+                } else {
+                    callAnnounce = false
+                    settings.announceCalls = false
+                }
+            },
+        )
+        SettingSwitch(
+            title = stringResource(R.string.rd_location_title),
+            description = stringResource(R.string.rd_location_desc),
+            checked = location,
+            onCheckedChange = { on ->
+                if (on) {
+                    askLocation()
+                } else {
+                    location = false
+                    settings.locationEnabled = false
+                }
+            },
+        )
+        SettingSwitch(
+            title = stringResource(R.string.rd_screen_title),
+            description = stringResource(R.string.rd_screen_desc),
+            checked = screenState,
+            onCheckedChange = {
+                screenState = it
+                settings.announceScreen = it
+            },
         )
     }
 }

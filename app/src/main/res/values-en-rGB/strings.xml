@@ -3,7 +3,6 @@
     <string name="service_description">Reads the screen aloud with customisable gestures, low-latency background event handling and a plugin system based on scripts.</string>
     <string name="msg_label_no_id">This element has no identifier, so it can\'t be labelled</string>
     <string name="img_none">Couldn\'t recognise the image content</string>
-    <string name="sec_reading_sum">Notifications, unlabelled elements</string>
     <string name="st_battery_optimized">Currently: the app is battery-optimised.</string>
     <string name="st_battery_button">Open battery optimisation settings</string>
     <string name="hp_limit_ocr">OCR uses ML Kit\'s Latin-script recogniser: it reads Latin text well, but accents may be wrong with small or blurry text, and other scripts (Chinese, Arabic, Cyrillic) are not recognised.</string>
@@ -11,4 +10,5 @@
     <string name="gt_unknown">Unrecognised gesture, code %1$d</string>
     <string name="rd_autoocr_title">Auto-read text in unlabelled images</string>
     <string name="msg_detailed_on">Detailed focus on. Controls the app hides from accessibility, such as an unlabelled checkbox, can now be reached.</string>
+    <string name="sec_read_elements_sum">Emoji, unlabelled images, hints, detail level</string>
 </resources>

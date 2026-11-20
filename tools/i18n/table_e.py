@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 # Chuỗi thêm ở v2.12.0 (phím cứng, đọc Toast, báo đổi engine TTS). Cột: khóa, en, vi, fr, es, ru, ar, zh.
 E = [
-    ('rd_g_keys', 'Keys', 'Phím', 'Touches', 'Teclas', 'Клавиши', 'المفاتيح', '按键'),
     ('rd_toast_title', 'Read toast messages', 'Đọc thông báo nổi (Toast)', 'Lire les messages toast', 'Leer mensajes emergentes (toast)', 'Читать всплывающие сообщения (toast)', 'قراءة رسائل Toast', '朗读 Toast 提示'),
     ('rd_toast_desc', 'Short pop-up messages such as Saved are read aloud, even when notification reading is off. On by default.', 'Các thông báo nổi ngắn như Đã lưu được đọc ra, kể cả khi tắt đọc thông báo. Mặc định bật.', 'Les courts messages contextuels comme Enregistré sont lus à voix haute, même si la lecture des notifications est désactivée. Activé par défaut.', 'Los mensajes emergentes breves, como Guardado, se leen en voz alta aunque la lectura de notificaciones esté desactivada. Activado por defecto.', 'Короткие всплывающие сообщения вроде «Сохранено» озвучиваются, даже если чтение уведомлений выключено. По умолчанию включено.', 'تُقرأ الرسائل المنبثقة القصيرة مثل تم الحفظ بصوت عالٍ حتى عند إيقاف قراءة الإشعارات. مفعّل افتراضيًا.', '“已保存”之类的简短弹出提示会被朗读，即使已关闭通知朗读。默认开启。'),
     ('rd_keys_title', 'Hardware keyboard shortcuts', 'Phím tắt bàn phím ngoài', 'Raccourcis du clavier physique', 'Atajos del teclado físico', 'Сочетания клавиш физической клавиатуры', 'اختصارات لوحة المفاتيح الفعلية', '外接键盘快捷键'),

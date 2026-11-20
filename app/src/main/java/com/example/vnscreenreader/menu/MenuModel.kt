@@ -21,11 +21,21 @@ data class MenuItem(
     }
 }
 
-enum class MenuKind(private val titleKey: S) {
+/**
+ * Các trình đơn: hai trình đơn gốc ([GLOBAL], [LOCAL]) và các trình đơn con của chúng. Trình đơn con của trình đơn chung là các
+ * nhóm của [MenuCatalog] ([isGroup]); trình đơn con của phần tử là [LOCAL_EDIT].
+ */
+enum class MenuKind(private val titleKey: S, val isGroup: Boolean = false) {
     GLOBAL(S.MENU_GLOBAL_TITLE),
     LOCAL(S.MENU_LOCAL_TITLE),
-    GLOBAL_MORE(S.MENU_MORE_TITLE),
-    LOCAL_EDIT(S.MENU_EDIT_TITLE);
+    LOCAL_EDIT(S.MENU_EDIT_TITLE),
+    GROUP_READING(S.MENU_GROUP_READING, isGroup = true),
+    GROUP_BROWSE(S.MENU_GROUP_BROWSE, isGroup = true),
+    GROUP_SCROLL(S.MENU_GROUP_SCROLL, isGroup = true),
+    GROUP_ELEMENT(S.MENU_GROUP_ELEMENT, isGroup = true),
+    GROUP_TEXT(S.MENU_EDIT_TITLE, isGroup = true),
+    GROUP_SYSTEM(S.MENU_GROUP_SYSTEM, isGroup = true),
+    GROUP_TOOLS(S.MENU_GROUP_TOOLS, isGroup = true);
 
     /** Tiêu đề theo ngôn ngữ hiện hành. */
     val title: String get() = t(titleKey)
@@ -36,86 +46,106 @@ data class CustomAction(val id: Int, val label: String)
 
 object Menus {
 
-    /** Số mục hành động tối đa ở cấp đầu của trình đơn chung (chưa tính mục mở trình đơn con "Khác"). */
+    /** Số mục hành động ở đầu trình đơn chung (chưa tính các mục mở nhóm). */
     const val MAX_GLOBAL_TOP_ACTIONS = 7
+
+    /**
+     * Hành động đứng đầu trình đơn chung, theo thứ tự: 7 mục dùng nhiều nhất, giữ nguyên vị trí như các bản trước để không phá thói
+     * quen vuốt. Mỗi mục cũng có mặt trong nhóm của nó, nên mỗi nhóm đủ chức năng của chủ đề đó.
+     */
+    val GLOBAL_SHORTCUTS: List<GestureAction> = listOf(
+        GestureAction.READ_FROM_TOP, GestureAction.READ_FROM_CURRENT, GestureAction.REPEAT_LAST,
+        GestureAction.SEARCH_SCREEN, GestureAction.OCR_SCREEN, GestureAction.NOTIFICATIONS, GestureAction.HOME,
+    )
+
+    /** Số hành động tùy chỉnh của ứng dụng tối đa ở cuối trình đơn phần tử. */
+    const val MAX_CUSTOM_ACTIONS = 20
+
+    /**
+     * Một số chức năng có tên ngắn riêng khi đọc trong trình đơn (nghe nhanh hơn tên đầy đủ dùng ở mục Cử chỉ tùy chỉnh); phần còn lại
+     * dùng tên chung của [GestureAction].
+     */
+    private val MENU_LABELS: Map<GestureAction, S> = mapOf(
+        GestureAction.ACTIVATE to S.MENU_ACTIVATE,
+        GestureAction.LONG_CLICK_FOCUSED to S.MENU_LONG_CLICK,
+        GestureAction.UNIT_NEXT to S.MENU_UNIT_NEXT,
+        GestureAction.UNIT_PREVIOUS to S.MENU_UNIT_PREV,
+        GestureAction.CYCLE_GRANULARITY to S.MENU_GRANULARITY,
+        GestureAction.COPY_UNIT to S.MENU_COPY_UNIT,
+        GestureAction.COPY_FOCUSED to S.MENU_COPY,
+        GestureAction.SPELL_FOCUSED to S.MENU_SPELL,
+        GestureAction.LABEL_FOCUSED to S.MENU_LABEL,
+        GestureAction.DESCRIBE_FOCUSED to S.MENU_DESCRIBE,
+        GestureAction.OCR_FOCUSED to S.MENU_OCR_FOCUSED,
+        GestureAction.DESCRIBE_TECHNICAL to S.MENU_TECH_INFO,
+        GestureAction.PASTE_FOCUSED to S.MENU_PASTE,
+        GestureAction.CUT_FOCUSED to S.MENU_CUT,
+        GestureAction.SELECT_ALL_FOCUSED to S.MENU_SELECT_ALL,
+        GestureAction.NOTIFICATIONS to S.MSG_NOTIFICATIONS,
+        GestureAction.HOME to S.MSG_HOME,
+        GestureAction.QUICK_SETTINGS to S.MSG_QUICK_SETTINGS,
+        GestureAction.RECENTS to S.MSG_RECENTS,
+        GestureAction.TOGGLE_DETAILED_FOCUS to S.MENU_DETAILED_FOCUS,
+    )
+
+    /** Tên của một chức năng khi đọc trong trình đơn (và khi liệt kê trong trình chỉnh sửa trình đơn). */
+    fun labelFor(action: GestureAction): String = MENU_LABELS[action]?.let { t(it) } ?: action.label
+
+    private fun actionItem(action: GestureAction) = MenuItem(labelFor(action), action)
 
     private fun back() = MenuItem(t(S.MENU_BACK), isBack = true)
 
-    /** Trình đơn chung, cấp đầu: 7 mục dùng nhiều nhất + "Khác". Phần còn lại nằm trong [globalMore]. */
-    fun global(): List<MenuItem> = listOf(
-        MenuItem(t(S.GA_READ_FROM_TOP), GestureAction.READ_FROM_TOP),
-        MenuItem(t(S.GA_READ_FROM_CURRENT), GestureAction.READ_FROM_CURRENT),
-        MenuItem(t(S.GA_REPEAT_LAST), GestureAction.REPEAT_LAST),
-        MenuItem(t(S.GA_SEARCH_SCREEN), GestureAction.SEARCH_SCREEN),
-        MenuItem(t(S.GA_OCR_SCREEN), GestureAction.OCR_SCREEN),
-        MenuItem(t(S.MSG_NOTIFICATIONS), GestureAction.NOTIFICATIONS),
-        MenuItem(t(S.MSG_HOME), GestureAction.HOME),
-        MenuItem(t(S.MENU_MORE_TITLE), submenu = MenuKind.GLOBAL_MORE),
-    )
+    /**
+     * Trình đơn chung, cấp đầu: [GLOBAL_SHORTCUTS] rồi mỗi nhóm của [MenuGroup] là một mục mở trình đơn con. Không sửa được, nên
+     * luôn đủ mọi chức năng của [MenuCatalog] (xem [submenu]).
+     */
+    fun global(): List<MenuItem> = buildList {
+        GLOBAL_SHORTCUTS.forEach { add(actionItem(it)) }
+        MenuGroup.entries.forEach { add(MenuItem(it.title, submenu = it.kind)) }
+    }
 
-    /** Trình đơn con "Khác" của trình đơn chung; mục cuối là "Quay lại". */
-    fun globalMore(): List<MenuItem> = listOf(
-        MenuItem(t(S.MSG_QUICK_SETTINGS), GestureAction.QUICK_SETTINGS),
-        MenuItem(t(S.MSG_RECENTS), GestureAction.RECENTS),
-        MenuItem(t(S.GA_CYCLE_FEEDBACK), GestureAction.CYCLE_FEEDBACK),
-        MenuItem(t(S.GA_SPEAK_STATUS), GestureAction.SPEAK_STATUS),
-        MenuItem(t(S.GA_MEDIA_PLAY_PAUSE), GestureAction.MEDIA_PLAY_PAUSE),
-        MenuItem(t(S.GA_RUN_PLUGINS), GestureAction.RUN_PLUGINS),
-        MenuItem(t(S.GA_NEXT_HEADING), GestureAction.NEXT_HEADING),
-        MenuItem(t(S.GA_PREV_HEADING), GestureAction.PREVIOUS_HEADING),
-        MenuItem(t(S.GA_NEXT_LINK), GestureAction.NEXT_LINK),
-        MenuItem(t(S.GA_PREV_LINK), GestureAction.PREVIOUS_LINK),
-        MenuItem(t(S.GA_SCROLL_TOP), GestureAction.SCROLL_TO_TOP),
-        MenuItem(t(S.GA_SCROLL_BOTTOM), GestureAction.SCROLL_TO_BOTTOM),
-        MenuItem(t(S.MENU_DETAILED_FOCUS), GestureAction.TOGGLE_DETAILED_FOCUS),
-        MenuItem(t(S.GA_SAY_LOCATION), GestureAction.SAY_LOCATION),
-        MenuItem(t(S.GA_OPEN_SETTINGS), GestureAction.OPEN_SETTINGS),
-        back(),
-    )
+    /** Mọi chức năng gọi được từ trình đơn chung (cấp đầu và các nhóm), không trùng. */
+    fun globalActions(): Set<GestureAction> = buildSet {
+        addAll(GLOBAL_SHORTCUTS)
+        MenuGroup.entries.forEach { addAll(it.actions) }
+    }
 
     /**
-     * Trình đơn của phần tử đang chọn. Mục chỉnh sửa văn bản chỉ nằm trong trình đơn con [localEdit] và chỉ hiện
-     * khi [editable]; cuối danh sách là các hành động tùy chỉnh của chính phần tử đó.
+     * Danh sách của một trình đơn con: một nhóm của trình đơn chung hoặc "Chỉnh sửa văn bản" của phần tử; null nếu [kind] không
+     * phải trình đơn con. Mục cuối luôn là "Quay lại".
      */
-    fun local(custom: List<CustomAction>, editable: Boolean = false, imageLike: Boolean = false): List<MenuItem> = buildList {
-        // Với ảnh, các mục đọc ảnh (mô tả, đọc chữ) lên ĐẦU để mở trình đơn rồi chạm hai lần là xong.
-        if (imageLike) {
-            add(MenuItem(t(S.MENU_DESCRIBE), GestureAction.DESCRIBE_FOCUSED))
-            add(MenuItem(t(S.MENU_OCR_FOCUSED), GestureAction.OCR_FOCUSED))
+    fun submenu(kind: MenuKind): List<MenuItem>? {
+        if (kind == MenuKind.LOCAL_EDIT) return localEdit()
+        val group = MenuGroup.forKind(kind) ?: return null
+        return group.actions.map { actionItem(it) } + back()
+    }
+
+    /**
+     * Trình đơn của phần tử đang chọn: các chức năng của [layout] (mặc định là 12 mục như các bản trước), rồi mục "Chỉnh sửa văn bản"
+     * khi [editable] (chỉ ở ô nhập), rồi các hành động tùy chỉnh của chính phần tử đó. Hai loại sau luôn nằm cuối và không tính vào
+     * giới hạn của [layout].
+     *
+     * Với ảnh ([imageLike]), nếu người dùng CHƯA tùy chỉnh thì các mục đọc ảnh (mô tả, đọc chữ) lên ĐẦU để mở trình đơn rồi chạm hai
+     * lần là xong. Đã tùy chỉnh thì thứ tự của người dùng được giữ nguyên.
+     */
+    fun local(
+        custom: List<CustomAction>,
+        editable: Boolean = false,
+        imageLike: Boolean = false,
+        layout: MenuLayout = MenuLayout.DEFAULT,
+    ): List<MenuItem> = buildList {
+        var actions = layout.actions
+        if (imageLike && !layout.isCustomized) {
+            val imageFirst = actions.filter { it == GestureAction.DESCRIBE_FOCUSED || it == GestureAction.OCR_FOCUSED }
+            actions = imageFirst + actions.filter { it !in imageFirst }
         }
-        add(MenuItem(t(S.MENU_ACTIVATE), GestureAction.ACTIVATE))
-        add(MenuItem(t(S.MENU_LONG_CLICK), GestureAction.LONG_CLICK_FOCUSED))
-        add(MenuItem(t(S.MENU_UNIT_NEXT), GestureAction.UNIT_NEXT))
-        add(MenuItem(t(S.MENU_UNIT_PREV), GestureAction.UNIT_PREVIOUS))
-        add(MenuItem(t(S.MENU_GRANULARITY), GestureAction.CYCLE_GRANULARITY))
-        add(MenuItem(t(S.MENU_COPY_UNIT), GestureAction.COPY_UNIT))
-        add(MenuItem(t(S.MENU_COPY), GestureAction.COPY_FOCUSED))
-        add(MenuItem(t(S.MENU_SPELL), GestureAction.SPELL_FOCUSED))
-        add(MenuItem(t(S.MENU_LABEL), GestureAction.LABEL_FOCUSED))
-        if (!imageLike) {
-            add(MenuItem(t(S.MENU_DESCRIBE), GestureAction.DESCRIBE_FOCUSED))
-            add(MenuItem(t(S.MENU_OCR_FOCUSED), GestureAction.OCR_FOCUSED))
-        }
-        add(MenuItem(t(S.MENU_TECH_INFO), GestureAction.DESCRIBE_TECHNICAL))
+        actions.forEach { add(actionItem(it)) }
         if (editable) add(MenuItem(t(S.MENU_EDIT_TITLE), submenu = MenuKind.LOCAL_EDIT))
         custom.take(MAX_CUSTOM_ACTIONS).forEach { add(MenuItem(it.label, customActionId = it.id)) }
     }
 
-    /** Trình đơn con "Chỉnh sửa văn bản"; mục cuối là "Quay lại". */
-    fun localEdit(): List<MenuItem> = listOf(
-        MenuItem(t(S.MENU_PASTE), GestureAction.PASTE_FOCUSED),
-        MenuItem(t(S.MENU_CUT), GestureAction.CUT_FOCUSED),
-        MenuItem(t(S.MENU_SELECT_ALL), GestureAction.SELECT_ALL_FOCUSED),
-        MenuItem(t(S.GA_CURSOR_START), GestureAction.CURSOR_START),
-        MenuItem(t(S.GA_CURSOR_END), GestureAction.CURSOR_END),
-        MenuItem(t(S.GA_SELECT_TO_START), GestureAction.SELECT_TO_START),
-        MenuItem(t(S.GA_SELECT_TO_END), GestureAction.SELECT_TO_END),
-        MenuItem(t(S.GA_CLEAR_FIELD), GestureAction.CLEAR_FIELD),
-        MenuItem(t(S.GA_RESTORE_CLEARED), GestureAction.RESTORE_CLEARED),
-        back(),
-    )
-
-    const val MAX_CUSTOM_ACTIONS = 20
+    /** Trình đơn con "Chỉnh sửa văn bản" của phần tử: đúng các chức năng của nhóm cùng tên; mục cuối là "Quay lại". */
+    fun localEdit(): List<MenuItem> = MenuGroup.TEXT.actions.map { actionItem(it) } + back()
 
     /**
      * Hành động tùy chỉnh = có nhãn và id nằm ngoài vùng id của khung hệ thống (cờ bit < 0x01000000 và

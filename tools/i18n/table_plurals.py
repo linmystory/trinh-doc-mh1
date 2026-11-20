@@ -103,6 +103,27 @@ def mk_more(n):
     }
 
 
+def mk_functions(n):
+    """Danh từ "chức năng" (một chức năng của ứng dụng). "function": dạng đứng sau số ở chủ cách ("đã có N chức năng");
+    "function_upto": dạng sau "tối đa / không quá" và sau giới từ (tiếng Nga dùng sở hữu cách; tiếng Ả Rập dùng cách phụ
+    thuộc, số đôi là "وظيفتين")."""
+    plain = {
+        "en": {"one": f"{n} function", "other": f"{n} functions"},
+        "vi": {"other": f"{n} chức năng"},
+        "fr": {"one": f"{n} fonction", "many": f"{n} fonctions", "other": f"{n} fonctions"},
+        "es": {"one": f"{n} función", "many": f"{n} de funciones", "other": f"{n} funciones"},
+        "ru": {"one": f"{n} функция", "few": f"{n} функции", "many": f"{n} функций", "other": f"{n} функции"},
+        "ar": {"zero": f"{n} وظائف", "one": "وظيفة واحدة", "two": "وظيفتان", "few": f"{n} وظائف",
+               "many": f"{n} وظيفة", "other": f"{n} وظيفة"},
+        "zh": {"other": f"{n}项功能"},
+    }
+    upto = dict(plain)
+    upto["ru"] = {"one": f"{n} функции", "few": f"{n} функций", "many": f"{n} функций", "other": f"{n} функции"}
+    upto["ar"] = {"zero": f"{n} وظائف", "one": "وظيفة واحدة", "two": "وظيفتين", "few": f"{n} وظائف",
+                  "many": f"{n} وظيفة", "other": f"{n} وظيفة"}
+    return {"function": plain, "function_upto": upto}
+
+
 def join(tpl_by_lang, noun_forms):
     """tpl_by_lang: {lang: mẫu chứa {N}}; noun_forms: kết quả mk()[loại]."""
     res = {}
@@ -112,6 +133,7 @@ def join(tpl_by_lang, noun_forms):
 
 n1, n2 = mk("%1$d"), mk("%2$d")
 m1 = mk_more("%1$d")
+m1f = mk_functions("%1$d")
 
 PLURALS = {
     "sp_state_percent": (1, join({l: "{N}" for l in QUANTITIES}, m1["percent"])),
@@ -153,6 +175,32 @@ PLURALS = {
         "en": "%1$s may be at most {N}", "vi": "%1$s dài tối đa {N}", "fr": "%1$s : {N} maximum",
         "es": "%1$s: máximo {N}", "ru": "%1$s — не более {N}", "ar": "يجب ألا يزيد %1$s عن {N}",
         "zh": "%1$s 最长 {N}"}, n2["char"])),
+    # Trình đơn phần tử tùy chỉnh (v59): số chức năng tối đa / hiện có là SỐ LƯỢNG nên là <plurals>.
+    "mn_local_desc": (1, join({
+        "en": "Your own list of up to {N}, in the order you choose. Tap an item to move, replace or remove it.",
+        "vi": "Danh sách riêng của bạn, tối đa {N}, xếp theo thứ tự bạn chọn. Chạm vào một mục để chuyển, thay hoặc xóa.",
+        "fr": "Votre propre liste de {N} au maximum, dans l'ordre de votre choix. Touchez un élément pour le déplacer, le remplacer ou le supprimer.",
+        "es": "Su propia lista de hasta {N}, en el orden que elija. Pulse un elemento para moverlo, reemplazarlo o quitarlo.",
+        "ru": "Ваш собственный список, не более {N}, в нужном вам порядке. Нажмите на пункт, чтобы переместить, заменить или удалить его.",
+        "ar": "قائمتك الخاصة بما لا يزيد على {N}، بالترتيب الذي تختاره. المس عنصرًا لنقله أو استبداله أو إزالته.",
+        "zh": "你自己的列表，最多{N}，顺序由你决定。点按某一项可移动、替换或删除。"}, m1f["function_upto"])),
+    "mn_add_full": (1, join({
+        "en": "The menu already has {N}, the maximum. Remove or replace one to add another.",
+        "vi": "Trình đơn đã có {N}, là mức tối đa. Hãy xóa hoặc thay một mục để thêm chức năng khác.",
+        "fr": "Le menu contient déjà {N}, le maximum. Retirez-en ou remplacez-en une pour en ajouter une autre.",
+        "es": "El menú ya tiene {N}, el máximo. Quite o reemplace una para añadir otra.",
+        "ru": "В меню уже {N} — это максимум. Удалите или замените одну, чтобы добавить другую.",
+        "ar": "تحتوي القائمة بالفعل على {N}، وهو الحد الأقصى. أزل وظيفة أو استبدلها لإضافة أخرى.",
+        "zh": "菜单已有{N}，已达上限。请删除或替换一项后再添加。"},
+        {**m1f["function"], "ar": m1f["function_upto"]["ar"]})),
+    "hp_menus_body": (1, join({
+        "en": "The general menu has every function of the app, split into groups. The element menu is your own list of up to {N}: add, remove, reorder or replace them in Controls, Quick menus. Each menu opens with the gesture you assign to it.",
+        "vi": "Trình đơn chung có đủ mọi chức năng của ứng dụng, chia thành các nhóm. Trình đơn phần tử là danh sách riêng của bạn, tối đa {N}: thêm, xóa, đổi thứ tự hoặc thay chức năng tại Điều khiển, Trình đơn nhanh. Mỗi trình đơn mở bằng cử chỉ bạn gán cho nó.",
+        "fr": "Le menu général contient toutes les fonctions de l'application, réparties en groupes. Le menu de l'élément est votre propre liste de {N} au maximum : ajoutez, retirez, réordonnez ou remplacez-les dans Commandes, Menus rapides. Chaque menu s'ouvre avec le geste que vous lui attribuez.",
+        "es": "El menú general contiene todas las funciones de la aplicación, repartidas en grupos. El menú del elemento es su propia lista de hasta {N}: añada, quite, reordene o reemplace funciones en Controles, Menús rápidos. Cada menú se abre con el gesto que usted le asigne.",
+        "ru": "Общее меню содержит все функции приложения, разделённые на группы. Меню элемента — ваш собственный список не более чем из {N}: добавляйте, удаляйте, меняйте порядок или заменяйте функции в разделе «Управление», «Быстрые меню». Каждое меню открывается жестом, который вы ему назначите.",
+        "ar": "تحتوي القائمة العامة على جميع وظائف التطبيق موزعة على مجموعات. أما قائمة العنصر فهي قائمتك الخاصة بما لا يزيد على {N}: أضف الوظائف أو أزلها أو أعد ترتيبها أو استبدلها من «التحكم» ثم «القوائم السريعة». تُفتح كل قائمة بالإيماءة التي تعيّنها لها.",
+        "zh": "通用菜单包含应用的全部功能，分为若干分组。元素菜单是你自己的列表，最多{N}：可在“控制”中的“快捷菜单”里添加、删除、调整顺序或替换。每个菜单都用你为它指定的手势打开。"}, m1f["function_upto"])),
     "notif_burst": (2, {
         "en": {"one": "New notification from %1$s: %2$d. Latest: %3$s", "other": "New notifications from %1$s: %2$d. Latest: %3$s"},
         "vi": {"other": "%2$d thông báo mới từ %1$s, mới nhất: %3$s"},

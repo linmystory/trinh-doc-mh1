@@ -33,7 +33,11 @@ import com.example.vnscreenreader.ai.ScreenCapture
 import com.example.vnscreenreader.ai.mlkit.MlKitImageLabeler
 import com.example.vnscreenreader.ai.mlkit.MlKitTextRecognizer
 import com.example.vnscreenreader.core.CustomLabelStore
+import com.example.vnscreenreader.core.CoalescingReceiver
 import com.example.vnscreenreader.core.EventDeduplicator
+import com.example.vnscreenreader.core.HoverEchoGuard
+import com.example.vnscreenreader.core.HoverOutcome
+import com.example.vnscreenreader.core.HoverStats
 import com.example.vnscreenreader.core.ScreenAnnouncement
 import com.example.vnscreenreader.core.SettingsRepository
 import com.example.vnscreenreader.core.SpeechEngine
@@ -80,6 +84,7 @@ import com.example.vnscreenreader.menu.MenuGestures
 import kotlinx.coroutines.Job
 import com.example.vnscreenreader.menu.MenuItem
 import com.example.vnscreenreader.menu.MenuKind
+import com.example.vnscreenreader.menu.MenuLayoutStore
 import com.example.vnscreenreader.menu.MenuState
 import com.example.vnscreenreader.menu.Menus
 import com.example.vnscreenreader.node.NodeCollector
@@ -112,6 +117,7 @@ internal class ReaderSession(private val service: AccessibilityService) {
 
     private val settings = SettingsRepository(service)
     private val gestureStore = GestureMappingStore(service)
+    private val menuLayoutStore = MenuLayoutStore(service)
     private val customLabels = CustomLabelStore(service)
     private val feedback = DeviceFeedback(service, settings)
     private val speech = SpeechEngine(service, settings.speechRate, settings.pitch, settings.ttsEngine)
@@ -162,6 +168,10 @@ internal class ReaderSession(private val service: AccessibilityService) {
     @Volatile private var activePackage: String? = null
     private val liftToType = LiftToTypePolicy(clock = { SystemClock.uptimeMillis() })
     private var hoverJob: Job? = null
+
+    // Chạm vào phần tử: chỉ truy cập trên luồng xử lý duy nhất của [scope] (cùng luồng với [handleEvent] và công việc chờ độ trễ chạm).
+    private val hoverGuard = HoverEchoGuard()
+    private val hoverStats = HoverStats()
     @Volatile private var fingerDownSince = 0L
 
     // Chỉ truy cập trên luồng xử lý duy nhất của [scope].
@@ -868,9 +878,14 @@ internal class ReaderSession(private val service: AccessibilityService) {
 
     private suspend fun processEvents() {
         val deduplicator = EventDeduplicator()
-        for (event in events) {
+        // Lướt nhanh hơn tốc độ xử lý: chỉ giữ sự kiện chạm MỚI NHẤT đang xếp hàng (ngón tay đã đi qua các mục cũ), xem CoalescingReceiver.
+        val receiver = CoalescingReceiver(events) { it.type == AccessibilityEvent.TYPE_VIEW_HOVER_ENTER }
+        while (true) {
+            val event = receiver.receive() ?: break
+            repeat(receiver.takeSkipped()) { hoverStats.record(HoverOutcome.COALESCED) }
             runSafely("xử lý sự kiện ${event.type}") {
-                if (deduplicator.shouldProcess(event.dedupKey(), event.timeMs)) handleEvent(event)
+                // Chạm vào phần tử không qua bộ lọc trùng chung (khóa của nó không phân biệt được các phần tử): xem EventDedupPolicy.
+                if (deduplicator.admit(event.type, event.dedupKey(), event.timeMs)) handleEvent(event)
             }
         }
     }
@@ -920,7 +935,13 @@ internal class ReaderSession(private val service: AccessibilityService) {
                 }
                 // Làm mới phần tử trước khi dựng trình đơn: nút cũ có thể cho hành động của phần tử đã biến mất.
                 if (navigator.currentFresh() == null) return
-                Menus.local(navigator.customActions(), editable = navigator.isCurrentEditable(), imageLike = navigator.isCurrentImage())
+                // Đọc bố cục lúc mở trình đơn (không giữ bản sao): người dùng sửa ở màn Cài đặt xong là dùng được ngay.
+                Menus.local(
+                    navigator.customActions(),
+                    editable = navigator.isCurrentEditable(),
+                    imageLike = navigator.isCurrentImage(),
+                    layout = menuLayoutStore.load(),
+                )
             }
             else -> return // trình đơn con chỉ mở từ trình đơn cha
         }
@@ -1000,11 +1021,7 @@ internal class ReaderSession(private val service: AccessibilityService) {
     }
 
     private fun openSubmenu(parent: MenuState, kind: MenuKind) {
-        val items = when (kind) {
-            MenuKind.GLOBAL_MORE -> Menus.globalMore()
-            MenuKind.LOCAL_EDIT -> Menus.localEdit()
-            else -> return
-        }
+        val items = Menus.submenu(kind) ?: return // nhóm của trình đơn chung hoặc "Chỉnh sửa văn bản"; loại khác không mở được
         val child = parent.child(kind, items).next() // vào thẳng mục đầu của trình đơn con
         menu = child
         armMenuTimeout()
@@ -1035,15 +1052,14 @@ internal class ReaderSession(private val service: AccessibilityService) {
 
             // Khám phá bằng cảm ứng: ngón tay chạm/lướt tới đâu thì chọn và đọc phần tử ở đó.
             // Cũng đặt phần tử hiện tại, nên "chạm hai lần" (ACTIVATE) nhấn đúng phần tử vừa nghe.
-            AccessibilityEvent.TYPE_VIEW_HOVER_ENTER ->
-                if (menu == null) event.source?.let { source ->
-                    NodeCollector.findHoverTarget(source)?.let { onHoverTarget(it) }
-                }
+            AccessibilityEvent.TYPE_VIEW_HOVER_ENTER -> if (menu == null) handleHover(event)
 
             // Nhập phím bằng nhấc tay: hệ thống báo kết thúc chạm (có thể hai sự kiện liền nhau, chính sách chỉ cho nhấn một lần).
             AccessibilityEvent.TYPE_TOUCH_EXPLORATION_GESTURE_END,
-            AccessibilityEvent.TYPE_TOUCH_INTERACTION_END ->
+            AccessibilityEvent.TYPE_TOUCH_INTERACTION_END -> {
+                onFingerLifted()
                 if (menu == null && liftToType.onTouchEnd(settings.liftToType)) navigator.activate()
+            }
 
             // Bắt đầu một cử chỉ: không phải thao tác gõ, và hủy việc đọc chờ độ trễ chạm.
             AccessibilityEvent.TYPE_GESTURE_DETECTION_START -> {
@@ -1268,6 +1284,30 @@ internal class ReaderSession(private val service: AccessibilityService) {
     }
 
     /**
+     * Sự kiện chạm vào một phần tử: tìm phần tử đáng đọc ([NodeCollector.findHoverTarget]) rồi đọc ([onHoverTarget]). Mỗi kết cục được
+     * đếm ([HoverStats], chỉ có số) để nhật ký cho biết lần đặt ngón tay nào có phần tử bị im và vì sao.
+     */
+    private fun handleHover(event: ReaderEvent) {
+        val source = event.source
+        if (source == null) {
+            hoverStats.record(HoverOutcome.NO_SOURCE)
+            return
+        }
+        val target = NodeCollector.findHoverTarget(source)
+        if (target == null) {
+            hoverStats.record(if (source.isVisibleToUser) HoverOutcome.UNREADABLE else HoverOutcome.HIDDEN)
+            return
+        }
+        onHoverTarget(target)
+    }
+
+    /** Ngón tay đã nhấc: lần chạm kế tiếp luôn được đọc ([HoverEchoGuard.onLift]); ghi nhật ký nếu lần đặt ngón tay vừa rồi có chạm bị im. */
+    private fun onFingerLifted() {
+        hoverGuard.onLift()
+        hoverStats.takeSummary()?.let { summary -> com.example.vnscreenreader.core.Diag.log("HOVER") { summary } }
+    }
+
+    /**
      * Ngón tay lướt tới [target]. Có độ trễ chạm thì chỉ đọc khi ngón tay còn dừng ở đó đủ lâu (lướt nhanh qua thì bỏ).
      * Phím bàn phím luôn đọc ngay khi bật nhập bằng nhấc tay: nhấc tay là gõ nên phải biết chắc đang ở phím nào.
      */
@@ -1277,13 +1317,23 @@ internal class ReaderSession(private val service: AccessibilityService) {
         hoverJob?.cancel()
         val delayMs = if (isKey && settings.liftToType) 0 else settings.touchDelayMs
         if (delayMs <= 0) {
-            navigator.focusOn(target)
+            readHoverTarget(target)
             return
         }
         hoverJob = scope.launch {
             delay(delayMs.toLong())
-            runSafely("đọc phần tử đang chạm") { if (menu == null) navigator.focusOn(target) }
+            runSafely("đọc phần tử đang chạm") { if (menu == null) readHoverTarget(target) }
         }
+    }
+
+    /** Đọc phần tử đang chạm, trừ khi đó là tiếng vọng của chính phần tử vừa đọc ([HoverEchoGuard]). */
+    private fun readHoverTarget(target: AccessibilityNodeInfo) {
+        if (!hoverGuard.shouldRead(target, SystemClock.uptimeMillis())) {
+            hoverStats.record(HoverOutcome.ECHO)
+            return
+        }
+        hoverStats.record(HoverOutcome.READ)
+        navigator.focusOn(target)
     }
 
     /**

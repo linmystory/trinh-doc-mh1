@@ -66,6 +66,16 @@ fun GestureSettingsScreen(source: GestureSource? = null, heading: String? = null
     ) {
         if (heading != null) {
             item { Text(heading, color = HighContrastGreen, fontSize = 22.sp) }
+        } else {
+            // Trang chính của mục có tên giống mọi trang cài đặt khác (trước đây mở ra là gặp ngay tiêu đề "Một ngón").
+            item(key = "page_title") {
+                Text(
+                    text = stringResource(R.string.sec_gestures),
+                    color = HighContrastYellow,
+                    fontSize = 30.sp,
+                    modifier = Modifier.semantics { heading() },
+                )
+            }
         }
         // Hai ngón vuốt do Android xử lý (Gesture.passedToSystem): dịch vụ không nhận được nên không liệt kê để gán.
         Gesture.entries.filterNot { it.passedToSystem }.groupBy { it.fingers }.forEach { (fingers, gestures) ->

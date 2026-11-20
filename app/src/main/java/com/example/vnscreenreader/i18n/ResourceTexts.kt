@@ -20,6 +20,9 @@ class ResourceTexts(private val context: Context) : TextProvider {
         S.SCRIPT_ERR_PATTERN -> plural(R.plurals.script_err_pattern, 2, args)
         S.LB_LIMITS -> plural(R.plurals.lb_limits, 1, args)
         S.GS_N_FINGERS -> plural(R.plurals.gs_n_fingers, 1, args)
+        S.MN_LOCAL_DESC -> plural(R.plurals.mn_local_desc, 1, args)
+        S.MN_ADD_FULL -> plural(R.plurals.mn_add_full, 1, args)
+        S.HP_MENUS_BODY -> plural(R.plurals.hp_menus_body, 1, args)
         else -> if (args.isEmpty()) context.getString(idOf(key)) else context.getString(idOf(key), *args)
     }
 
@@ -224,12 +227,8 @@ class ResourceTexts(private val context: Context) : TextProvider {
         S.STORE_ERR_BUILTIN_ID -> R.string.store_err_builtin_id
         S.STORE_ERR_SAVE -> R.string.store_err_save
         S.STORE_ERR_DIR -> R.string.store_err_dir
-        S.GRP_BASIC -> R.string.grp_basic
-        S.GRP_VOICE -> R.string.grp_voice
-        S.GRP_CONTROL -> R.string.grp_control
-        S.GRP_ADVANCED -> R.string.grp_advanced
-        S.GRP_EXTEND -> R.string.grp_extend
-        S.GRP_HELP -> R.string.grp_help
+        S.HUB_CONTROL -> R.string.hub_control
+        S.HUB_HELP -> R.string.hub_help
         S.SEC_STATUS -> R.string.sec_status
         S.SEC_STATUS_SUM -> R.string.sec_status_sum
         S.SEC_VOICE -> R.string.sec_voice
@@ -240,8 +239,6 @@ class ResourceTexts(private val context: Context) : TextProvider {
         S.SEC_GESTURES_SUM -> R.string.sec_gestures_sum
         S.SEC_MENUS -> R.string.sec_menus
         S.SEC_MENUS_SUM -> R.string.sec_menus_sum
-        S.SEC_READING -> R.string.sec_reading
-        S.SEC_READING_SUM -> R.string.sec_reading_sum
         S.SEC_LABELS -> R.string.sec_labels
         S.SEC_LABELS_SUM -> R.string.sec_labels_sum
         S.SEC_PLUGINS -> R.string.sec_plugins
@@ -287,7 +284,6 @@ class ResourceTexts(private val context: Context) : TextProvider {
         S.FBK_TEST_HAPTIC -> R.string.fbk_test_haptic
         S.FBK_TEST_SOUND -> R.string.fbk_test_sound
         S.FBK_QUICK -> R.string.fbk_quick
-        S.RD_TITLE -> R.string.rd_title
         S.RD_NOTIF_TITLE -> R.string.rd_notif_title
         S.RD_NOTIF_DESC -> R.string.rd_notif_desc
         S.RD_UNLABELED_HEAD -> R.string.rd_unlabeled_head
@@ -379,7 +375,6 @@ class ResourceTexts(private val context: Context) : TextProvider {
         S.PL_ALLAPPS_TITLE -> R.string.pl_allapps_title
         S.PL_ALLAPPS_MSG -> R.string.pl_allapps_msg
         S.PL_ALLAPPS_CONFIRM -> R.string.pl_allapps_confirm
-        S.MENU_MORE_TITLE -> R.string.menu_more_title
         S.MENU_EDIT_TITLE -> R.string.menu_edit_title
         S.MENU_BACK -> R.string.menu_back
         S.GA_CURSOR_START -> R.string.ga_cursor_start
@@ -483,7 +478,6 @@ class ResourceTexts(private val context: Context) : TextProvider {
         S.PERM_NONE -> R.string.perm_none
         S.PERM_CONTINUE -> R.string.perm_continue
         S.SEC_PERMS -> R.string.sec_perms
-        S.SEC_PERMS_SUM -> R.string.sec_perms_sum
         S.SP_ROLE_LINK -> R.string.sp_role_link
         S.SP_POSITION -> R.string.sp_position
         S.HINT_ACTIVATE -> R.string.hint_activate
@@ -577,9 +571,9 @@ class ResourceTexts(private val context: Context) : TextProvider {
         S.SS_LABEL -> R.string.ss_label
         S.SS_NONE -> R.string.ss_none
         S.SS_CLEAR -> R.string.ss_clear
-        S.RD_G_CONTENT -> R.string.rd_g_content
+        S.HUB_CONTENT -> R.string.hub_content
         S.RD_G_HINTS -> R.string.rd_g_hints
-        S.RD_G_TOUCH -> R.string.rd_g_touch
+        S.SEC_TOUCH_TYPING -> R.string.sec_touch_typing
         S.SEC_NOTIF -> R.string.sec_notif
         S.SEC_NOTIF_SUM -> R.string.sec_notif_sum
         S.NT_QUIET_HEAD -> R.string.nt_quiet_head
@@ -610,7 +604,6 @@ class ResourceTexts(private val context: Context) : TextProvider {
         S.AG_RAWTAP_TITLE -> R.string.ag_rawtap_title
         S.AG_RAWTAP_DESC -> R.string.ag_rawtap_desc
         S.ST_OTHER_READER_WARN -> R.string.st_other_reader_warn
-        S.RD_G_KEYS -> R.string.rd_g_keys
         S.RD_TOAST_TITLE -> R.string.rd_toast_title
         S.RD_TOAST_DESC -> R.string.rd_toast_desc
         S.RD_KEYS_TITLE -> R.string.rd_keys_title
@@ -673,7 +666,7 @@ class ResourceTexts(private val context: Context) : TextProvider {
         S.PERM_NAME_CONTACTS -> R.string.perm_name_contacts
         S.PERM_NAME_LOCATION -> R.string.perm_name_location
         S.PERM_LOCATION_HERE_RATIONALE -> R.string.perm_location_here_rationale
-        S.RD_G_MORE -> R.string.rd_g_more
+        S.NT_EVENTS_HEAD -> R.string.nt_events_head
         S.RD_CALL_TITLE -> R.string.rd_call_title
         S.RD_CALL_DESC -> R.string.rd_call_desc
         S.RD_LOCATION_TITLE -> R.string.rd_location_title
@@ -718,6 +711,49 @@ class ResourceTexts(private val context: Context) : TextProvider {
         S.GS_SWIPE_PROFILE_CONTROLS -> R.string.gs_swipe_profile_controls
         S.HP_STD_HEAD -> R.string.hp_std_head
         S.HP_STD_BODY -> R.string.hp_std_body
+        S.HUB_START -> R.string.hub_start
+        S.HUB_AUDIO -> R.string.hub_audio
+        S.HUB_AUDIO_SUM -> R.string.hub_audio_sum
+        S.HUB_CONTENT_SUM -> R.string.hub_content_sum
+        S.HUB_CONTROL_SUM -> R.string.hub_control_sum
+        S.HUB_TOOLS -> R.string.hub_tools
+        S.HUB_TOOLS_SUM -> R.string.hub_tools_sum
+        S.SEC_READ_ELEMENTS -> R.string.sec_read_elements
+        S.SEC_READ_ELEMENTS_SUM -> R.string.sec_read_elements_sum
+        S.SEC_FOCUS -> R.string.sec_focus
+        S.SEC_FOCUS_SUM -> R.string.sec_focus_sum
+        S.SEC_TOUCH_TYPING_SUM -> R.string.sec_touch_typing_sum
+        S.SEC_HW_KEYS -> R.string.sec_hw_keys
+        S.SEC_HW_KEYS_SUM -> R.string.sec_hw_keys_sum
+        S.LOG_ERRORS_HEAD -> R.string.log_errors_head
+        S.LOG_DIAG_HEAD -> R.string.log_diag_head
+        S.UI_BACK_TO_MENU -> R.string.ui_back_to_menu
+        S.MENU_GROUP_READING -> R.string.menu_group_reading
+        S.MENU_GROUP_BROWSE -> R.string.menu_group_browse
+        S.MENU_GROUP_SCROLL -> R.string.menu_group_scroll
+        S.MENU_GROUP_ELEMENT -> R.string.menu_group_element
+        S.MENU_GROUP_SYSTEM -> R.string.menu_group_system
+        S.MENU_GROUP_TOOLS -> R.string.menu_group_tools
+        S.MN_GENERAL_DESC -> R.string.mn_general_desc
+        S.MN_COUNTER -> R.string.mn_counter
+        S.MN_MOVE_TOP -> R.string.mn_move_top
+        S.MN_MOVE_UP -> R.string.mn_move_up
+        S.MN_MOVE_DOWN -> R.string.mn_move_down
+        S.MN_REPLACE -> R.string.mn_replace
+        S.MN_REMOVE -> R.string.mn_remove
+        S.MN_ADD -> R.string.mn_add
+        S.MN_PICK_TITLE -> R.string.mn_pick_title
+        S.MN_PICK_REPLACE_TITLE -> R.string.mn_pick_replace_title
+        S.MN_RESET -> R.string.mn_reset
+        S.MN_RESET_TITLE -> R.string.mn_reset_title
+        S.MN_RESET_MSG -> R.string.mn_reset_msg
+        S.MN_RESET_CONFIRM -> R.string.mn_reset_confirm
+        S.MN_MSG_MOVED -> R.string.mn_msg_moved
+        S.MN_MSG_REMOVED -> R.string.mn_msg_removed
+        S.MN_MSG_ADDED -> R.string.mn_msg_added
+        S.MN_MSG_REPLACED -> R.string.mn_msg_replaced
+        S.MN_MSG_RESET -> R.string.mn_msg_reset
+        S.MN_MSG_LAST -> R.string.mn_msg_last
         else -> error("Khóa plurals đã xử lý ở get(): $key")
     }
 }
