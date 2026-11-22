@@ -2,8 +2,6 @@ package com.example.vnscreenreader.menu
 
 import com.example.vnscreenreader.core.EditOp
 import com.example.vnscreenreader.core.EditPolicy
-import com.example.vnscreenreader.core.GestureTestEvent
-import com.example.vnscreenreader.core.GestureTestLogic
 import com.example.vnscreenreader.core.SelectionMath
 import com.example.vnscreenreader.gesture.Gesture
 import com.example.vnscreenreader.gesture.GestureAction
@@ -143,14 +141,6 @@ class SubmenuAndEditTest {
 
     @Test fun passwordOnlyAllowsPaste() {
         EditOp.entries.forEach { assertEquals(it == EditOp.PASTE, EditPolicy.allowedOnPassword(it)) }
-    }
-
-    @Test fun gestureTestToggleAndAnnouncement() {
-        assertTrue(GestureTestLogic.reduce(false, GestureTestEvent.ENTER))
-        listOf(GestureTestEvent.EXIT_BUTTON, GestureTestEvent.BACK, GestureTestEvent.SCREEN_LEFT)
-            .forEach { assertFalse(GestureTestLogic.reduce(true, it)) }
-        assertEquals("Vuốt hai ngón lên", GestureTestLogic.announcement(true, "Vuốt hai ngón lên"))
-        assertNull(GestureTestLogic.announcement(false, "x")) // thoát rồi: cử chỉ chạy bình thường
     }
 
     @Test fun defaultsAndRealMappingLookup() {

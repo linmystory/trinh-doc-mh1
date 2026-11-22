@@ -14,8 +14,8 @@ android {
         applicationId = "com.example.vnscreenreader"
         minSdk = 35 // Android 15+: bỏ mọi nhánh tương thích cũ; ngôn ngữ theo ứng dụng có sẵn trong hệ thống
         targetSdk = 36
-        versionCode = 60
-        versionName = "2.22.0"
+        versionCode = 62
+        versionName = "2.24.0"
     }
 
     // Ký bản release: chỉ khi đủ 4 biến môi trường (CI secrets / máy cá nhân). Khóa KHÔNG nằm trong repo.

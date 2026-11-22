@@ -14,7 +14,6 @@ enum class SettingsPage(val key: String) {
     NOTIFICATIONS("notifications"),
     GESTURES("gestures"),
     APP_GESTURES("appgestures"),
-    GESTURE_TEST("gesturetest"),
     MENUS("menus"),
     TOUCH_TYPING("touch_typing"),
     HARDWARE_KEYS("hardware_keys"),
@@ -38,7 +37,6 @@ enum class SettingsMenu(val key: String, val pages: List<SettingsPage>) {
         listOf(
             SettingsPage.GESTURES,
             SettingsPage.APP_GESTURES,
-            SettingsPage.GESTURE_TEST,
             SettingsPage.MENUS,
             SettingsPage.TOUCH_TYPING,
             SettingsPage.HARDWARE_KEYS,
@@ -69,12 +67,13 @@ sealed interface SettingsDestination {
  */
 object SettingsNav {
     /**
-     * Khóa của các trang ở bản trước khi có menu mà nay đã tách hoặc gộp: "Chi tiết đọc" (reading) tách thành nhiều trang,
-     * lấy trang đầu; "Quyền" (permissions) đã gộp vào "Trạng thái và quyền".
+     * Khóa của các trang ở bản trước mà nay đã tách, gộp hoặc bỏ: "Chi tiết đọc" (reading) tách thành nhiều trang, lấy trang
+     * đầu; "Quyền" (permissions) đã gộp vào "Trạng thái và quyền"; "Kiểm tra cử chỉ" (gesturetest) đã bỏ, về trang Cử chỉ.
      */
     private val LEGACY_PAGE_KEYS: Map<String, SettingsPage> = mapOf(
         "reading" to SettingsPage.READ_ELEMENTS,
         "permissions" to SettingsPage.STATUS,
+        "gesturetest" to SettingsPage.GESTURES,
     )
 
     private val pageByKey: Map<String, SettingsPage> = SettingsPage.entries.associateBy { it.key }

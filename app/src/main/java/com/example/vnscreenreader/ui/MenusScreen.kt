@@ -37,6 +37,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.vnscreenreader.R
+import com.example.vnscreenreader.core.Diag
 import com.example.vnscreenreader.gesture.GestureAction
 import com.example.vnscreenreader.gesture.GestureMappingStore
 import com.example.vnscreenreader.menu.MenuGroup
@@ -78,11 +79,13 @@ fun MenusScreen() {
 
     fun itemText(items: List<MenuItem>): String = items.mapIndexed { i, item -> "${i + 1}. ${item.label}" }.joinToString("\n")
 
-    // Mọi thay đổi đi qua đây: lưu ngay, rồi báo kết quả bằng vùng thông báo trực tiếp (liveRegion).
-    fun commit(newLayout: MenuLayout, message: String) {
+    // Mọi thay đổi đi qua đây: lưu ngay, rồi báo kết quả bằng vùng thông báo trực tiếp (liveRegion). [op] chỉ để ghi nhật ký chẩn
+    // đoán (tên thao tác và số mục còn lại, không có chữ nào của người dùng).
+    fun commit(op: String, newLayout: MenuLayout, message: String) {
         layout = newLayout
         store.save(newLayout)
         status = message
+        Diag.log("MENU_EDIT") { "$op count=${newLayout.actions.size}" }
     }
 
     // Không tiêu đề trang: vào thẳng nội dung. Phần của người dùng (chỉnh được) đứng trước phần tra cứu.
@@ -130,17 +133,17 @@ fun MenusScreen() {
             onMoveToTop = {
                 itemDialog = null
                 val moved = layout.moveToTop(selected)
-                commit(moved, resources.getString(R.string.mn_msg_moved, Menus.labelFor(selected), moved.positionOf(selected), moved.actions.size))
+                commit("top", moved, resources.getString(R.string.mn_msg_moved, Menus.labelFor(selected), moved.positionOf(selected), moved.actions.size))
             },
             onMoveUp = {
                 itemDialog = null
                 val moved = layout.moveUp(selected)
-                commit(moved, resources.getString(R.string.mn_msg_moved, Menus.labelFor(selected), moved.positionOf(selected), moved.actions.size))
+                commit("up", moved, resources.getString(R.string.mn_msg_moved, Menus.labelFor(selected), moved.positionOf(selected), moved.actions.size))
             },
             onMoveDown = {
                 itemDialog = null
                 val moved = layout.moveDown(selected)
-                commit(moved, resources.getString(R.string.mn_msg_moved, Menus.labelFor(selected), moved.positionOf(selected), moved.actions.size))
+                commit("down", moved, resources.getString(R.string.mn_msg_moved, Menus.labelFor(selected), moved.positionOf(selected), moved.actions.size))
             },
             onReplace = {
                 itemDialog = null
@@ -150,7 +153,7 @@ fun MenusScreen() {
                 itemDialog = null
                 val removed = layout.remove(selected)
                 if (removed !== layout) {
-                    commit(removed, resources.getString(R.string.mn_msg_removed, Menus.labelFor(selected), removed.actions.size))
+                    commit("remove", removed, resources.getString(R.string.mn_msg_removed, Menus.labelFor(selected), removed.actions.size))
                 }
             },
             onDismiss = { itemDialog = null },
@@ -171,12 +174,12 @@ fun MenusScreen() {
                 if (replacing == null) {
                     val added = layout.add(chosen)
                     if (added !== layout) {
-                        commit(added, resources.getString(R.string.mn_msg_added, Menus.labelFor(chosen), added.positionOf(chosen)))
+                        commit("add", added, resources.getString(R.string.mn_msg_added, Menus.labelFor(chosen), added.positionOf(chosen)))
                     }
                 } else {
                     val replaced = layout.replace(replacing, chosen)
                     if (replaced !== layout) {
-                        commit(replaced, resources.getString(R.string.mn_msg_replaced, Menus.labelFor(chosen)))
+                        commit("replace", replaced, resources.getString(R.string.mn_msg_replaced, Menus.labelFor(chosen)))
                     }
                 }
             },
@@ -192,7 +195,7 @@ fun MenusScreen() {
             confirmButton = {
                 TextButton(onClick = {
                     confirmReset = false
-                    commit(layout.reset(), resources.getString(R.string.mn_msg_reset))
+                    commit("reset", layout.reset(), resources.getString(R.string.mn_msg_reset))
                 }) { Text(stringResource(R.string.mn_reset_confirm), fontSize = 18.sp) }
             },
             dismissButton = { TextButton(onClick = { confirmReset = false }) { Text(stringResource(R.string.ui_cancel), fontSize = 18.sp) } },

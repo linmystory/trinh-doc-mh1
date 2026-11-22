@@ -6,6 +6,7 @@ B = [
 ("menu_local_title","Element menu","Trình đơn phần tử","Menu de l'élément","Menú del elemento","Меню элемента","قائمة العنصر","元素菜单"),
 ("menu_opening", "%1$s, %2$d items.", "%1$s, %2$d mục.", "%1$s, %2$d éléments.", "%1$s, %2$d elementos.", "%1$s, пунктов: %2$d.", "%1$s، %2$d عناصر.", "%1$s，共%2$d项。"),
 ("menu_position","%1$s, %2$d of %3$d","%1$s, %2$d trên %3$d","%1$s, %2$d sur %3$d","%1$s, %2$d de %3$d","%1$s, %2$d из %3$d","%1$s، %2$d من %3$d","%1$s，第%2$d项，共%3$d项"),
+("menu_position_group","%1$s, group, %2$d of %3$d","%1$s, nhóm, %2$d trên %3$d","%1$s, groupe, %2$d sur %3$d","%1$s, grupo, %2$d de %3$d","%1$s, группа, %2$d из %3$d","%1$s، مجموعة، %2$d من %3$d","%1$s，分组，第%2$d项，共%3$d项"),
 ("menu_activate","Tap","Nhấn","Activer","Pulsar","Нажать","نقر","点按"),
 ("menu_long_click","Long press","Nhấn giữ","Appui long","Pulsación larga","Нажать и удерживать","ضغط مطوّل","长按"),
 ("menu_copy","Copy text","Sao chép chữ","Copier le texte","Copiar texto","Копировать текст","نسخ النص","复制文字"),

@@ -112,6 +112,7 @@
     <string name="menu_global_title">通用選單</string>
     <string name="menu_local_title">元素選單</string>
     <string name="menu_position">%1$s，第%2$d項，共%3$d項</string>
+    <string name="menu_position_group">%1$s，分組，第%2$d項，共%3$d項</string>
     <string name="menu_activate">點按</string>
     <string name="menu_long_click">長按</string>
     <string name="menu_copy">複製文字</string>
@@ -255,7 +256,7 @@
     <string name="fbk_test_sound">測試提示音</string>
     <string name="fbk_quick">使用中如需快速切換，可將“切換震動和聲音模式”分配給某個手勢，或在通用選單中選擇。</string>
     <string name="rd_notif_title">朗讀新通知</string>
-    <string name="rd_notif_desc">朗讀應用程式名稱和精簡內容；忽略重複通知，密集通知會合並。</string>
+    <string name="rd_notif_desc">朗讀應用程式名稱和精簡內容；忽略重複通知，密集通知會合並。息屏時不朗讀任何內容。</string>
     <string name="rd_unlabeled_head">無標籤元素</string>
     <string name="rd_unlabeled_intro">當應用程式未給按鈕設定標籤時，讀屏按以下順序處理，無需截屏：</string>
     <string name="rd_unlabeled_1">1. 應用程式自帶的標籤（描述、文字、關聯標籤、工具提示）。</string>
@@ -355,15 +356,6 @@
     <string name="msg_cursor_end">游標在末尾</string>
     <string name="msg_selected_to_start">已選擇到開頭</string>
     <string name="msg_selected_to_end">已選擇到末尾</string>
-    <string name="gt_unknown">無法識別的手勢，代碼%1$d</string>
-    <string name="sec_gesttest">手勢測試</string>
-    <string name="sec_gesttest_sum">查看系統向應用程式發送了哪些手勢</string>
-    <string name="gt_intro">測試期間每個手勢只會朗讀名稱，不執行任何功能。未朗讀的手勢表示系統沒有發送給應用程式。</string>
-    <string name="gt_start">開始手勢測試</string>
-    <string name="gt_stop">停止手勢測試</string>
-    <string name="gt_active">測試進行中。做一個手勢即可聽到名稱。</string>
-    <string name="gt_inactive">測試未開始</string>
-    <string name="gt_stopped">測試已停止</string>
     <string name="mn_gesture_line">開啟方式：%1$s。</string>
     <string name="mn_gesture_none">尚未分配手勢。請在“自訂手勢”中分配。</string>
     <string name="ocr_unsupported">此裝置暫不支援該語言的圖片文字識別。</string>
@@ -545,7 +537,7 @@
     <string name="rd_g_hints">提示與詳細程度</string>
     <string name="sec_touch_typing">觸控與輸入</string>
     <string name="sec_notif">通知與事件</string>
-    <string name="sec_notif_sum">通知、來電者、位置、開啟和關閉螢幕</string>
+    <string name="sec_notif_sum">通知、來電者、位置</string>
     <string name="nt_quiet_head">在以下情况不自動朗讀</string>
     <string name="nt_finger_title">手指正在觸控螢幕</string>
     <string name="nt_finger_desc">觸控螢幕時跳過，以免打斷你的探索。</string>
@@ -558,7 +550,7 @@
     <string name="nt_black_title">永不朗讀的關鍵詞</string>
     <string name="nt_black_desc">每行一個詞或短語。包含其中任何一個的通知永遠不會朗讀。不區分大小寫和重音。</string>
     <string name="nt_white_title">始終朗讀的關鍵詞</string>
-    <string name="nt_white_desc">每行一個詞或短語。包含其中任何一個的通知始終朗讀，即使通知朗讀已關閉或處於安靜情形。永不朗讀列表優先。</string>
+    <string name="nt_white_desc">每行一個詞或短語。包含其中任何一個的通知始終朗讀，即使通知朗讀已關閉或處於安靜情形，但息屏時除外。永不朗讀列表優先。</string>
     <string name="sec_backup">備份與恢復</string>
     <string name="sec_backup_sum">將全部設定保存到檔案或從檔案恢復</string>
     <string name="bk_intro">將設定、手勢、按應用程式手勢、自訂元素選單和自訂標籤保存為文本檔案，存放位置由你選擇。不包括擴展、錯誤日誌和語音引擎選擇。</string>
@@ -575,7 +567,7 @@
     <string name="ag_rawtap_desc">激活時在元素中心發送真實觸控，而不是無障礙點擊。適用於激活無效的應用程式。</string>
     <string name="st_other_reader_warn">另一個讀屏器已開啟。兩者同時運行可能導致語音和手勢衝突，請關閉其中一個。</string>
     <string name="rd_toast_title">朗讀 Toast 提示</string>
-    <string name="rd_toast_desc">“已保存”之類的簡短彈出提示會被朗讀，即使已關閉通知朗讀。預設開啟。</string>
+    <string name="rd_toast_desc">“已保存”之類的簡短彈出提示會被朗讀，即使已關閉通知朗讀，但息屏時不朗讀。預設開啟。</string>
     <string name="rd_keys_title">外接鍵盤快捷鍵</string>
     <string name="rd_keys_desc">Alt 或 Windows/Search 加方向鍵切換元素；Alt+回車激活；Alt+退格返回；單按 Ctrl 停止朗讀。其他按鍵照常輸入。完整列表見幫助。預設開啟。</string>
     <string name="msg_tts_fallback">所選語音引擎不可用，已改用預設引擎。</string>
@@ -588,8 +580,6 @@
     <string name="msg_keys_resumed">已恢復鍵盤和音量鍵</string>
     <string name="msg_volume_app_off">已在 %1$s 中關閉音量鍵導航</string>
     <string name="msg_volume_app_on">已在 %1$s 中開啟音量鍵導航</string>
-    <string name="rd_screen_title">亮屏報時，息屏提示</string>
-    <string name="rd_screen_desc">息屏時朗讀總會停止。開啟後：亮屏時播報當前時間，息屏時播報“已息屏”。預設關閉。</string>
     <string name="msg_screen_off">已息屏</string>
     <string name="rd_dialog_focus_title">自動聚焦到對話框</string>
     <string name="rd_dialog_focus_desc">對話框或底部面板開啟時，朗讀標題並移到其第一個元素；若您已自行選擇則不移動。預設開啟。</string>
@@ -636,7 +626,7 @@
     <string name="perm_name_contacts">從通訊錄讀取來電者姓名</string>
     <string name="perm_name_location">報告我的位置</string>
     <string name="perm_location_here_rationale">為了報告您所在的位置，應用程式只在您要求時才向手機請求位置。把位置轉換成地址由手機自帶的定位服務完成，它可能透過互聯網聯系其提供商。</string>
-    <string name="nt_events_head">來電、位置和螢幕</string>
+    <string name="nt_events_head">來電和位置</string>
     <string name="rd_call_title">播報來電</string>
     <string name="rd_call_desc">手機響铃時讀出來電者。需要查看手機狀態和通話號碼的權限。隨後會可選地询問讀取通訊錄的權限：允許則讀出通訊錄中的姓名而不是號碼，否則只讀號碼。預設關閉。</string>
     <string name="rd_location_title">允許報告我的位置</string>
@@ -764,6 +754,6 @@
         <item quantity="other">選單已有%1$d項功能，已達上限。請刪除或替換一項後再添加。</item>
     </plurals>
     <plurals name="hp_menus_body">
-        <item quantity="other">通用選單包含應用程式的全部功能，分為若干分組。元素選單是你自己的列表，最多%1$d項功能：可在“控制”中的“快捷選單”裡添加、刪除、調整順序或替換。每個選單都用你為它指定的手勢開啟。</item>
+        <item quantity="other">通用選單包含應用程式的全部功能，分為若干分組。元素選單是你自己的列表，最多%1$d項功能：可在“控制”中的“快捷選單”裡添加、刪除、調整順序或替換。每個選單都用你為它指定的手勢開啟。選單開啟時，向右或向左滑動可切換項目，也可以觸控螢幕並滑動手指逐項聽讀；雙擊即可選擇。</item>
     </plurals>
 </resources>

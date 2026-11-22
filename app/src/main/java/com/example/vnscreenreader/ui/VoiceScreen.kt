@@ -119,7 +119,7 @@ fun VoiceScreen() {
                 .replaceFirstChar { c -> c.titlecase() }
         }
         var firstLanguage by remember { mutableStateOf(settings.firstLanguage) }
-        SettingChoice(
+        SettingPicker(
             title = stringResource(R.string.vo2_first_lang_title),
             description = stringResource(R.string.vo2_first_lang_desc),
             options = listOf(stringResource(R.string.vo2_first_lang_auto)) + voiceLanguageNames,
@@ -145,7 +145,7 @@ fun VoiceScreen() {
             }
             val languageTags = voiceLanguageTags
             val languageNames = voiceLanguageNames
-            SettingChoice(
+            SettingPicker(
                 title = stringResource(R.string.vo2_lang_title),
                 description = stringResource(R.string.vo2_lang_desc),
                 options = languageNames,

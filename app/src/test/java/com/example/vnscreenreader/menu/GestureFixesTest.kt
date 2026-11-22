@@ -5,14 +5,11 @@ import com.example.vnscreenreader.core.Dictionaries
 import com.example.vnscreenreader.core.EmojiText
 import com.example.vnscreenreader.core.EnglishDictionary
 import com.example.vnscreenreader.core.FocusLocator
-import com.example.vnscreenreader.core.GestureTestEvent
-import com.example.vnscreenreader.core.GestureTestMode
 import com.example.vnscreenreader.core.VietnameseDictionary
 import com.example.vnscreenreader.gesture.Gesture
 import com.example.vnscreenreader.gesture.GestureAction
 import com.example.vnscreenreader.gesture.GestureMapping
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -51,18 +48,6 @@ class GestureFixesTest {
         assertEquals(GestureAction.PAGE_NEXT, GestureMapping.parse("SWIPE_UP=HOME").actionFor(Gesture.TWO_FINGER_SWIPE_LEFT))
         // Đặt rõ NONE cũng được nhớ.
         assertEquals("SWIPE_UP=NONE", GestureMapping().with(Gesture.SWIPE_UP, GestureAction.NONE).serializeOverrides())
-    }
-
-    @Test fun gestureTestModeExpiresWhenIdle() {
-        GestureTestMode.dispatch(GestureTestEvent.ENTER, nowMs = 1_000)
-        assertTrue(GestureTestMode.isActive(1_000 + GestureTestMode.IDLE_TIMEOUT_MS))
-        GestureTestMode.touch(5_000)
-        assertTrue(GestureTestMode.isActive(5_000 + GestureTestMode.IDLE_TIMEOUT_MS))
-        assertFalse(GestureTestMode.isActive(5_000 + GestureTestMode.IDLE_TIMEOUT_MS + 1)) // tự tắt
-        assertFalse(GestureTestMode.isActive(5_001)) // đã tắt hẳn
-        GestureTestMode.dispatch(GestureTestEvent.ENTER, nowMs = 10)
-        GestureTestMode.dispatch(GestureTestEvent.BACK, nowMs = 11)
-        assertFalse(GestureTestMode.isActive(12))
     }
 
     @Test fun locatorFindsSmallestContainingStop() {

@@ -1165,18 +1165,24 @@ class FocusNavigator(
         // Dự phòng: giả lập cú vuốt dọc cho khung nhận hành động mà không đổi gì, hoặc khung "cuộn được" mà không báo hành động nào (view
         // tự vẽ). Chỉ khi tìm ở cấp cả cửa sổ mới dò khung không có hành động; với vùng đã biết ([within]) chỉ thử đúng vùng đó.
         val stuck = swipeBox ?: if (within == null) stuckBox(root) else null
-        if (stuck == null) return false
+        if (stuck == null) return autoScrollFailed("NO_TARGET")
         val swipeKey = boxKey(stuck, forward)
-        if (exhaustion.isExhausted(swipeKey, SystemClock.uptimeMillis())) return false
-        val line = SwipeGeometry.vertical(stuck[0], stuck[1], stuck[2], stuck[3], forward) ?: return false
+        if (exhaustion.isExhausted(swipeKey, SystemClock.uptimeMillis())) return autoScrollFailed("EXHAUSTED")
+        val line = SwipeGeometry.vertical(stuck[0], stuck[1], stuck[2], stuck[3], forward) ?: return autoScrollFailed("NO_SWIPE_LINE")
         val before = areaView(start, stuck)
-        if (!swipeBlocking(line)) return false
+        if (!swipeBlocking(line)) return autoScrollFailed("SWIPE_FAILED")
         val after = awaitScrolled(stuck, before.items)
         if (after == null) {
             exhaustion.mark(swipeKey, SystemClock.uptimeMillis())
-            return false
+            return autoScrollFailed("SWIPE_UNCHANGED")
         }
         return pickNew(before, after, stuck, forward, quiet, "swipe")
+    }
+
+    /** Ghi lý do tìm-bằng-cuộn không chọn được gì (để nhật ký luôn có dòng kết cục, kể cả khi không có khung nào để cuộn); trả false. */
+    private fun autoScrollFailed(reason: String): Boolean {
+        com.example.vnscreenreader.core.Diag.log("AUTOSCROLL") { "outcome=$reason" }
+        return false
     }
 
     /**

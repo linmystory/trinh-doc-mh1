@@ -22,7 +22,7 @@ H = [
      "لكي ينطق مكانك يطلب التطبيق موقعك من الهاتف فقط عندما تطلب ذلك. يتم تحويل الموقع إلى عنوان بواسطة خدمة الموقع في الهاتف نفسه، وقد تتصل بمزوّدها عبر الإنترنت.",
      "为了报告您所在的位置，应用只在您要求时才向手机请求位置。把位置转换成地址由手机自带的定位服务完成，它可能通过互联网联系其提供商。"),
     # --- Cài đặt ---
-    ("nt_events_head", "Calls, location and screen", "Cuộc gọi, vị trí và màn hình", "Appels, position et écran", "Llamadas, ubicación y pantalla", "Звонки, местоположение и экран", "المكالمات والموقع والشاشة", "来电、位置和屏幕"),
+    ('nt_events_head', 'Calls and location', 'Cuộc gọi và vị trí', 'Appels et position', 'Llamadas y ubicación', 'Звонки и местоположение', 'المكالمات والموقع', '来电和位置'),
     ("rd_call_title", "Announce incoming calls", "Đọc người gọi đến", "Annoncer les appels entrants", "Anunciar llamadas entrantes", "Озвучивать входящие звонки", "الإعلان عن المكالمات الواردة", "播报来电"),
     ("rd_call_desc",
      "When the phone rings, says who is calling. Needs permission to see phone state and call numbers. You are then asked, optionally, for permission to read contacts; if you allow it the contact's name is said instead of the number, otherwise only the number. Off by default.",

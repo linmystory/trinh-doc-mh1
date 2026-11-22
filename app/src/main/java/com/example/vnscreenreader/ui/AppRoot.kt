@@ -272,7 +272,6 @@ private fun SettingsPage.titleRes(): Int = when (this) {
     SettingsPage.NOTIFICATIONS -> R.string.sec_notif
     SettingsPage.GESTURES -> R.string.sec_gestures
     SettingsPage.APP_GESTURES -> R.string.sec_appgest
-    SettingsPage.GESTURE_TEST -> R.string.sec_gesttest
     SettingsPage.MENUS -> R.string.sec_menus
     SettingsPage.TOUCH_TYPING -> R.string.sec_touch_typing
     SettingsPage.HARDWARE_KEYS -> R.string.sec_hw_keys
@@ -293,7 +292,6 @@ private fun SettingsPage.summaryRes(): Int = when (this) {
     SettingsPage.NOTIFICATIONS -> R.string.sec_notif_sum
     SettingsPage.GESTURES -> R.string.sec_gestures_sum
     SettingsPage.APP_GESTURES -> R.string.sec_appgest_sum
-    SettingsPage.GESTURE_TEST -> R.string.sec_gesttest_sum
     SettingsPage.MENUS -> R.string.sec_menus_sum
     SettingsPage.TOUCH_TYPING -> R.string.sec_touch_typing_sum
     SettingsPage.HARDWARE_KEYS -> R.string.sec_hw_keys_sum
@@ -326,7 +324,6 @@ private fun PageContent(page: SettingsPage) {
         SettingsPage.NOTIFICATIONS -> NotificationScreen()
         SettingsPage.GESTURES -> GestureSettingsScreen()
         SettingsPage.APP_GESTURES -> AppGesturesScreen()
-        SettingsPage.GESTURE_TEST -> GestureTestScreen()
         SettingsPage.MENUS -> MenusScreen()
         SettingsPage.TOUCH_TYPING -> TouchTypingScreen()
         SettingsPage.HARDWARE_KEYS -> HardwareKeysScreen()

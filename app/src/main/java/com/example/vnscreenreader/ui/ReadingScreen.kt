@@ -15,7 +15,8 @@ import com.example.vnscreenreader.core.Verbosity
 /*
  * Màn "Chi tiết đọc nội dung" cũ (một trang cuộn dài 21 công tắc) đã được tách theo chủ đề; mỗi hàm dưới đây là một trang
  * của cây menu (core/SettingsMenu.kt, ui/AppRoot.kt). Các cài đặt đã chuyển chỗ nhưng KHÔNG đổi khóa lưu hay giá trị:
- *   - đọc người gọi, nói vị trí, báo giờ khi bật/tắt màn hình  → NotificationScreen
+ *   - đọc người gọi, nói vị trí                               → NotificationScreen
+ *     (báo giờ khi bật/tắt màn hình: từ 2.24.0 luôn bật, không còn công tắc)
  *   - nhật ký chẩn đoán                                         → LogScreen
  *   - hai đoạn giải thích (phần tử không nhãn, chức năng gán vào cử chỉ) → HelpScreen
  */

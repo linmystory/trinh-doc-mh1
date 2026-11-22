@@ -31,9 +31,10 @@ class SettingsMenuTest {
     }
 
     @Test
-    fun designHasSixMenusAndSeventeenPages() {
+    fun designHasSixMenusAndSixteenPages() {
         assertEquals(6, SettingsMenu.entries.size)
-        assertEquals(17, SettingsPage.entries.size)
+        assertEquals(16, SettingsPage.entries.size) // bản 2.23.0 đã bỏ trang "Kiểm tra cử chỉ"
+        assertEquals(16, SettingsMenu.entries.sumOf { it.pages.size })
     }
 
     @Test
@@ -44,7 +45,7 @@ class SettingsMenuTest {
             "hub_start" to listOf("status"),
             "hub_audio" to listOf("voice", "feedback"),
             "hub_content" to listOf("read_elements", "focus", "notifications"),
-            "hub_control" to listOf("gestures", "appgestures", "gesturetest", "menus", "touch_typing", "hardware_keys"),
+            "hub_control" to listOf("gestures", "appgestures", "menus", "touch_typing", "hardware_keys"),
             "hub_tools" to listOf("labels", "plugins", "backup", "log"),
             "hub_help" to listOf("help"),
         )

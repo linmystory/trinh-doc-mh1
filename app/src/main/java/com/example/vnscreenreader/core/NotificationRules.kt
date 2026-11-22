@@ -48,13 +48,16 @@ object NotificationRules {
 
     /**
      * Có nên đọc thông báo này không?
-     * 1. Chứa từ trong danh sách chặn: không bao giờ đọc (ưu tiên cao nhất).
+     * 0. Màn hình đang TẮT ([screenOn] = false): không đọc gì, kể cả thông báo có từ khóa "luôn đọc". Thông báo đến lúc màn hình
+     *    tắt cũng không được đọc bù khi bật lại; đây là luật cứng, không có công tắc.
+     * 1. Chứa từ trong danh sách chặn: không bao giờ đọc.
      * 2. Chứa từ trong danh sách luôn đọc: đọc, kể cả khi đang tắt đọc thông báo hay đang ở hoàn cảnh yên lặng.
      * 3. Đang tắt đọc thông báo: không.
      * 4. Hoàn cảnh yên lặng (ngón tay chạm, đang gọi, không làm phiền, đang phát nhạc) mà người dùng đã chọn: không.
      * [context] chỉ được gọi khi cần (tra hệ thống tốn kém hơn nhiều so với so khớp chữ).
      */
     fun shouldRead(
+        screenOn: Boolean,
         masterOn: Boolean,
         quiet: QuietRules,
         context: () -> NotificationContext,
@@ -62,10 +65,17 @@ object NotificationRules {
         blacklist: List<String>,
         whitelist: List<String>,
     ): Boolean {
+        if (!screenOn) return false
         if (KeywordList.matches(text, blacklist)) return false
         if (KeywordList.matches(text, whitelist)) return true
         if (!masterOn) return false
         if (quiet.anyEnabled && quiet.blocks(context())) return false
         return true
     }
+
+    /**
+     * Có nên đọc Toast này không? Toast theo công tắc RIÊNG ([readToasts]), không theo "đọc thông báo" và không theo các hoàn cảnh yên
+     * lặng, nhưng cũng như thông báo: không bao giờ đọc khi màn hình tắt.
+     */
+    fun shouldReadToast(readToasts: Boolean, screenOn: Boolean): Boolean = screenOn && readToasts
 }

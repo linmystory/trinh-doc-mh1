@@ -31,7 +31,7 @@ object BackupSchema {
             "notif_quiet_finger" to 'b', "notif_quiet_call" to 'b', "notif_quiet_dnd" to 'b', "notif_quiet_media" to 'b',
             "notif_blacklist" to 's', "notif_whitelist" to 's',
             "read_toasts" to 'b', "keyboard_shortcuts" to 'b', "volume_key_nav" to 'b',
-            "volume_excluded_apps" to 's', "headset_key" to 'b', "announce_calls" to 'b', "location_enabled" to 'b', "scroll_adjust_sliders" to 'b', "focus_dialogs" to 'b', "remember_focus" to 'b', "announce_screen" to 'b',
+            "volume_excluded_apps" to 's', "headset_key" to 'b', "announce_calls" to 'b', "location_enabled" to 'b', "scroll_adjust_sliders" to 'b', "focus_dialogs" to 'b', "remember_focus" to 'b',
             "echo_chars" to 'b', "echo_words" to 'b', "speak_capitals" to 'b', "speak_list_range" to 'b',
             // Công cụ đọc: chế độ, cách chia và ngôn ngữ. KHÔNG sao lưu tên gói công cụ (tts_engine, second_tts_engine) vì
             // phụ thuộc từng máy; máy khác chưa cài công cụ đó thì sẽ rơi về công cụ mặc định.
@@ -42,12 +42,23 @@ object BackupSchema {
         LABELS to mapOf("labels_json" to 's'),
         MENU_LAYOUT to mapOf("local_actions" to 's'),
     )
+
+    /**
+     * Khóa đã bị bỏ khỏi ứng dụng nhưng còn nằm trong tệp sao lưu của bản cũ: khi nhập thì lặng lẽ bỏ qua và KHÔNG tính vào số mục "bị bỏ
+     * qua" (không có gì hỏng để báo). Khi xuất thì không còn được ghi ra vì đã khỏi [EXACT].
+     *  - screen_reader_prefs / announce_screen: công tắc báo bật/tắt màn hình; từ bản 2.24.0 tính năng này luôn bật.
+     */
+    private val RETIRED: Set<Pair<String, String>> = setOf(SETTINGS to "announce_screen")
+
     private const val APP_GESTURE_PREFIX = "ov_"
     private const val APP_TAP_PREFIX = "tap_"
 
     const val MAX_VALUE_CHARS = 128_000
     const val MAX_TOTAL_CHARS = 400_000
     const val MAX_ENTRIES = 600
+
+    /** Khóa đã bỏ khỏi ứng dụng (chỉ còn trong tệp sao lưu cũ): nhập thì bỏ qua lặng lẽ. */
+    fun isRetired(file: String, key: String): Boolean = (file to key) in RETIRED
 
     fun typeOf(file: String, key: String): Char? {
         if (file == APP_GESTURES) {
@@ -102,6 +113,7 @@ object BackupCodec {
                 skipped++
                 continue
             }
+            if (BackupSchema.isRetired(parts[0], parts[1])) continue // khóa cũ đã bỏ: không phải lỗi, không đếm vào skipped
             val type = parts[2][0]
             val value = unescape(parts[3])
             if (BackupSchema.typeOf(parts[0], parts[1]) != type || !BackupSchema.valid(type, value)) {

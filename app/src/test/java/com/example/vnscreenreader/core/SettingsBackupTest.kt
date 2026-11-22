@@ -48,6 +48,35 @@ class SettingsBackupTest {
         assertEquals(7, decoded.skipped)
     }
 
+    @Test fun retiredKeyFromAnOlderBackupIsIgnoredQuietly() {
+        // Bản cũ có công tắc báo bật/tắt màn hình (khóa announce_screen); từ 2.24.0 tính năng luôn bật nên khóa đó không còn trong lược đồ.
+        val text = listOf(
+            BackupCodec.HEADER,
+            "screen_reader_prefs\tspeech_rate\tf\t1.0",
+            "screen_reader_prefs\tannounce_screen\tb\ttrue",
+            "screen_reader_prefs\tannounce_screen\tb\tfalse",
+        ).joinToString("\n")
+        val decoded = BackupCodec.decode(text)
+        assertTrue(decoded.valid)
+        assertEquals(listOf("speech_rate"), decoded.entries.map { it.key })
+        assertEquals(0, decoded.skipped) // khóa đã bỏ không phải lỗi, nên không được báo "bị bỏ qua"
+    }
+
+    @Test fun retiredKeyIsOutOfTheSchemaAndRetiredOnlyInItsOwnFile() {
+        assertNull(BackupSchema.typeOf(BackupSchema.SETTINGS, "announce_screen"))
+        assertTrue(BackupSchema.isRetired(BackupSchema.SETTINGS, "announce_screen"))
+        assertFalse(BackupSchema.isRetired(BackupSchema.GESTURES, "announce_screen"))
+        assertFalse(BackupSchema.isRetired(BackupSchema.SETTINGS, "speech_rate"))
+    }
+
+    @Test fun aBrokenLineIsStillCountedEvenWhenItNamesARetiredKey() {
+        val text = BackupCodec.HEADER + "\nscreen_reader_prefs\tannounce_screen\tb\n" // thiếu cột giá trị
+        val decoded = BackupCodec.decode(text)
+        assertTrue(decoded.valid)
+        assertEquals(0, decoded.entries.size)
+        assertEquals(1, decoded.skipped)
+    }
+
     @Test fun schemaTypes() {
         assertEquals('b', BackupSchema.typeOf(BackupSchema.SETTINGS, "notif_quiet_call"))
         assertEquals('s', BackupSchema.typeOf(BackupSchema.APP_GESTURES, "ov_com.a"))

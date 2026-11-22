@@ -1,5 +1,6 @@
 package com.example.vnscreenreader.ui
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -8,17 +9,26 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -145,8 +155,68 @@ fun LabeledSlider(
 }
 
 /**
+ * Chọn một trong NHIỀU lựa chọn mà không dàn cả danh sách giữa màn hình: trang chỉ có tiêu đề, mô tả và MỘT nút ghi lựa chọn hiện
+ * tại (đọc ra "tên: lựa chọn"); chạm vào mở hộp thoại danh sách cuộn được, mỗi hàng là một nút chọn đọc "tên, đang chọn/không chọn".
+ * Chọn xong hộp thoại tự đóng. Dùng khi có từ khoảng 5 lựa chọn trở lên (ví dụ ngôn ngữ giọng đọc); ít hơn thì dùng [SettingChoice].
+ */
+@Composable
+fun SettingPicker(
+    title: String,
+    description: String?,
+    options: List<String>,
+    selectedIndex: Int,
+    onSelect: (Int) -> Unit,
+) {
+    var open by remember { mutableStateOf(false) }
+    val current = options.getOrElse(selectedIndex) { "" }
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(text = title, fontSize = 22.sp, color = Color.White, modifier = Modifier.semantics { heading() })
+        if (description != null) Text(text = description, fontSize = 16.sp, color = Color.LightGray)
+        OutlinedButton(
+            onClick = { open = true },
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 64.dp)
+                .semantics { contentDescription = "$title: $current" },
+            border = BorderStroke(2.dp, HighContrastYellow),
+            colors = ButtonDefaults.outlinedButtonColors(contentColor = HighContrastYellow),
+        ) {
+            Text(current, fontSize = 18.sp)
+        }
+    }
+    if (open) {
+        AlertDialog(
+            onDismissRequest = { open = false },
+            title = { Text(title, fontSize = 20.sp) },
+            text = {
+                LazyColumn(modifier = Modifier.fillMaxWidth()) {
+                    itemsIndexed(options) { index, label ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(min = 56.dp)
+                                .selectable(selected = index == selectedIndex, role = Role.RadioButton) {
+                                    open = false
+                                    onSelect(index)
+                                },
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        ) {
+                            RadioButton(selected = index == selectedIndex, onClick = null)
+                            Text(text = label, fontSize = 18.sp, modifier = Modifier.weight(1f))
+                        }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = { TextButton(onClick = { open = false }) { Text(stringResource(R.string.ui_cancel), fontSize = 18.sp) } },
+        )
+    }
+}
+
+/**
  * Nhóm lựa chọn một trong nhiều (nút chọn): mỗi hàng là một vùng chạm lớn, đọc ra "tên lựa chọn, đang chọn/không chọn".
- * [title]/[description] đứng trên nhóm. Dùng cho cài đặt có vài mức (ví dụ mức độ chi tiết khi duyệt).
+ * [title]/[description] đứng trên nhóm. Dùng cho cài đặt có vài mức (ví dụ mức độ chi tiết khi duyệt); nhiều lựa chọn thì dùng [SettingPicker].
  */
 @Composable
 fun SettingChoice(

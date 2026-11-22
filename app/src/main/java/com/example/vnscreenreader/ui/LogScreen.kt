@@ -35,8 +35,11 @@ import com.example.vnscreenreader.core.SettingsRepository
 private const val VIEW_MAX_CHARS = 20_000
 private const val SHARE_MAX_CHARS = 90_000
 
-/** Số ký tự nhật ký chẩn đoán tối đa chép vào clipboard (clipboard đi qua Binder nên có giới hạn dung lượng). */
-private const val DIAG_COPY_MAX_CHARS = 100_000
+/**
+ * Số ký tự nhật ký chẩn đoán chép vào clipboard: lấy đoạn CUỐI (mới nhất). Khung chat nhận tối đa khoảng 20.000 ký tự khi dán và khi
+ * quá dài thì giữ phần ĐẦU, bỏ phần CUỐI, tức là bỏ đúng phần vừa thao tác; nên chép vừa dưới giới hạn đó để gửi đi không mất dòng mới nhất.
+ */
+private const val DIAG_COPY_MAX_CHARS = 18_000
 
 /**
  * Trang "Nhật ký và hỗ trợ", gồm hai phần cùng mục đích là nhờ người khác tìm lỗi giúp:

@@ -8,8 +8,8 @@ import org.junit.Test
 
 class ScreenAnnouncementTest {
 
-    private fun say(on: Boolean, enabled: Boolean = true, inCall: Boolean = false, hour: Int = 15, minute: Int = 28) =
-        ScreenAnnouncement.text(on, enabled, inCall, hour, minute)
+    private fun say(on: Boolean, inCall: Boolean = false, hour: Int = 15, minute: Int = 28) =
+        ScreenAnnouncement.text(on, inCall, hour, minute)
 
     @Test
     fun screenOffKeepsTheOldMessage() {
@@ -39,20 +39,10 @@ class ScreenAnnouncementTest {
     }
 
     @Test
-    fun switchOffMeansNothingIsSaidInEitherDirection() {
-        assertNull(say(on = true, enabled = false))
-        assertNull(say(on = false, enabled = false))
-    }
-
-    @Test
-    fun noTimeIsReadWhileRingingOrInACall() {
-        // Màn hình bật lại mỗi lần rời tai nghe: đọc giờ sẽ chen vào lời báo người gọi / cuộc nói chuyện.
+    fun nothingIsSaidInEitherDirectionWhileRingingOrInACall() {
+        // Áp tai nghe làm cảm biến tiệm cận tắt màn hình, rời tai nghe làm nó bật lại: lời báo sẽ chen vào lời báo người gọi / cuộc nói chuyện.
         assertNull(say(on = true, inCall = true))
-    }
-
-    @Test
-    fun screenOffIsStillAnnouncedDuringACallAsBefore() {
-        assertEquals("Đã tắt màn hình", say(on = false, inCall = true))
+        assertNull(say(on = false, inCall = true))
     }
 
     @Test

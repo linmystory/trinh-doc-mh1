@@ -86,8 +86,6 @@ internal val SETTINGS_INDEX: Map<String, List<IndexString>> = mapOf(
         IndexString(R.string.rd_call_desc, false),
         IndexString(R.string.rd_location_title, true),
         IndexString(R.string.rd_location_desc, false),
-        IndexString(R.string.rd_screen_title, true),
-        IndexString(R.string.rd_screen_desc, false),
     ),
     "gestures" to listOf(
         IndexString(R.string.gs_f2_profile_title, true),
@@ -101,9 +99,6 @@ internal val SETTINGS_INDEX: Map<String, List<IndexString>> = mapOf(
         IndexString(R.string.ag_rawtap_desc, false),
         IndexString(R.string.ag_edit_title, true),
         IndexString(R.string.ag_pick_title, true),
-    ),
-    "gesturetest" to listOf(
-
     ),
     "menus" to listOf(
         IndexString(R.string.mn_local_head, true),

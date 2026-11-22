@@ -112,6 +112,7 @@
     <string name="menu_global_title">Trình đơn chung</string>
     <string name="menu_local_title">Trình đơn phần tử</string>
     <string name="menu_position">%1$s, %2$d trên %3$d</string>
+    <string name="menu_position_group">%1$s, nhóm, %2$d trên %3$d</string>
     <string name="menu_activate">Nhấn</string>
     <string name="menu_long_click">Nhấn giữ</string>
     <string name="menu_copy">Sao chép chữ</string>
@@ -255,7 +256,7 @@
     <string name="fbk_test_sound">Thử âm báo</string>
     <string name="fbk_quick">Đổi nhanh chế độ khi đang dùng: gán chức năng \"Đổi chế độ rung và âm báo\" cho một cử chỉ, hoặc chọn trong trình đơn chung.</string>
     <string name="rd_notif_title">Đọc thông báo mới</string>
-    <string name="rd_notif_desc">Đọc tên ứng dụng và nội dung đã rút gọn; bỏ thông báo trùng, gộp khi dồn dập.</string>
+    <string name="rd_notif_desc">Đọc tên ứng dụng và nội dung đã rút gọn; bỏ thông báo trùng, gộp khi dồn dập. Không đọc gì khi màn hình tắt.</string>
     <string name="rd_unlabeled_head">Phần tử không có nhãn</string>
     <string name="rd_unlabeled_intro">Khi một nút không được ứng dụng gắn nhãn, trình đọc xử lý theo thứ tự sau, không cần chụp màn hình:</string>
     <string name="rd_unlabeled_1">1. Nhãn của ứng dụng (mô tả, chữ, nhãn liên kết, gợi ý công cụ).</string>
@@ -355,15 +356,6 @@
     <string name="msg_cursor_end">Con trỏ ở cuối</string>
     <string name="msg_selected_to_start">Đã chọn đến đầu</string>
     <string name="msg_selected_to_end">Đã chọn đến cuối</string>
-    <string name="gt_unknown">Cử chỉ không nhận ra, mã %1$d</string>
-    <string name="sec_gesttest">Kiểm tra cử chỉ</string>
-    <string name="sec_gesttest_sum">Xem hệ thống có gửi cử chỉ nào tới ứng dụng</string>
-    <string name="gt_intro">Khi đang kiểm tra, mỗi cử chỉ chỉ được đọc tên và không chạy chức năng nào. Cử chỉ nào không được đọc tên là hệ thống không gửi tới ứng dụng.</string>
-    <string name="gt_start">Bắt đầu kiểm tra cử chỉ</string>
-    <string name="gt_stop">Dừng kiểm tra cử chỉ</string>
-    <string name="gt_active">Đang kiểm tra. Hãy làm một cử chỉ để nghe tên.</string>
-    <string name="gt_inactive">Chưa bắt đầu kiểm tra</string>
-    <string name="gt_stopped">Đã dừng kiểm tra</string>
     <string name="mn_gesture_line">Mở bằng: %1$s.</string>
     <string name="mn_gesture_none">Chưa gán cử chỉ nào. Hãy gán trong mục Cử chỉ tùy chỉnh.</string>
     <string name="ocr_unsupported">Chưa hỗ trợ đọc chữ trong ảnh cho ngôn ngữ này trên thiết bị.</string>
@@ -545,7 +537,7 @@
     <string name="rd_g_hints">Gợi ý và mức chi tiết</string>
     <string name="sec_touch_typing">Chạm và gõ phím</string>
     <string name="sec_notif">Thông báo và sự kiện</string>
-    <string name="sec_notif_sum">Thông báo, người gọi, vị trí, bật tắt màn hình</string>
+    <string name="sec_notif_sum">Thông báo, người gọi, vị trí</string>
     <string name="nt_quiet_head">Không đọc tự động khi</string>
     <string name="nt_finger_title">Ngón tay đang chạm màn hình</string>
     <string name="nt_finger_desc">Bỏ qua khi bạn đang chạm màn hình, để không cắt ngang lúc bạn khám phá.</string>
@@ -558,7 +550,7 @@
     <string name="nt_black_title">Từ khóa không bao giờ đọc</string>
     <string name="nt_black_desc">Mỗi dòng một từ hoặc cụm từ. Thông báo chứa bất kỳ từ nào trong đó sẽ không bao giờ được đọc. Không phân biệt hoa thường và dấu.</string>
     <string name="nt_white_title">Từ khóa luôn đọc</string>
-    <string name="nt_white_desc">Mỗi dòng một từ hoặc cụm từ. Thông báo chứa bất kỳ từ nào trong đó luôn được đọc, kể cả khi đang tắt đọc thông báo hoặc đang ở hoàn cảnh yên lặng. Danh sách không bao giờ đọc được ưu tiên hơn.</string>
+    <string name="nt_white_desc">Mỗi dòng một từ hoặc cụm từ. Thông báo chứa bất kỳ từ nào trong đó luôn được đọc, kể cả khi đang tắt đọc thông báo hoặc đang ở hoàn cảnh yên lặng, trừ khi màn hình đang tắt. Danh sách không bao giờ đọc được ưu tiên hơn.</string>
     <string name="sec_backup">Sao lưu và khôi phục</string>
     <string name="sec_backup_sum">Lưu hoặc khôi phục toàn bộ cài đặt bằng một tệp</string>
     <string name="bk_intro">Lưu cài đặt, cử chỉ, cử chỉ theo ứng dụng, trình đơn phần tử tùy chỉnh và nhãn tùy chỉnh vào một tệp văn bản, nơi lưu do bạn chọn. Không gồm tiện ích mở rộng, nhật ký lỗi và lựa chọn công cụ giọng đọc.</string>
@@ -575,7 +567,7 @@
     <string name="ag_rawtap_desc">Khi kích hoạt, gửi một cú chạm thật vào giữa phần tử thay vì lệnh nhấn trợ năng. Dùng cho ứng dụng mà kích hoạt không có tác dụng.</string>
     <string name="st_other_reader_warn">Một trình đọc màn hình khác đang bật. Hai trình cùng chạy có thể làm giọng đọc và cử chỉ xung đột; hãy tắt một trong hai.</string>
     <string name="rd_toast_title">Đọc thông báo nổi (Toast)</string>
-    <string name="rd_toast_desc">Các thông báo nổi ngắn như Đã lưu được đọc ra, kể cả khi tắt đọc thông báo. Mặc định bật.</string>
+    <string name="rd_toast_desc">Các thông báo nổi ngắn như Đã lưu được đọc ra, kể cả khi tắt đọc thông báo, nhưng không đọc khi màn hình tắt. Mặc định bật.</string>
     <string name="rd_keys_title">Phím tắt bàn phím ngoài</string>
     <string name="rd_keys_desc">Alt hoặc Windows/Search cùng phím mũi tên để chuyển phần tử; Alt+Enter kích hoạt; Alt+Backspace quay lại; nhấn riêng Ctrl để dừng đọc. Các phím khác gõ bình thường. Danh sách đầy đủ ở phần Trợ giúp. Mặc định bật.</string>
     <string name="msg_tts_fallback">Engine giọng đọc đã chọn không dùng được. Đang dùng engine mặc định.</string>
@@ -588,8 +580,6 @@
     <string name="msg_keys_resumed">Đã tiếp tục phím cứng và phím âm lượng</string>
     <string name="msg_volume_app_off">Đã tắt điều hướng bằng phím âm lượng trong %1$s</string>
     <string name="msg_volume_app_on">Đã bật điều hướng bằng phím âm lượng trong %1$s</string>
-    <string name="rd_screen_title">Báo giờ khi bật màn hình, báo khi tắt màn hình</string>
-    <string name="rd_screen_desc">Giọng đọc luôn dừng khi tắt màn hình. Bật: khi bật màn hình đọc giờ hiện tại, khi tắt màn hình đọc Đã tắt màn hình. Mặc định tắt.</string>
     <string name="msg_screen_off">Đã tắt màn hình</string>
     <string name="rd_dialog_focus_title">Tự chuyển tiêu điểm vào hộp thoại</string>
     <string name="rd_dialog_focus_desc">Khi hộp thoại hoặc bảng dưới mở ra, đọc tiêu đề rồi chuyển tới phần tử đầu tiên của nó, trừ khi bạn đã tự chọn phần tử khác. Mặc định bật.</string>
@@ -636,7 +626,7 @@
     <string name="perm_name_contacts">Tên người gọi từ danh bạ</string>
     <string name="perm_name_location">Nói vị trí của tôi</string>
     <string name="perm_location_here_rationale">Để nói bạn đang ở đâu, ứng dụng chỉ hỏi điện thoại vị trí của bạn khi bạn yêu cầu. Việc đổi vị trí thành địa chỉ do chính dịch vụ vị trí của điện thoại thực hiện, và dịch vụ đó có thể kết nối nhà cung cấp qua internet.</string>
-    <string name="nt_events_head">Cuộc gọi, vị trí và màn hình</string>
+    <string name="nt_events_head">Cuộc gọi và vị trí</string>
     <string name="rd_call_title">Đọc người gọi đến</string>
     <string name="rd_call_desc">Khi điện thoại đổ chuông, đọc ai đang gọi. Cần quyền xem trạng thái điện thoại và số cuộc gọi. Sau đó app hỏi thêm quyền đọc danh bạ (tùy chọn): nếu bạn cho phép thì đọc tên trong danh bạ thay cho số, nếu không thì chỉ đọc số. Mặc định tắt.</string>
     <string name="rd_location_title">Cho phép nói vị trí của tôi</string>
@@ -764,6 +754,6 @@
         <item quantity="other">Trình đơn đã có %1$d chức năng, là mức tối đa. Hãy xóa hoặc thay một mục để thêm chức năng khác.</item>
     </plurals>
     <plurals name="hp_menus_body">
-        <item quantity="other">Trình đơn chung có đủ mọi chức năng của ứng dụng, chia thành các nhóm. Trình đơn phần tử là danh sách riêng của bạn, tối đa %1$d chức năng: thêm, xóa, đổi thứ tự hoặc thay chức năng tại Điều khiển, Trình đơn nhanh. Mỗi trình đơn mở bằng cử chỉ bạn gán cho nó.</item>
+        <item quantity="other">Trình đơn chung có đủ mọi chức năng của ứng dụng, chia thành các nhóm. Trình đơn phần tử là danh sách riêng của bạn, tối đa %1$d chức năng: thêm, xóa, đổi thứ tự hoặc thay chức năng tại Điều khiển, Trình đơn nhanh. Mỗi trình đơn mở bằng cử chỉ bạn gán cho nó. Khi trình đơn đang mở, vuốt phải hoặc trái để chuyển mục, hoặc chạm và lướt ngón tay trên màn hình để nghe từng mục; chạm hai lần để chọn.</item>
     </plurals>
 </resources>

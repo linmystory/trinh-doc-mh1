@@ -112,6 +112,7 @@
     <string name="menu_global_title">General menu</string>
     <string name="menu_local_title">Element menu</string>
     <string name="menu_position">%1$s, %2$d of %3$d</string>
+    <string name="menu_position_group">%1$s, group, %2$d of %3$d</string>
     <string name="menu_activate">Tap</string>
     <string name="menu_long_click">Long press</string>
     <string name="menu_copy">Copy text</string>
@@ -255,7 +256,7 @@
     <string name="fbk_test_sound">Test sound</string>
     <string name="fbk_quick">To switch quickly while in use, assign \"Change haptic and sound mode\" to a gesture, or pick it from the general menu.</string>
     <string name="rd_notif_title">Read new notifications</string>
-    <string name="rd_notif_desc">Reads the app name and a shortened text; skips duplicates and merges bursts.</string>
+    <string name="rd_notif_desc">Reads the app name and a shortened text; skips duplicates and merges bursts. Nothing is read while the screen is off.</string>
     <string name="rd_unlabeled_head">Elements without a label</string>
     <string name="rd_unlabeled_intro">When an app doesn\'t label a button, the reader handles it in this order, without taking screenshots:</string>
     <string name="rd_unlabeled_1">1. The app\'s own label (description, text, linked label, tooltip).</string>
@@ -355,15 +356,6 @@
     <string name="msg_cursor_end">Cursor at end</string>
     <string name="msg_selected_to_start">Selected to start</string>
     <string name="msg_selected_to_end">Selected to end</string>
-    <string name="gt_unknown">Unrecognized gesture, code %1$d</string>
-    <string name="sec_gesttest">Gesture test</string>
-    <string name="sec_gesttest_sum">See which gestures the system sends to the app</string>
-    <string name="gt_intro">While the test is on, each gesture is only announced by name and nothing is run. If a gesture is not announced, the system did not send it to the app.</string>
-    <string name="gt_start">Start gesture test</string>
-    <string name="gt_stop">Stop gesture test</string>
-    <string name="gt_active">Test is on. Do a gesture to hear its name.</string>
-    <string name="gt_inactive">Test is off</string>
-    <string name="gt_stopped">Test stopped</string>
     <string name="mn_gesture_line">Open with: %1$s.</string>
     <string name="mn_gesture_none">No gesture is assigned. Assign one in Custom gestures.</string>
     <string name="ocr_unsupported">Reading text from images is not available for this language on this device.</string>
@@ -545,7 +537,7 @@
     <string name="rd_g_hints">Hints and detail level</string>
     <string name="sec_touch_typing">Touch and typing</string>
     <string name="sec_notif">Notifications and events</string>
-    <string name="sec_notif_sum">Notifications, callers, location, screen on and off</string>
+    <string name="sec_notif_sum">Notifications, callers, location</string>
     <string name="nt_quiet_head">Do not read automatically when</string>
     <string name="nt_finger_title">A finger is on the screen</string>
     <string name="nt_finger_desc">Skipped while you touch the screen, so they do not cut into what you are exploring.</string>
@@ -558,7 +550,7 @@
     <string name="nt_black_title">Never read these words</string>
     <string name="nt_black_desc">One word or phrase per line. A notification containing any of them is never read. Ignores case and accents.</string>
     <string name="nt_white_title">Always read these words</string>
-    <string name="nt_white_desc">One word or phrase per line. A notification containing any of them is always read, even when notification reading is off or a quiet situation applies. The never-read list wins.</string>
+    <string name="nt_white_desc">One word or phrase per line. A notification containing any of them is always read, even when notification reading is off or a quiet situation applies, but never while the screen is off. The never-read list wins.</string>
     <string name="sec_backup">Backup and restore</string>
     <string name="sec_backup_sum">Save or restore all settings in a file</string>
     <string name="bk_intro">Saves your settings, gestures, per-app gestures, custom element menu and custom labels in a text file stored wherever you choose. It does not include extensions, the error log or the speech engine choice.</string>
@@ -575,7 +567,7 @@
     <string name="ag_rawtap_desc">Activating sends a real touch at the center of the element instead of an accessibility click. Use it for apps where activating does nothing.</string>
     <string name="st_other_reader_warn">Another screen reader is turned on. Two at once can make speech and gestures conflict; turn one of them off.</string>
     <string name="rd_toast_title">Read toast messages</string>
-    <string name="rd_toast_desc">Short pop-up messages such as Saved are read aloud, even when notification reading is off. On by default.</string>
+    <string name="rd_toast_desc">Short pop-up messages such as Saved are read aloud, even when notification reading is off, but not while the screen is off. On by default.</string>
     <string name="rd_keys_title">Hardware keyboard shortcuts</string>
     <string name="rd_keys_desc">Alt or Windows/Search plus an arrow key moves between elements; Alt+Enter activates; Alt+Backspace goes back; Ctrl alone stops speech. Other keys type as usual. Full list in Help. On by default.</string>
     <string name="msg_tts_fallback">The chosen speech engine is unavailable. Using the default engine.</string>
@@ -588,8 +580,6 @@
     <string name="msg_keys_resumed">Keyboard and volume keys resumed</string>
     <string name="msg_volume_app_off">Volume-key navigation off in %1$s</string>
     <string name="msg_volume_app_on">Volume-key navigation on in %1$s</string>
-    <string name="rd_screen_title">Announce the time when the screen turns on, and screen off</string>
-    <string name="rd_screen_desc">Speech always stops when the screen turns off. On: reads the current time when the screen turns on, and says Screen off when it turns off. Off by default.</string>
     <string name="msg_screen_off">Screen off</string>
     <string name="rd_dialog_focus_title">Move focus into dialogs</string>
     <string name="rd_dialog_focus_desc">When a dialog or bottom sheet opens, read its title and move to its first element, unless you already chose something. On by default.</string>
@@ -636,7 +626,7 @@
     <string name="perm_name_contacts">Caller names from contacts</string>
     <string name="perm_name_location">Say my location</string>
     <string name="perm_location_here_rationale">To say where you are, the app asks the phone for your location only when you ask it to. Turning a position into an address is done by the phone\'s own location service, which may contact its provider over the internet.</string>
-    <string name="nt_events_head">Calls, location and screen</string>
+    <string name="nt_events_head">Calls and location</string>
     <string name="rd_call_title">Announce incoming calls</string>
     <string name="rd_call_desc">When the phone rings, says who is calling. Needs permission to see phone state and call numbers. You are then asked, optionally, for permission to read contacts; if you allow it the contact\'s name is said instead of the number, otherwise only the number. Off by default.</string>
     <string name="rd_location_title">Allow saying my location</string>
@@ -777,7 +767,7 @@
         <item quantity="other">The menu already has %1$d functions, the maximum. Remove or replace one to add another.</item>
     </plurals>
     <plurals name="hp_menus_body">
-        <item quantity="one">The general menu has every function of the app, split into groups. The element menu is your own list of up to %1$d function: add, remove, reorder or replace them in Controls, Quick menus. Each menu opens with the gesture you assign to it.</item>
-        <item quantity="other">The general menu has every function of the app, split into groups. The element menu is your own list of up to %1$d functions: add, remove, reorder or replace them in Controls, Quick menus. Each menu opens with the gesture you assign to it.</item>
+        <item quantity="one">The general menu has every function of the app, split into groups. The element menu is your own list of up to %1$d function: add, remove, reorder or replace them in Controls, Quick menus. Each menu opens with the gesture you assign to it. While a menu is open, swipe right or left to move between items, or touch the screen and slide a finger to hear each item; double-tap to choose.</item>
+        <item quantity="other">The general menu has every function of the app, split into groups. The element menu is your own list of up to %1$d functions: add, remove, reorder or replace them in Controls, Quick menus. Each menu opens with the gesture you assign to it. While a menu is open, swipe right or left to move between items, or touch the screen and slide a finger to hear each item; double-tap to choose.</item>
     </plurals>
 </resources>

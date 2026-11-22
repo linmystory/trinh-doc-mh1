@@ -180,6 +180,10 @@ class MenuState private constructor(
     fun previous(): MenuState =
         MenuState(kind, items, if (index < 0) items.size - 1 else (index - 1 + items.size) % items.size, parent)
 
+    /** Chọn thẳng mục ở vị trí [position] (khi người dùng chạm vào hàng đó); giữ nguyên nếu [position] ngoài phạm vi hoặc đang chọn rồi. */
+    fun select(position: Int): MenuState =
+        if (position in items.indices && position != index) MenuState(kind, items, position, parent) else this
+
     /** Mở trình đơn con; [back] của nó trả về đúng trạng thái này (giữ nguyên mục đang chọn). */
     fun child(kind: MenuKind, items: List<MenuItem>): MenuState = MenuState(kind, items, -1, this)
 
@@ -189,9 +193,14 @@ class MenuState private constructor(
     /** "Tên, N mục." — luôn đọc như nhau, bất kể công tắc đọc hướng dẫn. */
     fun opening(): String = t(S.MENU_OPENING, kind.title, items.size)
 
+    /**
+     * Câu đọc cho mục đang chọn: "tên, i trên N" (bật gợi ý) hoặc chỉ tên (tắt gợi ý). Mục mở một nhóm/trình đơn con đọc thêm "nhóm"
+     * ([S.MENU_POSITION_GROUP]) để người dùng biết chạm hai lần sẽ mở một danh sách chứ không chạy chức năng.
+     */
     fun describeCurrent(hints: Boolean = true): String {
         val item = current ?: return opening()
-        return if (hints) t(S.MENU_POSITION, item.label, index + 1, items.size) else item.label
+        if (!hints) return item.label
+        return t(if (item.submenu != null) S.MENU_POSITION_GROUP else S.MENU_POSITION, item.label, index + 1, items.size)
     }
 
     companion object {

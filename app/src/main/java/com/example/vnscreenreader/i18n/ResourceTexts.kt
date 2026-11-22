@@ -142,6 +142,7 @@ class ResourceTexts(private val context: Context) : TextProvider {
         S.MENU_GLOBAL_TITLE -> R.string.menu_global_title
         S.MENU_LOCAL_TITLE -> R.string.menu_local_title
         S.MENU_POSITION -> R.string.menu_position
+        S.MENU_POSITION_GROUP -> R.string.menu_position_group
         S.MENU_ACTIVATE -> R.string.menu_activate
         S.MENU_LONG_CLICK -> R.string.menu_long_click
         S.MENU_COPY -> R.string.menu_copy
@@ -385,15 +386,6 @@ class ResourceTexts(private val context: Context) : TextProvider {
         S.MSG_CURSOR_END -> R.string.msg_cursor_end
         S.MSG_SELECTED_TO_START -> R.string.msg_selected_to_start
         S.MSG_SELECTED_TO_END -> R.string.msg_selected_to_end
-        S.GT_UNKNOWN -> R.string.gt_unknown
-        S.SEC_GESTTEST -> R.string.sec_gesttest
-        S.SEC_GESTTEST_SUM -> R.string.sec_gesttest_sum
-        S.GT_INTRO -> R.string.gt_intro
-        S.GT_START -> R.string.gt_start
-        S.GT_STOP -> R.string.gt_stop
-        S.GT_ACTIVE -> R.string.gt_active
-        S.GT_INACTIVE -> R.string.gt_inactive
-        S.GT_STOPPED -> R.string.gt_stopped
         S.MN_GESTURE_LINE -> R.string.mn_gesture_line
         S.MN_GESTURE_NONE -> R.string.mn_gesture_none
         S.OCR_UNSUPPORTED -> R.string.ocr_unsupported
@@ -618,8 +610,6 @@ class ResourceTexts(private val context: Context) : TextProvider {
         S.MSG_KEYS_RESUMED -> R.string.msg_keys_resumed
         S.MSG_VOLUME_APP_OFF -> R.string.msg_volume_app_off
         S.MSG_VOLUME_APP_ON -> R.string.msg_volume_app_on
-        S.RD_SCREEN_TITLE -> R.string.rd_screen_title
-        S.RD_SCREEN_DESC -> R.string.rd_screen_desc
         S.MSG_SCREEN_OFF -> R.string.msg_screen_off
         S.RD_DIALOG_FOCUS_TITLE -> R.string.rd_dialog_focus_title
         S.RD_DIALOG_FOCUS_DESC -> R.string.rd_dialog_focus_desc

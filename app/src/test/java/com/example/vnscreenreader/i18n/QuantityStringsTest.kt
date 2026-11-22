@@ -12,7 +12,7 @@ import org.junit.Test
  */
 class QuantityStringsTest {
 
-    private val notQuantities = setOf("menu_position", "gt_unknown", "status_time_hm", "status_time_exact", "status_battery",
+    private val notQuantities = setOf("menu_position", "menu_position_group", "status_time_hm", "status_time_exact", "status_battery",
         "sp_position", "rd_diag_lines", "log_summary", "msg_list_range", "msg_volume_pct", "msg_loc_here", "msg_loc_coords", "rd_touch_delay_value", "ag_row", "bk_saved", "bk_restored",
         "msg_rate_set",
         // Trình đơn phần tử tùy chỉnh: vị trí mới, vị trí vừa thêm, "Còn lại: N" và "Chức năng đang dùng: N trên M" (không danh từ sau số).

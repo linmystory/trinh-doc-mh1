@@ -11,13 +11,22 @@ class NotificationRulesTest {
     private val calm = NotificationContext(fingerDown = false, inCall = false, dnd = false, mediaPlaying = false)
 
     private fun decide(
+        screenOn: Boolean = true,
         master: Boolean = true,
         rules: QuietRules = noQuiet,
         ctx: NotificationContext = calm,
         text: String = "Zalo: Mẹ gọi",
         black: List<String> = emptyList(),
         white: List<String> = emptyList(),
-    ) = NotificationRules.shouldRead(master, rules, { ctx }, text, black, white)
+    ) = NotificationRules.shouldRead(
+        screenOn = screenOn,
+        masterOn = master,
+        quiet = rules,
+        context = { ctx },
+        text = text,
+        blacklist = black,
+        whitelist = white,
+    )
 
     @Test fun plainCaseFollowsMasterSwitch() {
         assertTrue(decide())
@@ -45,14 +54,53 @@ class NotificationRulesTest {
         assertTrue(decide(rules = quiet, ctx = NotificationContext(true, true, true, true), text = "Ngân hàng", white = white))
     }
 
+    /** Gọi thẳng [NotificationRules.shouldRead] với ngữ cảnh đo được, để đếm số lần hệ thống bị tra. */
+    private fun ask(screenOn: Boolean, master: Boolean, rules: QuietRules, context: () -> NotificationContext) =
+        NotificationRules.shouldRead(
+            screenOn = screenOn,
+            masterOn = master,
+            quiet = rules,
+            context = context,
+            text = "x",
+            blacklist = emptyList(),
+            whitelist = emptyList(),
+        )
+
     @Test fun contextIsOnlyQueriedWhenNeeded() {
         var calls = 0
         val lazy = { calls++; calm }
-        NotificationRules.shouldRead(true, noQuiet, lazy, "x", emptyList(), emptyList())
-        NotificationRules.shouldRead(false, quiet, lazy, "x", emptyList(), emptyList())
+        ask(screenOn = true, master = true, rules = noQuiet, context = lazy)
+        ask(screenOn = true, master = false, rules = quiet, context = lazy)
         assertEquals(0, calls)
-        NotificationRules.shouldRead(true, quiet, lazy, "x", emptyList(), emptyList())
+        ask(screenOn = true, master = true, rules = quiet, context = lazy)
         assertEquals(1, calls)
+    }
+
+    @Test fun screenOffReadsNothingEvenWhenEverythingElseSaysRead() {
+        assertTrue(decide(screenOn = true))
+        assertFalse(decide(screenOn = false))
+    }
+
+    @Test fun screenOffBeatsTheAlwaysReadList() {
+        // Luật cứng: ngay cả từ khóa "luôn đọc" (mã OTP, ngân hàng...) cũng im lặng khi màn hình tắt.
+        val white = KeywordList.parse("ngân hàng; mã otp")
+        assertTrue(decide(screenOn = true, master = false, text = "Ngan hang: ma OTP 123", white = white))
+        assertFalse(decide(screenOn = false, master = false, text = "Ngan hang: ma OTP 123", white = white))
+        assertFalse(decide(screenOn = false, master = true, text = "Ngan hang: ma OTP 123", white = white))
+    }
+
+    @Test fun screenOffDoesNotConsultTheSystemContext() {
+        var calls = 0
+        val lazy = { calls++; calm }
+        assertFalse(ask(screenOn = false, master = true, rules = quiet, context = lazy))
+        assertEquals(0, calls)
+    }
+
+    @Test fun toastsFollowTheirOwnSwitchAndAreSilentWhileTheScreenIsOff() {
+        assertTrue(NotificationRules.shouldReadToast(readToasts = true, screenOn = true))
+        assertFalse(NotificationRules.shouldReadToast(readToasts = false, screenOn = true))
+        assertFalse(NotificationRules.shouldReadToast(readToasts = true, screenOn = false))
+        assertFalse(NotificationRules.shouldReadToast(readToasts = false, screenOn = false))
     }
 
     @Test fun keywordParsingSplitsDedupesAndBounds() {

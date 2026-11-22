@@ -18,8 +18,8 @@ import com.example.vnscreenreader.core.SettingsRepository
 
 /**
  * Trang "Thông báo và sự kiện": công tắc chính, các hoàn cảnh yên lặng, hai danh sách từ khóa, rồi các sự kiện khác của máy
- * (người gọi đến, nói vị trí, bật/tắt màn hình; trước đây nằm ở màn Đọc). Quy tắc ưu tiên của thông báo nằm ở
- * [com.example.vnscreenreader.core.NotificationRules].
+ * (người gọi đến, nói vị trí; trước đây nằm ở màn Đọc). Báo bật/tắt màn hình không còn công tắc (luôn bật) và khi màn hình tắt thì
+ * không đọc thông báo nào. Quy tắc ưu tiên của thông báo nằm ở [com.example.vnscreenreader.core.NotificationRules].
  */
 @Composable
 fun NotificationScreen() {
@@ -27,7 +27,6 @@ fun NotificationScreen() {
     val settings = remember { SettingsRepository(context) }
     var callAnnounce by remember { mutableStateOf(settings.announceCalls) }
     var location by remember { mutableStateOf(settings.locationEnabled) }
-    var screenState by remember { mutableStateOf(settings.announceScreen) }
     // Chỉ xin quyền khi người dùng BẬT tính năng; từ chối thì công tắc giữ nguyên tắt.
     // Một công tắc "đọc người gọi": quyền cuộc gọi là bắt buộc; quyền danh bạ là tùy chọn (không cấp thì chỉ đọc số).
     val askContacts = rememberPermissionRequest(PermissionFeatures.contacts) { }
@@ -156,15 +155,6 @@ fun NotificationScreen() {
                     location = false
                     settings.locationEnabled = false
                 }
-            },
-        )
-        SettingSwitch(
-            title = stringResource(R.string.rd_screen_title),
-            description = stringResource(R.string.rd_screen_desc),
-            checked = screenState,
-            onCheckedChange = {
-                screenState = it
-                settings.announceScreen = it
             },
         )
     }

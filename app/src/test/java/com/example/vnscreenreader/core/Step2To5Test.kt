@@ -127,7 +127,7 @@ class ListRangeTest {
 
 class NewStep2To5SettingsTest {
     @Test fun backupSchemaKnowsTheNewSettings() {
-        for (key in listOf("focus_dialogs", "remember_focus", "announce_screen", "echo_chars", "echo_words", "speak_capitals", "speak_list_range")) {
+        for (key in listOf("focus_dialogs", "remember_focus", "echo_chars", "echo_words", "speak_capitals", "speak_list_range")) {
             assertEquals(key, 'b', BackupSchema.typeOf(BackupSchema.SETTINGS, key))
         }
         assertEquals('s', BackupSchema.typeOf(BackupSchema.SETTINGS, "volume_excluded_apps"))

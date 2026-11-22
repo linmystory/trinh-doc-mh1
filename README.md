@@ -14,13 +14,13 @@ Trình đọc màn hình (screen reader) cho Android dành cho người khiếm 
 - 45 cử chỉ chạm (1 ngón: vuốt 4 hướng, 12 cử chỉ hai bước, chạm hai lần, chạm hai lần và giữ; 2, 3, 4 ngón) và 8 cử chỉ phím cứng (phím âm lượng, nút tai nghe), gán chức năng tùy ý. Riêng bốn cú **hai ngón vuốt** do Android xử lý như ở các trình đọc màn hình lớn nên không gán lại được (xem bản 2.18.1).
 - **AI trên máy, không dùng mạng** (mô hình ML Kit đóng gói sẵn trong APK; ứng dụng không xin quyền INTERNET):
   - *Đọc chữ trên màn hình (OCR)* và *Mô tả hình ảnh của phần tử đang chọn* - gán vào cử chỉ bất kỳ trong thẻ "Cử chỉ".
-  - Đọc thông báo mới đã được tóm tắt (bỏ trùng, rút gọn, gộp khi dồn dập); bật/tắt ở thẻ cài đặt chung.
+  - Đọc thông báo mới đã được tóm tắt (bỏ trùng, rút gọn, gộp khi dồn dập); bật/tắt ở thẻ cài đặt chung. Không đọc khi màn hình tắt.
 - Phần tử không có nhãn (không cần chụp màn hình): nhãn ứng dụng → nhãn tự gán → chữ gộp của phần tử con →
   đoán theo tên view (báo "nhãn đoán") → "không có nhãn". Gắn nhãn tự gán bằng cử chỉ "Gắn nhãn cho phần tử đang chọn".
 - Chế độ phản hồi: chỉ rung / chỉ âm báo / cả hai / tắt, đổi tức thì, không ảnh hưởng giọng đọc.
 - Rung và âm báo (tổng hợp tại chỗ, không tệp âm thanh) khi chuyển phần tử, chạm đầu/cuối, nhấn.
 - Chọn công cụ TTS (engine) ngay trong cài đặt, có hiệu lực tức thì.
-- Cài đặt chia thành 6 menu và 17 trang (xem "Bản 2.21.0"), bố cục thích ứng: máy rộng hiện cây menu + nội dung song song; máy hẹp mở từng tầng, Back lùi từng tầng.
+- Cài đặt chia thành 6 menu và 16 trang (xem "Bản 2.21.0" và "Bản 2.23.0"), bố cục thích ứng: máy rộng hiện cây menu + nội dung song song; máy hẹp mở từng tầng, Back lùi từng tầng.
 - Hệ thống tiện ích: plugin dựng sẵn và script JSON nạp từ tệp.
 - Giao diện độ tương phản cao (đen/vàng).
 
@@ -29,7 +29,7 @@ Trình đọc màn hình (screen reader) cho Android dành cho người khiếm 
 |---|---|
 | Vuốt phải / trái | Phần tử kế tiếp / trước đó |
 | Chạm hai lần | Nhấn phần tử đang chọn |
-| Chạm hai lần và giữ | Nhấn giữ phần tử đang chọn (nếu hệ thống gửi cử chỉ này tới app; kiểm tra bằng **Kiểm tra cử chỉ**) |
+| Chạm hai lần và giữ | Nhấn giữ phần tử đang chọn (nếu hệ thống gửi cử chỉ này tới app; xem "Điều kiện hệ thống ảnh hưởng cử chỉ") |
 | Vuốt xuống / lên | Tiến / lùi theo **điều khiển đọc** đang chọn (ban đầu: từng phần tử, như vuốt phải / trái). Trong **ô nhập**: dời **con trỏ thật** theo đơn vị của điều khiển (ban đầu: từng ký tự) và đọc đoạn chữ vừa đi qua. Đang chọn thanh trượt thì xuống = giảm, lên = tăng (xem bản 2.19.0 và 2.20.0) |
 | Xuống rồi phải | **Trình đơn chung** |
 | Lên rồi phải | **Trình đơn của phần tử đang chọn** |
@@ -58,9 +58,66 @@ Trình đọc màn hình (screen reader) cho Android dành cho người khiếm 
 Cử chỉ mở trình đơn hiển thị ở trang **Trình đơn nhanh** trong ứng dụng (Cài đặt → Điều khiển), lấy từ cấu hình thật của bạn.
 - **Trình đơn chung** chứa **toàn bộ 65 chức năng** của ứng dụng và không sửa được, nên luôn đầy đủ. Cấp đầu có 7 mục dùng nhiều nhất (đọc từ đầu, đọc từ phần tử hiện tại, lặp lại, tìm chữ, đọc chữ trên màn hình (OCR), thông báo, màn hình chính), rồi 7 nhóm; mỗi nhóm là một trình đơn con, mục cuối là **Quay lại**: **Đọc** (10), **Duyệt nhanh** (12), **Cuộn và trang** (6), **Phần tử đang chọn** (11), **Chỉnh sửa văn bản** (9), **Hệ thống và phím** (9), **Công cụ và thông tin** (8).
 - **Trình đơn phần tử** là danh sách của riêng bạn, tối đa 12 chức năng. Mặc định giống các bản trước: nhấn, nhấn giữ, đơn vị kế/trước, đổi đơn vị đọc, sao chép đơn vị, sao chép chữ, đọc từng ký tự, gắn nhãn, mô tả hình ảnh, đọc chữ trong ảnh, thông tin kỹ thuật. Thêm, xóa, đổi thứ tự, thay chức năng và khôi phục mặc định ngay trong trang **Trình đơn nhanh**. Cuối trình đơn còn có các hành động tùy chỉnh của ứng dụng và, riêng ở **ô nhập liệu**, trình đơn con **Chỉnh sửa văn bản** (dán, cắt, chọn tất cả, đưa con trỏ về đầu/cuối, chọn đến đầu/cuối, xóa tất cả, khôi phục chữ vừa xóa, **Quay lại**); hai phần này không tính vào 12.
-- Khi trình đơn mở: vuốt phải/trái (hoặc xuống/lên) chọn mục, chạm hai lần thực hiện, quay lại để lùi một cấp. Mở trình đơn là vào thẳng
+- Khi trình đơn mở: vuốt phải/trái (hoặc xuống/lên) chọn mục, **hoặc chạm và lướt ngón tay trên màn hình** để nghe từng mục (trình đơn hiện thành danh sách phủ toàn màn hình, xem "Bản 2.23.0"), chạm hai lần thực hiện mục đang chọn, quay lại để lùi một cấp. Mở trình đơn là vào thẳng
   mục đầu tiên (không đọc tên và số mục trước); cử chỉ không dùng được trong trình đơn chỉ nhắc ngắn một lần.
-- Cài đặt **Đọc hướng dẫn thao tác** (Nội dung được đọc → Cách đọc phần tử, mặc định bật): tắt thì trình đơn chỉ đọc tên mục, không đọc vị trí và lời nhắc.
+- Cài đặt **Đọc hướng dẫn thao tác** (Nội dung được đọc → Cách đọc phần tử, mặc định bật): tắt thì trình đơn chỉ đọc tên mục, không đọc vị trí, chữ "nhóm", tên nhóm khi vào và lời nhắc.
+
+## Bản 2.24.0: báo bật/tắt màn hình luôn bật (bỏ công tắc), tắt màn hình thì không đọc thông báo, rà lỗi tồn đọng
+
+Yêu cầu (làm một lần trong một bản): (1) đưa phần báo bật/tắt màn hình vào mặc định và xóa công tắc cho bớt rườm rà; (2) khi tắt màn hình thì không đọc thông báo đến; (3) kiểm tra còn lỗi tồn đọng nào không rồi sửa. **Chưa thử được trên máy thật**: thứ tự broadcast bật/tắt màn hình so với các sự kiện hệ thống, việc hỏi trạng thái nguồn của máy và phát giọng không chạy được trong môi trường dựng của mình. Phần giao diện (`ui/NotificationScreen.kt`) chỉ là xóa một khối công tắc, nhưng Compose vẫn không biên dịch được ở đây nên **CI là lần biên dịch đầu tiên**.
+
+- **Luôn bật, không còn công tắc.**
+  - Bật màn hình: đọc giờ hiện tại ("Bây giờ là 15 giờ 28 phút"). Tắt màn hình: "Đã tắt màn hình". Giống bản 2.20.6, chỉ khác là không ai phải bật.
+  - Mặc định trước đây là TẮT, nên **người đang dùng từ trước sẽ nghe lời báo này ngay sau khi cập nhật**, kể cả khi trước đó đã để tắt.
+  - Đã xóa: công tắc ở trang Thông báo và sự kiện, `SettingsRepository.announceScreen`, hai chuỗi `rd_screen_title`/`rd_screen_desc` (cả 8 ngôn ngữ) và mục trong chỉ mục tìm kiếm. Tiêu đề nhóm ở trang đó nay là "Cuộc gọi và vị trí"; tóm tắt của menu bỏ "bật tắt màn hình".
+  - Khóa `announce_screen` còn nằm lại trong cài đặt đã lưu trên máy: vô hại, không còn mã nào đọc. Tệp sao lưu của bản cũ có khóa này thì khi nhập bị bỏ qua **lặng lẽ** (`BackupSchema.isRetired`, không tính vào số mục "bị bỏ qua"); tệp sao lưu mới không còn ghi nó.
+- **Đang đổ chuông hoặc trong cuộc gọi: im lặng cả hai chiều (đổi).** Trước đây "Đã tắt màn hình" vẫn được đọc trong cuộc gọi vì công tắc mặc định tắt. Nay tính năng luôn bật mà áp điện thoại lên tai làm cảm biến tiệm cận tắt màn hình (rời tai thì bật lại), nên nếu giữ nguyên thì mỗi cuộc gọi đều nghe "Đã tắt màn hình" ngay bên tai. Cách nhận biết giống cũ: chế độ âm thanh khác bình thường (đổ chuông, cuộc gọi, gọi qua mạng). Nếu bạn vẫn muốn nghe lời này trong cuộc gọi, báo lại, chỉ đổi một chỗ.
+- **Tắt màn hình thì không đọc thông báo.**
+  - Hệ thống gửi sự kiện thông báo **ngay lúc nó được đăng**, kể cả khi màn hình đang tắt, nên trước đây thông báo đến lúc tắt màn hình (đang nghe nhạc, bỏ túi) vẫn bị đọc to. `NotificationRules.shouldRead` nay có tham số `screenOn` và kiểm tra nó **trước mọi luật khác**: màn hình tắt thì không đọc, kể cả thông báo chứa từ khóa "luôn đọc" (mã OTP, ngân hàng...). Khi màn hình tắt, hệ thống cũng không bị tra ngữ cảnh (đang gọi, không làm phiền...).
+  - Thông báo bỏ lỡ lúc tắt màn hình **không được đọc bù** khi bật lại, và cũng không ghi vào bộ nhớ chống trùng, nên thông báo gửi lại sau đó vẫn được đọc.
+  - **Toast** cũng vậy (`NotificationRules.shouldReadToast`: công tắc đọc thông báo nổi VÀ màn hình bật).
+  - Trạng thái màn hình lấy từ `PowerManager.isInteractive` ngay lúc xử lý sự kiện, không dựa vào cờ do broadcast đặt nên không lệch nếu lỡ một broadcast. Màn hình khóa nhưng đang sáng vẫn là "bật", nên vẫn đọc thông báo. Không hỏi được hệ thống thì coi là bật (thà đọc thừa còn hơn im nhầm với người không nhìn thấy màn hình).
+  - **Không đổi:** lời báo người gọi (đi đường riêng, bằng broadcast trạng thái điện thoại) vẫn đọc khi màn hình tắt; lời "ứng dụng chủ động báo" (`TYPE_ANNOUNCEMENT`) và vùng thông báo trực tiếp không bị chặn.
+  - **Quyết định cần bạn xem:** luật cứng này ghi đè cả danh sách "Từ khóa luôn đọc". Nếu bạn muốn từ khóa luôn đọc vẫn được đọc lúc tắt màn hình (ví dụ mã OTP khi điện thoại trong túi), báo lại; chỉ đổi một dòng.
+- **Lỗi tồn đọng đã sửa** (tìm trong lúc làm):
+  1. **Lời đọc giờ bị cắt giữa chừng** (giới hạn đã biết từ 2.20.6): màn hình khóa hiện ra ngay sau khi bật màn hình và đọc tiêu đề cửa sổ cùng tiêu điểm đầu tiên theo cách ngắt lời, nên câu giờ chỉ còn vài âm đầu. Nay `core/SpeechShield.kt` (thuần Kotlin, có kiểm thử) giữ câu vừa báo (cả giờ lẫn "Đã tắt màn hình") tối đa 6 giây: trong lúc đó lời **tự động** (tiêu đề cửa sổ, tiêu điểm do hệ thống tự đặt) xếp hàng sau thay vì ngắt. Cử chỉ, chạm và phím của bạn không đi qua bộ này và luôn ngắt ngay. Hết 6 giây, hoặc khi giọng đã đọc xong, mọi thứ như cũ.
+  2. **Mở trình đơn rồi tắt màn hình:** trước đây trình đơn (và lớp danh sách chạm được của 2.23.0) vẫn mở khi bật lại, nằm trên màn hình khóa, rồi 30 giây sau tự đóng kèm lời "Đã đóng trình đơn" giữa lúc đang dùng. Nay đổi trạng thái màn hình (tắt hoặc bật) đóng trình đơn **im lặng**: hủy hẹn giờ đóng và gỡ lớp phủ.
+  3. **Việc chờ độ trễ chạm** (`hoverJob`) không bị hủy khi màn hình đổi trạng thái, nên một lần chạm sát lúc tắt có thể đọc sau khi đã tắt. Nay hủy cùng với việc chuyển tiêu điểm và việc AI.
+  4. **Tiêu đề cửa sổ và việc hẹn đọc phần tử đầu/phần tử nhớ lúc màn hình tắt:** vẫn cập nhật trạng thái như cũ nhưng không đọc và không hẹn đọc, để không nói chồng lên "Đã tắt màn hình".
+  5. **Tệp sao lưu cũ có khóa đã bỏ** không còn làm tăng số mục "bị bỏ qua" (xem trên).
+  6. **Nhật ký chẩn đoán** có hai dòng mới: `SCREEN on|off said=true|false inCall=true|false menuClosed=true|false` và `NOTIF screenOn=true|false allowed=true|false` (chỉ hai giá trị đúng/sai, **không ghi nội dung hay tên ứng dụng của thông báo**).
+- **Chuỗi dịch:** xóa 2 chuỗi, sửa 5 chuỗi (`sec_notif_sum`, `nt_events_head`, `rd_notif_desc`, `rd_toast_desc`, `nt_white_desc`: nay nói rõ "không đọc khi màn hình tắt"); cả 8 ngôn ngữ, còn 728 mục (714 chuỗi và 14 `<plurals>`). **Bản dịch ngoài tiếng Việt và tiếng Anh do máy dịch**, chưa người bản ngữ duyệt. Chuỗi sinh tự động vẫn sửa trong `tools/i18n/table_*.py` rồi chạy `python3 -I tools/i18n/gen.py .`.
+- **Kiểm thử:** 825 bài JVM đạt (814 trước đó). `ScreenAnnouncementTest` viết lại (bỏ bài của công tắc, thêm "im lặng cả hai chiều khi đổ chuông hoặc trong cuộc gọi"); `NotificationRulesTest` thêm 4 bài (màn hình tắt chặn mọi thứ kể cả "luôn đọc"; không tra ngữ cảnh hệ thống khi màn hình tắt; Toast); `SpeechShieldTest` 6 bài mới (đúng ranh giới thời gian, không bảo vệ khi không đang đọc, bảo vệ lại thì tính lại từ mốc mới); `SettingsBackupTest` thêm 3 bài (khóa cũ bỏ lặng lẽ, dòng hỏng vẫn được đếm). Việc nghe broadcast, hỏi `PowerManager`, phát giọng và lớp phủ **không kiểm thử được ngoài máy thật**.
+- **Cách thử trên máy:** (1) bấm nút nguồn: nghe "Đã tắt màn hình"; bấm lại: nghe giờ đầy đủ rồi mới tới tên màn hình khóa. (2) Tắt màn hình, nhờ người gửi một tin: không nghe gì; bật màn hình rồi gửi tiếp: nghe như thường. (3) Mở trình đơn, tắt rồi bật màn hình: trình đơn đã đóng, không có lời nào. (4) Gọi điện, áp lên tai: không nghe "Đã tắt màn hình". Có gì lạ thì bật Nhật ký chẩn đoán, làm lại đúng thao tác đó, bấm **Sao chép nhật ký** và gửi các dòng `SCREEN`, `NOTIF`, `WINDOW`.
+- **Giới hạn đã biết:** (1) thứ tự sự kiện lúc bật màn hình do hệ thống quyết định; nếu câu giờ vẫn bị cắt thì báo kèm tên máy, kiểu khóa màn hình và dòng `SCREEN`. (2) Nếu có máy nào báo sai "không tương tác" trong khi bạn đang dùng, tiêu đề cửa sổ và thông báo sẽ im; chưa gặp và không kiểm chứng được. (3) Khi trình đơn đang mở, chạm hai ngón (`STOP_SPEECH`) vừa dừng đọc vừa đóng trình đơn; giữ nguyên vì có thể là chủ ý.
+
+## Bản 2.23.0: trình đơn của dịch vụ chạm và lướt ngón tay được, ngôn ngữ giọng nói thành danh sách, bỏ "Kiểm tra cử chỉ"
+
+Yêu cầu (làm một lần trong một bản): (1) ở ngoài màn hình mọi mục đọc rất tốt, nhưng trong trình đơn của dịch vụ vuốt qua lại thì đọc còn chạm và rê ngón tay thì **im lặng**; (2) các ngôn ngữ trong Công cụ giọng nói bày giữa màn hình quá rườm rà, nên gom thành danh sách trong một menu con; (3) bỏ phần Kiểm tra cử chỉ. Kèm theo vài cải tiến nhật ký chẩn đoán và lời đọc của nhóm, rút ra sau khi đọc nhật ký bạn gửi (nhật ký bị khung chat cắt ở khoảng 20.000 ký tự, trong phần nhìn thấy không có lỗi nào của phần đọc ở ngoài màn hình).
+
+**Chưa thử được trên máy thật.** Lớp danh sách phủ màn hình (`service/MenuOverlay.kt`) và trang Giọng nói (`ui/VoiceScreen.kt`, `ui/SettingsComponents.kt`) không chạy được trong môi trường dựng của mình. Điều chưa biết chắc: trên máy của bạn hệ thống có chuyển sự kiện lướt ngón tay vào lớp phủ đúng như tài liệu hay không. Cách kiểm tra: bật **Nhật ký chẩn đoán**, mở trình đơn rồi chạm và lướt ngón tay; dòng `MENU_OVERLAY shown rows=N` cho biết lớp đã hiện, dòng `MENU touch row=i/N` cho biết mỗi lần chạm tới đúng hàng. Có dòng `shown` mà không có dòng `touch` nghĩa là hệ thống không chuyển sự kiện vào lớp: gửi nhật ký để sửa. Nếu CI báo lỗi ở `ui/`, gửi nội dung lỗi.
+
+- **Nguyên nhân im lặng khi chạm.** Khi trình đơn mở, nó chỉ là trạng thái trong bộ nhớ của dịch vụ, không có gì trên màn hình để chạm vào; còn sự kiện lướt ngón tay của ứng dụng nằm bên dưới thì cố ý bị bỏ qua lúc trình đơn đang mở (để chạm nhầm không làm đổi mục chọn). Kết quả: vuốt thì đọc, chạm thì im.
+- **Cách sửa: trình đơn cũng là một danh sách thật trên màn hình.** Khi trình đơn mở, dịch vụ vẽ nó thành danh sách phủ toàn màn hình (cửa sổ `TYPE_ACCESSIBILITY_OVERLAY` nhận chạm; nền gần đen, chữ trắng, mục đang chọn tô vàng chữ đen, cùng bảng màu tương phản cao của màn hình cài đặt):
+  - Chạm hoặc lướt ngón tay tới hàng nào thì chọn và đọc hàng đó, đúng câu khi vuốt ("tên, i trên N"). Rê trong cùng một hàng không đọc lặp; nhấc ngón rồi chạm lại thì đọc lại.
+  - Chạm hai lần thực hiện **mục đang chọn** (mục vừa nghe). Vuốt phải/trái/xuống/lên, quay lại, đóng trình đơn giữ nguyên như trước; vuốt chuyển mục thì hàng được tô theo.
+  - Các hàng chia đều toàn bộ chiều cao màn hình, mỗi hàng cao tối thiểu 56 dp. Trình đơn dài hơn số hàng vừa màn hình (trình đơn phần tử có thể tới khoảng 33 mục) thì hiện một "cửa sổ" hàng và tự cuộn theo mục đang chọn.
+  - Lớp được gỡ **trước** khi chạy chức năng: dịch vụ chờ luồng chính gỡ xong (tối đa 250 ms) rồi thêm khoảng 48 ms cho hệ thống cập nhật danh sách cửa sổ nhận chạm. Lý do: nhiều chức năng (nhấn bằng toạ độ, nhấn giữ, cuộn, chuyển trang) phát cử chỉ chạm giả lập; nếu lớp còn nằm trên cùng thì chạm đó rơi vào lớp chứ không tới ứng dụng bên dưới. Chụp màn hình cho OCR và mô tả hình ảnh cũng chỉ xảy ra sau khi lớp đã gỡ.
+  - Sự kiện "đổi cửa sổ" do chính lớp này tạo ra không bị coi là màn hình mới nên trình đơn không tự đóng khi vừa mở.
+  - Hệ thống từ chối thêm cửa sổ thì trình đơn quay về hành vi cũ, nhưng chạm vào màn hình sẽ **đọc lại mục đang chọn** (tối đa một lần mỗi 1,5 giây) thay vì im lặng.
+  - Mã: `menu/MenuTouchMap.kt` (hình học thuần Kotlin, có kiểm thử), `MenuState.select(position)` (chọn thẳng một mục, giữ nguyên danh sách, trình đơn cha và thứ tự), `service/MenuOverlay.kt` (cửa sổ và vẽ), `ReaderSession` (nối chạm với trình đơn).
+- **Báo "nhóm".** Khi bật **Đọc hướng dẫn thao tác**, mục mở một nhóm được đọc "Đọc, nhóm, 1 trên 14" (trước chỉ "Đọc, 1 trên 14"), và khi vào nhóm dịch vụ đọc tên nhóm cùng số mục ("Duyệt nhanh, 12 mục.") trước mục đầu để biết mình vừa vào đâu. Tắt gợi ý thì chỉ đọc tên mục như trước.
+- **Ngôn ngữ giọng nói thành danh sách.** Trang **Giọng nói (TTS)**: mỗi lựa chọn ngôn ngữ chỉ còn tiêu đề, mô tả và **một nút** ghi lựa chọn hiện tại (đọc "Ngôn ngữ của công cụ thứ nhất: Tiếng Việt"). Chạm vào mở hộp thoại danh sách cuộn được, mỗi hàng là một nút chọn đọc "tên, đang chọn/không chọn", chọn xong hộp thoại tự đóng, có nút Hủy. Áp dụng cho ngôn ngữ công cụ thứ nhất (có mục "Theo ngôn ngữ ứng dụng", 12 ngôn ngữ) và ngôn ngữ công cụ thứ hai. Thành phần mới `SettingPicker` (`ui/SettingsComponents.kt`) dành cho cài đặt có nhiều lựa chọn; `SettingChoice` (dàn mọi lựa chọn ra màn hình) vẫn dùng cho cài đặt chỉ có vài mức.
+- **Bỏ "Kiểm tra cử chỉ".** Đã bỏ trang cài đặt, các điểm móc trong dịch vụ, 9 chuỗi dịch (cả 8 ngôn ngữ) và 2 bài kiểm thử; cài đặt còn **16 trang** (6 menu). Tệp `core/GestureTestMode.kt` và `ui/GestureTestScreen.kt` còn lại như tệp chỉ có chú thích (bản tải lên không xóa được tệp cũ). Trang đã lưu là "Kiểm tra cử chỉ" tự chuyển sang trang **Cử chỉ tùy chỉnh**. Muốn biết cử chỉ nào thật sự tới được ứng dụng: bật Nhật ký chẩn đoán rồi làm thử cử chỉ, mỗi cử chỉ tới dịch vụ để lại một dòng `GESTURE`.
+- **Nhật ký chẩn đoán:**
+  - Nút **Sao chép nhật ký** nay chép tối đa 18.000 ký tự cuối (trước đó 100.000): khung chat chỉ nhận khoảng 20.000 ký tự khi dán và khi quá dài thì giữ phần ĐẦU, bỏ phần CUỐI, tức là bỏ đúng đoạn vừa thao tác. Muốn gửi đúng đoạn cần xem: bấm **Xóa nhật ký**, làm thao tác đó rồi bấm **Sao chép nhật ký** ngay.
+  - Dòng `START` ghi thêm phiên bản ứng dụng.
+  - Trình đơn: `MENU open/enter/back/run/close/timeout/closed by window change`, `MENU touch row=i/N` (chạm chọn hàng), `MENU_OVERLAY shown/attach failed`; chỉnh trình đơn phần tử: `MENU_EDIT <thao tác> count=N`. Chỉ ghi tên thao tác, vị trí và số lượng, **không ghi nhãn chữ** của phần tử.
+  - Nhánh dự phòng của tự cuộn tìm phần tử nay luôn ghi dòng kết cục `AUTOSCROLL outcome=...`, kể cả khi không có khung nào để cuộn (`NO_TARGET`, `EXHAUSTED`, `NO_SWIPE_LINE`, `SWIPE_FAILED`, `SWIPE_UNCHANGED`); trước đây các trường hợp này không để lại dòng nào nên nhật ký chỉ thấy dòng `start` rồi im.
+- **Trợ giúp:** mục Trình đơn nói thêm cách dùng khi trình đơn đang mở (vuốt, chạm và lướt ngón tay, chạm hai lần).
+- **Chuỗi dịch:** thêm 1 chuỗi (`menu_position_group`: "tên, nhóm, i trên N"), sửa 1 chuỗi có số lượng (`hp_menus_body`, nay thêm câu hướng dẫn), xóa 9 chuỗi của "Kiểm tra cử chỉ"; cả 8 ngôn ngữ. `menu_position_group` là vị trí chứ không phải số lượng nên nằm trong danh sách ngoại lệ của `QuantityStringsTest`. **Bản dịch ngoài tiếng Việt và tiếng Anh do máy dịch**, chưa người bản ngữ duyệt.
+- **Kiểm thử:** 814 bài JVM đạt (16 bài mới, trừ 2 bài của tính năng đã bỏ). `MenuTouchMapTest` (8 bài): hàng chia đều toàn bộ chiều cao kể cả phần dư, chạm ngoài vùng hoặc toạ độ không hợp lệ không ra hàng nào, trình đơn dài cuộn theo mục chọn, hàng cao hơn cả màn hình vẫn hiện một hàng, mép các hàng liền nhau, và với mọi cỡ trình đơn và màn hình thì mục đang chọn luôn nằm trong cửa sổ. `MenuTouchSelectTest` (8 bài): chọn thẳng một mục, giữ trình đơn cha để Quay lại vẫn đúng, bỏ qua vị trí không hợp lệ, chạm rồi vuốt tiếp đi từ mục vừa chạm, chữ "nhóm" đúng với đúng 7 nhóm của trình đơn chung thật, câu vào nhóm có tên và số mục. Hai bài của tính năng đã bỏ được xóa khỏi `GestureFixesTest` và `SubmenuAndEditTest`; `SettingsMenuTest` cập nhật thành 16 trang. Phần mã dịch vụ (`MenuOverlay`, nối chạm trong `ReaderSession`) được biên dịch cùng bộ kiểm tra nhưng **không chạy được** trong JVM vì cần Android thật. `SettingPicker` và hai chỗ gọi trong `VoiceScreen` được kiểm tra kiểu với bộ khai báo thay thế của Compose, **chưa biên dịch bằng Compose thật**.
+- **Giới hạn đã biết:** (1) chưa biết hệ thống có đưa sự kiện lướt ngón tay vào lớp danh sách trên máy bạn không (xem cách kiểm tra ở trên); (2) trong lúc trình đơn mở, lớp phủ chặn chạm vào ứng dụng bên dưới (có chủ ý, vì chạm lúc này là để nghe trình đơn); trình đơn tự đóng sau 30 giây không thao tác; (3) hàng chữ dài bị cắt bằng dấu "…" trên màn hình nhưng vẫn được đọc đủ; (4) lớp phủ này chỉ hữu ích khi chế độ khám phá bằng cảm ứng đang bật, là điều kiện sẵn có của dịch vụ.
 
 ## Bản 2.22.0: trình đơn chung đủ mọi chức năng, trình đơn phần tử tự sắp xếp
 
@@ -89,11 +146,11 @@ Yêu cầu: trình đơn chung là nơi chứa **tất cả** chức năng của
 
 Yêu cầu: gom các tính năng giống nhau vào cùng một menu cho gọn (phương án A, làm một lần trong một bản) và đổi tiêu đề mục cử chỉ thành "Cử chỉ tùy chỉnh". **Chưa thử được trên máy thật.** Phần giao diện (Compose) không biên dịch được trong môi trường dựng của mình nên **CI là lần biên dịch đầu tiên** của bản này.
 
-- **Cấu trúc: 6 menu, 17 trang** (trước đó là danh sách phẳng 15 mục, trong đó "Chi tiết đọc nội dung" là một trang cuộn dài 21 công tắc):
+- **Cấu trúc: 6 menu, 17 trang** (nay còn 16 trang vì trang "Kiểm tra cử chỉ" đã bỏ ở bản 2.23.0; trước đó là danh sách phẳng 15 mục, trong đó "Chi tiết đọc nội dung" là một trang cuộn dài 21 công tắc):
   - **Bắt đầu**: Trạng thái và quyền.
   - **Giọng nói và âm thanh**: Giọng nói (TTS); Âm báo và rung.
   - **Nội dung được đọc**: Cách đọc phần tử; Tiêu điểm; Thông báo và sự kiện.
-  - **Điều khiển**: Cử chỉ tùy chỉnh; Cử chỉ theo ứng dụng; Kiểm tra cử chỉ; Trình đơn nhanh; Chạm và gõ phím; Phím cứng và nút tai nghe.
+  - **Điều khiển**: Cử chỉ tùy chỉnh; Cử chỉ theo ứng dụng; Kiểm tra cử chỉ (đã bỏ ở bản 2.23.0); Trình đơn nhanh; Chạm và gõ phím; Phím cứng và nút tai nghe.
   - **Công cụ**: Nhãn của tôi; Tiện ích và kịch bản; Sao lưu và khôi phục; Nhật ký và hỗ trợ.
   - **Trợ giúp**: Hướng dẫn và giới hạn.
 - **Điều hướng (máy hẹp):** danh sách chính chỉ có 6 menu; mở menu ra danh sách trang; mở trang ra toàn màn hình. Nút Back của hệ thống và hàng "Quay lại" ở đầu trang lùi **từng tầng** (trang → menu → danh sách chính; ở danh sách chính mới thoát ứng dụng). Hai menu chỉ có một trang (Bắt đầu, Trợ giúp) mở **thẳng** trang, không qua danh sách một mục. **Máy rộng:** cột trái hiện cả cây (tên menu làm tiêu đề, dưới là các trang của nó), cột phải là trang đang chọn nên không cần Back.
@@ -102,7 +159,7 @@ Yêu cầu: gom các tính năng giống nhau vào cùng một menu cho gọn (p
 - **Cài đặt cũ nay nằm ở đâu:**
   - Biểu tượng cảm xúc, ảnh không nhãn (OCR), phạm vi danh sách, đọc hướng dẫn thao tác, gợi ý thao tác, mức chi tiết (trước ở Đọc) → Nội dung được đọc → **Cách đọc phần tử**.
   - Tiêu điểm chi tiết, hộp thoại, nhớ vị trí (trước ở Đọc) → Nội dung được đọc → **Tiêu điểm**.
-  - Đọc người gọi đến, nói vị trí, báo giờ khi bật/tắt màn hình (trước ở Đọc) → Nội dung được đọc → **Thông báo và sự kiện**, cùng trang với đọc thông báo.
+  - Đọc người gọi đến, nói vị trí (trước ở Đọc) → Nội dung được đọc → **Thông báo và sự kiện**, cùng trang với đọc thông báo. Báo giờ khi bật màn hình / báo khi tắt màn hình từng nằm cùng chỗ; từ bản 2.24.0 nó luôn bật và không còn công tắc.
   - Độ trễ chạm, nhập phím bằng nhấc tay, thanh trượt chỉnh bằng cử chỉ cuộn, đọc ký tự và từ khi gõ, chữ hoa, đọc mật khẩu (trước ở Đọc) → Điều khiển → **Chạm và gõ phím**.
   - Phím tắt bàn phím ngoài, phím âm lượng, nút tai nghe (trước ở Đọc) → Điều khiển → **Phím cứng và nút tai nghe**.
   - Nhật ký chẩn đoán (trước nằm lẫn trong trang Đọc) → Công cụ → **Nhật ký và hỗ trợ**, cùng trang với nhật ký lỗi.
@@ -127,6 +184,8 @@ Yêu cầu: vuốt qua lại đã đọc đủ, nhưng khi **lướt ngón tay t
 - Giới hạn đã biết: mục nằm trong view bị ứng dụng đánh dấu "không quan trọng với trợ năng" vẫn cần "Tiêu điểm chi tiết"; ứng dụng tự vẽ không qua cây trợ năng (game, canvas, ảnh chứa chữ) không có phần tử để đọc, dùng OCR; khối đọc không nhãn mà không có chữ nào bên dưới vẫn im khi chạm. Nếu vẫn còn mục không đọc khi lướt, gửi tên ứng dụng, màn hình đang dùng, tốc độ lướt (chậm hay nhanh) và các dòng `HOVER`/`COLLECT` trong nhật ký (Cài đặt → Đọc → "Sao chép nhật ký").
 
 ## Bản 2.20.6: bật màn hình thì đọc giờ, tắt màn hình vẫn báo "Đã tắt màn hình"
+
+> **Đã đổi ở bản 2.24.0:** công tắc dưới đây đã bỏ và tính năng luôn bật; trong cuộc gọi không đọc cả hai chiều; giới hạn "lời đọc giờ bị cắt" đã có biện pháp riêng. Xem "Bản 2.24.0". Phần còn lại của mục này giữ làm lịch sử.
 
 Công tắc **Báo giờ khi bật màn hình, báo khi tắt màn hình** (Cài đặt → Đọc; khóa lưu giữ nguyên là `announce_screen`, nên ai đã bật rồi thì không phải bật lại; mặc định vẫn tắt):
 
@@ -398,7 +457,7 @@ Chưa làm: bấm đúp/ba phím âm lượng, phím âm lượng điều khiể
 ## Bản 2.13.0: an toàn phím, màn hình tắt/bật, hộp thoại và nhớ vị trí, tùy chọn gõ phím, phạm vi danh sách
 
 - **Lối thoát cho phím cứng/phím âm lượng**: Alt+P (hoặc cử chỉ "Tạm dừng/tiếp tục phím") tạm dừng cả hai, không lưu (khởi động lại dịch vụ là hoạt động lại). Alt+V (hoặc cử chỉ "Tắt/bật phím âm lượng cho ứng dụng này") ghi ứng dụng đang mở vào danh sách không dùng phím âm lượng (`volume_excluded_apps`). Hai hành động mới đã có trong danh sách cử chỉ, chưa gán mặc định.
-- **Màn hình tắt/bật** (`ACTION_SCREEN_OFF/ON`): luôn dừng giọng đọc, bỏ trạng thái phím đang giữ dở, hủy việc AI/chuyển tiêu điểm đang chờ; công tắc "Báo giờ khi bật màn hình, báo khi tắt màn hình" (mặc định tắt) báo thêm bằng lời: tắt màn hình đọc "Đã tắt màn hình", bật màn hình đọc giờ hiện tại (xem bản 2.20.6).
+- **Màn hình tắt/bật** (`ACTION_SCREEN_OFF/ON`): luôn dừng giọng đọc, bỏ trạng thái phím đang giữ dở, hủy việc AI/chuyển tiêu điểm đang chờ; luôn báo thêm bằng lời (từ bản 2.24.0 không còn công tắc): tắt màn hình đọc "Đã tắt màn hình", bật màn hình đọc giờ hiện tại, im lặng cả hai chiều khi đang đổ chuông hoặc trong cuộc gọi, và đóng trình đơn đang mở một cách im lặng (xem bản 2.20.6 và 2.24.0).
 - **Tự chuyển tiêu điểm vào hộp thoại** (mặc định bật): cửa sổ có lớp `*Dialog*`/`*BottomSheet*` mở ra thì đọc tiêu đề rồi chọn phần tử đầu tiên, nhưng chỉ khi người dùng chưa tự chọn gì và không đang trong trình đơn.
 - **Nhớ vị trí theo cửa sổ** (mặc định tắt): nhớ phần tử đang chọn khi rời cửa sổ (khóa = gói + tiêu đề, tối đa 8 cửa sổ) và tìm lại bằng vết (mã/nhãn) khi quay về.
 - **Gõ phím**: đọc từng ký tự (mặc định bật, như cũ), đọc từ vừa gõ xong sau dấu cách/dấu câu (mặc định tắt), đọc "Chữ hoa" trước chữ viết hoa (mặc định tắt). Ô mật khẩu không bao giờ đọc từ hay chữ hoa. Chưa làm: đọc từ ví dụ cho chữ cái (cần bảng theo từng ngôn ngữ).
@@ -412,7 +471,7 @@ Các lỗi tìm thấy ở v2.11.0 và cách xử lý:
 
 - **Hiện/ẩn bàn phím không còn xóa vị trí đang chọn**: `TYPE_WINDOW_STATE_CHANGED` của cửa sổ bàn phím (IME) hoặc lớp phủ trợ năng chỉ làm mới bộ đệm, không `reset()`, không đóng trình đơn, không ngắt lời đang đọc (`ReaderSession.handleWindowState`). Cửa sổ ứng dụng, hộp thoại, thanh thông báo vẫn đặt lại như trước.
 - **Đọc vùng cập nhật trực tiếp (`liveRegion`), khung mới (`paneTitle`) và `announceForAccessibility`**: thêm `typeAnnouncement` và xử lý `TYPE_WINDOW_CONTENT_CHANGED` qua kênh riêng (`contentEvents`, tối đa 1 sự kiện/80 ms, chỉ các kiểu đổi chữ/mô tả/cây con/khung). Assertive ngắt lời, còn lại xếp hàng; `LiveRegionGate` chống đọc lặp. Các màn hình của chính ứng dụng dùng `liveRegion` nay được đọc.
-- **Toast** đọc theo công tắc riêng (Đọc thông báo → Đọc thông báo nổi, mặc định bật), không phụ thuộc "đọc thông báo", không gộp "N thông báo mới", kể cả Toast của chính ứng dụng.
+- **Toast** đọc theo công tắc riêng (Đọc thông báo → Đọc thông báo nổi, mặc định bật), không phụ thuộc "đọc thông báo", không gộp "N thông báo mới", kể cả Toast của chính ứng dụng; không đọc khi màn hình tắt (từ bản 2.24.0).
 - **Sự kiện bổ sung**: `typeViewTextSelectionChanged` (đọc ký tự vừa đi qua / đoạn được chọn / dòng khi nhảy xa; `SelectionSpeech`; bỏ qua tiếng vọng của chính lệnh đặt con trỏ), `typeViewSelected` (chỉ tab), `typeViewLongClicked` (bỏ tiếng vọng của lệnh nhấn giữ của trình đọc), `typeWindowsChanged` (chỉ đánh dấu bộ đệm cũ).
 - **Giọng đọc không còn câm vĩnh viễn**: engine đã chọn hỏng/bị gỡ → sau 5 lần thử lại tự rơi về engine mặc định và báo một lần (không đổi lựa chọn trong cài đặt); engine mặc định hỏng thì thử lại mỗi 60 giây. Lỗi dịch vụ TTS (`ERROR_SERVICE`, `ERROR_NOT_INSTALLED_YET`) hoặc 3 lần `speak()` trả `ERROR` liên tiếp → dựng lại engine (tối đa 1 lần/5 giây) và đọc lại câu đang dở.
 - **`runSafely`** nay bắt mọi `Exception`, `StackOverflowError`, `OutOfMemoryError`; scope có `CoroutineExceptionHandler` nên lỗi lạ chỉ được ghi nhật ký, không làm sập tiến trình hay chết vòng xử lý. Hàng đợi sự kiện chính 32 → 128 để rê ngón nhanh không làm rơi sự kiện nhấc tay.
@@ -440,7 +499,7 @@ Chưa build/chạy test trong môi trường soạn thảo: chạy `./gradlew :a
 - Không làm, có chủ đích: cử chỉ vân tay (phím cứng và phím âm lượng đã làm từ 2.12.0, xem mục đó) (ít máy hỗ trợ, thêm quyền), vùng chạm đi xuyên (cấu hình sai có thể khóa vùng chạm). Mỗi mục cần thử trên máy thật trước khi bật.
 - Nhận diện nội dung web theo khả năng (có hành động duyệt phần tử HTML) thay vì chỉ theo tên lớp WebView, để giả lập chạm cũng áp dụng cho trình duyệt không dùng WebView. - **Tìm cài đặt** (ô tìm ở đầu màn hình chính): không phân biệt hoa thường và dấu ("thong bao" ra "Đọc thông báo"); tên cài đặt xếp trước mô tả. Chỉ mục nằm ở `SettingsIndex.kt` (tạo từ các màn hình); thêm cài đặt mới thì nhớ thêm chuỗi vào đó.
 - **Màn Đọc chia nhóm** (Nội dung được đọc / Gợi ý và mức chi tiết / Chạm và gõ phím). Công tắc đọc thông báo chuyển hẳn sang màn **Đọc thông báo** để mỗi cài đặt chỉ có một nơi.
-- **Đọc thông báo** (mục mới): không đọc khi ngón tay đang chạm màn hình, đang gọi, bật không làm phiền, đang phát nhạc (đều mặc định tắt) cùng danh sách "không bao giờ đọc" và "luôn đọc" (không phân biệt hoa thường/dấu; danh sách chặn ưu tiên hơn; "luôn đọc" bỏ qua cả công tắc chính). Không cần thêm quyền.
+- **Đọc thông báo** (mục mới): không đọc khi ngón tay đang chạm màn hình, đang gọi, bật không làm phiền, đang phát nhạc (đều mặc định tắt) cùng danh sách "không bao giờ đọc" và "luôn đọc" (không phân biệt hoa thường/dấu; danh sách chặn ưu tiên hơn; "luôn đọc" bỏ qua cả công tắc chính). Không cần thêm quyền. Từ bản 2.24.0: màn hình tắt thì không đọc thông báo nào (luật cứng, đứng trước mọi luật khác, kể cả "luôn đọc").
 - **Sao lưu và khôi phục** (Nâng cao): lưu/khôi phục cài đặt, cử chỉ, cử chỉ theo ứng dụng và nhãn tùy chỉnh bằng bộ chọn tệp của hệ thống (không cần quyền lưu trữ). Chỉ nhận khóa và kiểu hợp lệ theo `BackupSchema` (khóa sai kiểu sẽ làm sập dịch vụ ở lần đọc sau nên bị bỏ qua); không gồm tiện ích mở rộng, nhật ký lỗi, công cụ giọng đọc.
 - **Chạm thẳng theo ứng dụng** (Cử chỉ theo ứng dụng → chọn ứng dụng): kích hoạt bằng cú chạm thật vào giữa phần tử thay vì `ACTION_CLICK`, cho ứng dụng tự vẽ giao diện. Trạng thái màn Trạng thái cảnh báo khi một trình đọc màn hình khác đang bật cùng lúc.
 - Chưa làm có chủ đích: vùng cho cử chỉ/chạm đi xuyên (`setTouchExplorationPassthroughRegion`, `setGestureDetectionPassthroughRegion`). Cấu hình sai có thể khiến người dùng không chạm được vùng đó, nên cần thử trên máy thật (bàn phím, thanh điều hướng, cạnh màn hình) trước khi bật.
@@ -537,15 +596,11 @@ Cài đặt → Đọc → **Đọc biểu tượng cảm xúc** (mặc định 
 - Khoảng lặng dùng `playSilentUtterance`; hành vi thật phụ thuộc engine TTS và **chưa được thử trên máy**.
 - Chưa có kiểm thử trên thiết bị thật; chưa chạy được `assembleDebug`, `testDebugUnitTest`, `lintDebug`.
 
-## Kiểm tra cử chỉ
-Mục **Kiểm tra cử chỉ** trong cài đặt: khi bật, mọi cử chỉ hệ thống gửi tới ứng dụng chỉ được **đọc tên** (ví dụ
-"Vuốt hai ngón lên"), không chạy chức năng đã gán. Cử chỉ nào không được đọc tên nghĩa là hệ thống không gửi tới
-ứng dụng. Thoát bằng nút trên màn hình (chạm hai lần vẫn bấm được nút này) hoặc Back; tự tắt khi rời màn hình hoặc sau 30 giây không có cử chỉ. Không lưu lịch sử.
-
 ## Điều kiện hệ thống ảnh hưởng cử chỉ
 - Cử chỉ nhiều ngón và cử chỉ hai bước chỉ hoạt động khi bật chế độ khám phá bằng cảm ứng và hệ thống gửi cử chỉ tới
-  dịch vụ; một số hãng máy/phiên bản Android hoặc trình đọc màn hình khác đang bật có thể chiếm cử chỉ. Hãy dùng
-  **Kiểm tra cử chỉ** để biết cử chỉ nào thật sự tới được ứng dụng trên máy của bạn.
+  dịch vụ; một số hãng máy/phiên bản Android hoặc trình đọc màn hình khác đang bật có thể chiếm cử chỉ. Muốn biết cử chỉ nào
+  thật sự tới được ứng dụng trên máy của bạn, bật **Nhật ký chẩn đoán** (Công cụ → Nhật ký và hỗ trợ) rồi làm thử cử chỉ đó:
+  cử chỉ tới nơi thì nhật ký có dòng `GESTURE`, không tới thì không có dòng nào. (Mục **Kiểm tra cử chỉ** đã bỏ ở bản 2.23.0.)
 - Cử chỉ vuốt từ cạnh màn hình (Back/Home của hệ thống) không bắt được.
 
 ## Cài đặt
@@ -639,7 +694,7 @@ declaration) và chính sách quyền riêng tư nêu rõ **không thu thập, k
 Kiểm theo mã nguồn (không có thiết bị/emulator ở môi trường làm việc):
 | Màn hình | Cuộn dọc | Ghi chú |
 |---|---|---|
-| Danh sách mục + Trạng thái, Giọng nói, Rung/âm báo, Đọc, Nhãn, Trình đơn, Kiểm tra cử chỉ, Trợ giúp | Có (`ScreenColumn`) | chữ tự xuống dòng, hàng công tắc cao tối thiểu 80dp |
+| Danh sách mục + Trạng thái, Giọng nói, Rung/âm báo, Đọc, Nhãn, Trình đơn, Trợ giúp | Có (`ScreenColumn`) | chữ tự xuống dòng, hàng công tắc cao tối thiểu 80dp |
 | Cử chỉ, Tiện ích | Có (`LazyColumn`) | hộp chọn chức năng cuộn được |
 | Gắn nhãn, Tìm chữ (Activity riêng) | **Đã thêm** `verticalScroll` + `imePadding` | trước đó cột cố định, bàn phím/ chữ lớn/xoay ngang có thể che nút |
 | Hộp thoại xác nhận (xóa tiện ích, script mọi ứng dụng) | **Đã thêm** cuộn | chữ dài ở ngôn ngữ khác không bị cắt |

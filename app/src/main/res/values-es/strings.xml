@@ -112,6 +112,7 @@
     <string name="menu_global_title">Menú general</string>
     <string name="menu_local_title">Menú del elemento</string>
     <string name="menu_position">%1$s, %2$d de %3$d</string>
+    <string name="menu_position_group">%1$s, grupo, %2$d de %3$d</string>
     <string name="menu_activate">Pulsar</string>
     <string name="menu_long_click">Pulsación larga</string>
     <string name="menu_copy">Copiar texto</string>
@@ -255,7 +256,7 @@
     <string name="fbk_test_sound">Probar el sonido</string>
     <string name="fbk_quick">Para cambiar rápido mientras lo usas, asigna «Cambiar el modo de vibración y sonido» a un gesto o elígelo en el menú general.</string>
     <string name="rd_notif_title">Leer notificaciones nuevas</string>
-    <string name="rd_notif_desc">Lee el nombre de la aplicación y un texto abreviado; omite duplicados y agrupa ráfagas.</string>
+    <string name="rd_notif_desc">Lee el nombre de la aplicación y un texto abreviado; omite duplicados y agrupa ráfagas. No se lee nada con la pantalla apagada.</string>
     <string name="rd_unlabeled_head">Elementos sin etiqueta</string>
     <string name="rd_unlabeled_intro">Cuando una aplicación no etiqueta un botón, el lector actúa en este orden, sin capturas de pantalla:</string>
     <string name="rd_unlabeled_1">1. La etiqueta de la aplicación (descripción, texto, etiqueta vinculada, información sobre herramientas).</string>
@@ -355,15 +356,6 @@
     <string name="msg_cursor_end">Cursor al final</string>
     <string name="msg_selected_to_start">Seleccionado hasta el inicio</string>
     <string name="msg_selected_to_end">Seleccionado hasta el final</string>
-    <string name="gt_unknown">Gesto no reconocido, código %1$d</string>
-    <string name="sec_gesttest">Prueba de gestos</string>
-    <string name="sec_gesttest_sum">Ver qué gestos envía el sistema a la aplicación</string>
-    <string name="gt_intro">Durante la prueba, cada gesto solo se anuncia por su nombre y no se ejecuta nada. Si un gesto no se anuncia, el sistema no lo envió a la aplicación.</string>
-    <string name="gt_start">Iniciar prueba de gestos</string>
-    <string name="gt_stop">Detener prueba de gestos</string>
-    <string name="gt_active">Prueba activa. Haz un gesto para oír su nombre.</string>
-    <string name="gt_inactive">Prueba detenida</string>
-    <string name="gt_stopped">Prueba detenida</string>
     <string name="mn_gesture_line">Abrir con: %1$s.</string>
     <string name="mn_gesture_none">No hay ningún gesto asignado. Asigna uno en Gestos personalizados.</string>
     <string name="ocr_unsupported">La lectura de texto en imágenes no está disponible para este idioma en este dispositivo.</string>
@@ -545,7 +537,7 @@
     <string name="rd_g_hints">Sugerencias y nivel de detalle</string>
     <string name="sec_touch_typing">Tacto y escritura</string>
     <string name="sec_notif">Notificaciones y eventos</string>
-    <string name="sec_notif_sum">Notificaciones, quien llama, ubicación, pantalla encendida y apagada</string>
+    <string name="sec_notif_sum">Notificaciones, quien llama, ubicación</string>
     <string name="nt_quiet_head">No leer automáticamente cuando</string>
     <string name="nt_finger_title">Hay un dedo en la pantalla</string>
     <string name="nt_finger_desc">Se omiten mientras toca la pantalla, para no interrumpir su exploración.</string>
@@ -558,7 +550,7 @@
     <string name="nt_black_title">Palabras que nunca se leen</string>
     <string name="nt_black_desc">Una palabra o frase por línea. Una notificación que contenga alguna nunca se lee. Ignora mayúsculas y acentos.</string>
     <string name="nt_white_title">Palabras que siempre se leen</string>
-    <string name="nt_white_desc">Una palabra o frase por línea. Una notificación que contenga alguna siempre se lee, incluso con la lectura desactivada o en una situación silenciosa. La lista de nunca leer tiene prioridad.</string>
+    <string name="nt_white_desc">Una palabra o frase por línea. Una notificación que contenga alguna siempre se lee, incluso con la lectura desactivada o en una situación silenciosa, salvo con la pantalla apagada. La lista de nunca leer tiene prioridad.</string>
     <string name="sec_backup">Copia de seguridad y restauración</string>
     <string name="sec_backup_sum">Guardar o restaurar todos los ajustes en un archivo</string>
     <string name="bk_intro">Guarda sus ajustes, gestos, gestos por aplicación, menú del elemento personalizado y etiquetas personalizadas en un archivo de texto donde usted elija. No incluye extensiones, el registro de errores ni el motor de voz.</string>
@@ -575,7 +567,7 @@
     <string name="ag_rawtap_desc">Al activar se envía un toque real en el centro del elemento en lugar de un clic de accesibilidad. Úselo en aplicaciones donde activar no hace nada.</string>
     <string name="st_other_reader_warn">Hay otro lector de pantalla activado. Dos a la vez pueden provocar conflictos de voz y gestos; desactive uno.</string>
     <string name="rd_toast_title">Leer mensajes emergentes (toast)</string>
-    <string name="rd_toast_desc">Los mensajes emergentes breves, como Guardado, se leen en voz alta aunque la lectura de notificaciones esté desactivada. Activado por defecto.</string>
+    <string name="rd_toast_desc">Los mensajes emergentes breves, como Guardado, se leen en voz alta aunque la lectura de notificaciones esté desactivada, pero no con la pantalla apagada. Activado por defecto.</string>
     <string name="rd_keys_title">Atajos del teclado físico</string>
     <string name="rd_keys_desc">Alt o Windows/Buscar más una flecha para cambiar de elemento; Alt+Intro activa; Alt+Retroceso vuelve atrás; Ctrl solo detiene la voz. Las demás teclas escriben con normalidad. Lista completa en Ayuda. Activado por defecto.</string>
     <string name="msg_tts_fallback">El motor de voz elegido no está disponible. Se usa el motor predeterminado.</string>
@@ -588,8 +580,6 @@
     <string name="msg_keys_resumed">Teclado y teclas de volumen reanudados</string>
     <string name="msg_volume_app_off">Navegación con teclas de volumen desactivada en %1$s</string>
     <string name="msg_volume_app_on">Navegación con teclas de volumen activada en %1$s</string>
-    <string name="rd_screen_title">Anunciar la hora al encender la pantalla y su apagado</string>
-    <string name="rd_screen_desc">La voz siempre se detiene al apagar la pantalla. Activado: al encender la pantalla lee la hora actual y al apagarla dice Pantalla apagada. Desactivado por defecto.</string>
     <string name="msg_screen_off">Pantalla apagada</string>
     <string name="rd_dialog_focus_title">Mover el foco a los cuadros de diálogo</string>
     <string name="rd_dialog_focus_desc">Al abrirse un cuadro de diálogo u hoja inferior, lee su título y pasa a su primer elemento, salvo que ya haya elegido otro. Activado por defecto.</string>
@@ -636,7 +626,7 @@
     <string name="perm_name_contacts">Nombres de quien llama desde los contactos</string>
     <string name="perm_name_location">Decir mi ubicación</string>
     <string name="perm_location_here_rationale">Para decir dónde está, la aplicación solo pide su ubicación al teléfono cuando usted se lo pide. Convertir una posición en una dirección lo hace el propio servicio de ubicación del teléfono, que puede contactar con su proveedor por internet.</string>
-    <string name="nt_events_head">Llamadas, ubicación y pantalla</string>
+    <string name="nt_events_head">Llamadas y ubicación</string>
     <string name="rd_call_title">Anunciar llamadas entrantes</string>
     <string name="rd_call_desc">Cuando suena el teléfono, dice quién llama. Necesita permiso para ver el estado del teléfono y los números de llamada. Después se pide, de forma opcional, permiso para leer los contactos: si lo permite, se dice el nombre del contacto en lugar del número; si no, solo el número. Desactivado por defecto.</string>
     <string name="rd_location_title">Permitir decir mi ubicación</string>
@@ -790,8 +780,8 @@
         <item quantity="other">El menú ya tiene %1$d funciones, el máximo. Quite o reemplace una para añadir otra.</item>
     </plurals>
     <plurals name="hp_menus_body">
-        <item quantity="one">El menú general contiene todas las funciones de la aplicación, repartidas en grupos. El menú del elemento es su propia lista de hasta %1$d función: añada, quite, reordene o reemplace funciones en Controles, Menús rápidos. Cada menú se abre con el gesto que usted le asigne.</item>
-        <item quantity="many">El menú general contiene todas las funciones de la aplicación, repartidas en grupos. El menú del elemento es su propia lista de hasta %1$d de funciones: añada, quite, reordene o reemplace funciones en Controles, Menús rápidos. Cada menú se abre con el gesto que usted le asigne.</item>
-        <item quantity="other">El menú general contiene todas las funciones de la aplicación, repartidas en grupos. El menú del elemento es su propia lista de hasta %1$d funciones: añada, quite, reordene o reemplace funciones en Controles, Menús rápidos. Cada menú se abre con el gesto que usted le asigne.</item>
+        <item quantity="one">El menú general contiene todas las funciones de la aplicación, repartidas en grupos. El menú del elemento es su propia lista de hasta %1$d función: añada, quite, reordene o reemplace funciones en Controles, Menús rápidos. Cada menú se abre con el gesto que usted le asigne. Con un menú abierto, deslice a la derecha o a la izquierda para cambiar de elemento, o toque la pantalla y deslice un dedo para oír cada elemento; pulse dos veces para elegir.</item>
+        <item quantity="many">El menú general contiene todas las funciones de la aplicación, repartidas en grupos. El menú del elemento es su propia lista de hasta %1$d de funciones: añada, quite, reordene o reemplace funciones en Controles, Menús rápidos. Cada menú se abre con el gesto que usted le asigne. Con un menú abierto, deslice a la derecha o a la izquierda para cambiar de elemento, o toque la pantalla y deslice un dedo para oír cada elemento; pulse dos veces para elegir.</item>
+        <item quantity="other">El menú general contiene todas las funciones de la aplicación, repartidas en grupos. El menú del elemento es su propia lista de hasta %1$d funciones: añada, quite, reordene o reemplace funciones en Controles, Menús rápidos. Cada menú se abre con el gesto que usted le asigne. Con un menú abierto, deslice a la derecha o a la izquierda para cambiar de elemento, o toque la pantalla y deslice un dedo para oír cada elemento; pulse dos veces para elegir.</item>
     </plurals>
 </resources>

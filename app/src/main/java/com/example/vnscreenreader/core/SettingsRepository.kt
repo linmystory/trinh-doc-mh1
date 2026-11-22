@@ -143,11 +143,6 @@ class SettingsRepository(context: Context) {
         get() = prefs.getBoolean(KEY_REMEMBER_FOCUS, false)
         set(value) = prefs.edit { putBoolean(KEY_REMEMBER_FOCUS, value) }
 
-    /** Tắt màn hình: báo "Đã tắt màn hình"; bật màn hình: đọc giờ hiện tại. Giọng đọc luôn dừng khi tắt màn hình, bất kể công tắc này. Mặc định TẮT. */
-    var announceScreen: Boolean
-        get() = prefs.getBoolean(KEY_ANNOUNCE_SCREEN, false)
-        set(value) = prefs.edit { putBoolean(KEY_ANNOUNCE_SCREEN, value) }
-
     /** Đọc từng ký tự khi gõ. Mặc định BẬT (hành vi cũ). */
     var echoChars: Boolean
         get() = prefs.getBoolean(KEY_ECHO_CHARS, true)
@@ -284,7 +279,6 @@ class SettingsRepository(context: Context) {
         private const val KEY_SCROLL_SLIDERS = "scroll_adjust_sliders"
         private const val KEY_FOCUS_DIALOGS = "focus_dialogs"
         private const val KEY_REMEMBER_FOCUS = "remember_focus"
-        private const val KEY_ANNOUNCE_SCREEN = "announce_screen"
         private const val KEY_ECHO_CHARS = "echo_chars"
         private const val KEY_ECHO_WORDS = "echo_words"
         private const val KEY_SPEAK_CAPITALS = "speak_capitals"
