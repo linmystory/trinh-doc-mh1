@@ -20,6 +20,7 @@ import com.example.vnscreenreader.core.ActionHints
 import com.example.vnscreenreader.core.FocusIndex
 import com.example.vnscreenreader.core.FocusTrace
 import com.example.vnscreenreader.core.FocusTraceBuffer
+import com.example.vnscreenreader.core.NavigationWindow
 import com.example.vnscreenreader.core.QuickNav
 import com.example.vnscreenreader.core.ReadingControl
 import com.example.vnscreenreader.core.ReadingMode
@@ -104,6 +105,15 @@ class FocusNavigator(
     // @Volatile: invalidateCache() cũng được gọi từ luồng chính (callback chạm giữ, đổi cài đặt) trong khi luồng nền đọc.
     @Volatile private var cachedNodes: List<AccessibilityNodeInfo> = emptyList()
     @Volatile private var cachedAtMs = 0L
+
+    /**
+     * Cửa sổ của các nút trong [cachedNodes]. Danh sách lưu tạm gắn với cửa sổ: chọn phần tử ở cửa sổ khác (chạm vào bàn phím) thì không dùng
+     * lại danh sách của cửa sổ ứng dụng trong 800 ms còn hạn. Chỉ truy cập trên luồng xử lý.
+     */
+    private var cachedWindowId: Int? = null
+
+    /** Cửa sổ khác cửa sổ cơ sở mà [navigationRoot] đang theo (chỉ để nhật ký ghi MỘT dòng mỗi lần bắt đầu theo cửa sổ mới). */
+    private var followedWindowId: Int? = null
 
     /** Thời điểm (uptimeMillis) chính trình đọc vừa đặt vùng chọn/con trỏ; để không đọc lặp sự kiện do chính nó gây ra. */
     @Volatile var lastOwnSelectionMs = 0L
@@ -512,7 +522,7 @@ class FocusNavigator(
 
     /** Nhảy tới hàng đầu/cuối bằng ACTION_SCROLL_TO_POSITION nếu khung cuộn hỗ trợ và biết số hàng. */
     private fun jumpByPosition(forward: Boolean): Boolean {
-        val root = activeRoot() ?: return false
+        val root = navigationRoot() ?: return false
         val toPosition = AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_TO_POSITION.id
         for (target in NodeCollector.scrollTargets(currentQuiet(), root, forward)) {
             if (target.actionList.none { it.id == toPosition }) continue
@@ -526,7 +536,7 @@ class FocusNavigator(
 
     /** Một lần cuộn bằng hành động của khung cuộn gần nhất; true nếu có khung cuộn được thật sự. */
     private fun scrollOnce(forward: Boolean): Boolean {
-        val root = activeRoot() ?: return false
+        val root = navigationRoot() ?: return false
         val targets = NodeCollector.scrollTargets(currentQuiet(), root, forward)
         return targets.any { target -> NodeCollector.scrollActions(forward).any { target.performAction(it) } }
     }
@@ -1131,7 +1141,7 @@ class FocusNavigator(
         within: AccessibilityNodeInfo? = null,
         rounds: Int = MAX_SCROLL_ROUNDS,
     ): Boolean {
-        val root = activeRoot() ?: return false
+        val root = navigationRoot() ?: return false
         val start = nodesBeforeScroll(oldNodes) ?: return false
         val targets = if (within != null) listOf(within) else NodeCollector.contentScrollTargets(currentQuiet(), root, forward)
         com.example.vnscreenreader.core.Diag.log("AUTOSCROLL") { "start fwd=$forward within=${within != null} targets=${targets.size} rounds=$rounds" }
@@ -1521,17 +1531,58 @@ class FocusNavigator(
         return service.getRootInActiveWindow(AccessibilityNodeInfo.FLAG_PREFETCH_DESCENDANTS_HYBRID)
     }
 
+    /**
+     * Gốc cây để DUYỆT (vuốt, cuộn, nhảy theo vị trí): thường là [activeRoot]. Riêng khi phần tử đang chọn thuộc cửa sổ KHÁC cửa sổ đó và cửa sổ
+     * ấy còn mở thì lấy gốc của cửa sổ của phần tử đang chọn ([NavigationWindow.follow]). Bảng biểu tượng cảm xúc và bộ nhớ tạm nằm trong cửa
+     * sổ bàn phím, mà nhấc tay lên là Android trả "cửa sổ đang hoạt động" về cửa sổ ứng dụng: nếu cứ duyệt cây của cửa sổ ứng dụng thì không
+     * tìm thấy vị trí hiện tại và tiêu điểm nhảy sang dòng khác của ứng dụng.
+     *
+     * Không lưu lựa chọn bền (khác [windowOverrideId]): mỗi lần tính lại từ phần tử đang chọn nên không có trạng thái để quên; chạm sang phần
+     * tử của cửa sổ khác là tự theo cửa sổ mới. [passwordBounds] cố ý vẫn dùng [activeRoot]: vùng mật khẩu để che khi chụp màn hình lấy theo
+     * cửa sổ ứng dụng, đổi sang cửa sổ bàn phím sẽ làm sót ô mật khẩu của ứng dụng.
+     */
+    private fun navigationRoot(): AccessibilityNodeInfo? {
+        val base = activeRoot()
+        val selected = currentNode?.windowId
+        // Trường hợp thường gặp nhất (cùng cửa sổ, hoặc chưa chọn gì): không tốn thêm một lần gọi hệ thống để liệt kê cửa sổ.
+        if (selected == null || selected == base?.windowId) {
+            followedWindowId = null
+            return base
+        }
+        val windows = service.windows
+        val follow = NavigationWindow.follow(selected, base?.windowId, windows.map { it.id })
+        val root = follow?.let { id ->
+            windows.firstOrNull { it.id == id }?.getRoot(AccessibilityNodeInfo.FLAG_PREFETCH_DESCENDANTS_HYBRID)
+        }
+        if (root == null) {
+            followedWindowId = null
+            return base
+        }
+        if (followedWindowId != follow) {
+            followedWindowId = follow
+            com.example.vnscreenreader.core.Diag.log("WINDOW") { "follow selected element into window=$follow base=${base?.windowId}" }
+        }
+        return root
+    }
+
     private fun visibleNodes(): List<AccessibilityNodeInfo>? {
         val now = SystemClock.uptimeMillis()
-        // Bộ đệm chỉ dùng được khi chưa hết hạn VÀ chưa có sự kiện "nội dung đổi/đã cuộn" nào xảy ra sau lần nạp.
-        if (cachedNodes.isNotEmpty() && now - cachedAtMs < CACHE_TTL_MS && cachedAtMs > staleSinceMs) return cachedNodes
-        var collected = NodeCollector.collect(activeRoot() ?: return null)
+        val selectedWindowId = currentNode?.windowId
+        // Bộ đệm chỉ dùng được khi chưa hết hạn, chưa có sự kiện "nội dung đổi/đã cuộn" nào xảy ra sau lần nạp, VÀ phần tử đang chọn (nếu có)
+        // thuộc đúng cửa sổ của danh sách (chọn sang cửa sổ khác, ví dụ bàn phím, thì danh sách của cửa sổ cũ không còn đúng).
+        if (cachedNodes.isNotEmpty() && now - cachedAtMs < CACHE_TTL_MS && cachedAtMs > staleSinceMs &&
+            (selectedWindowId == null || selectedWindowId == cachedWindowId)
+        ) {
+            return cachedNodes
+        }
+        var collected = NodeCollector.collect(navigationRoot() ?: return null)
         if (!collected.complete) {
             // Có nút con không lấy được (cây đang đổi, thường ngay lúc ứng dụng vẽ lại): đợi một nhịp ngắn rồi lấy lại cây MỚI một lần
             // để không để lọt phần tử. Vẫn thiếu thì dùng bản này nhưng không giữ trong bộ đệm.
             SystemClock.sleep(RECOLLECT_DELAY_MS)
-            activeRoot()?.let { collected = NodeCollector.collect(it) }
+            navigationRoot()?.let { collected = NodeCollector.collect(it) }
         }
+        cachedWindowId = collected.nodes.firstOrNull()?.windowId
         cachedNodes = orderByTraversal(collected.nodes)
         // Danh sách còn thiếu nút thì coi như hết hạn ngay: lần vuốt kế sẽ nạp lại thay vì dùng tiếp bản khuyết trong 800 ms.
         cachedAtMs = if (collected.complete) now else 0L

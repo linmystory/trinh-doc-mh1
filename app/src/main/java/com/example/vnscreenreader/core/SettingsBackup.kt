@@ -158,7 +158,7 @@ object SettingsBackupIO {
     fun collect(context: Context): List<BackupEntry> {
         val out = ArrayList<BackupEntry>()
         for (file in BackupSchema.FILES) {
-            val prefs = context.applicationContext.getSharedPreferences(file, Context.MODE_PRIVATE)
+            val prefs = DeviceStorage.prefs(context, file)
             for ((key, value) in prefs.all.entries.sortedBy { it.key }) {
                 val type = BackupSchema.typeOf(file, key) ?: continue
                 val text = when {
@@ -179,7 +179,7 @@ object SettingsBackupIO {
         var applied = 0
         for ((file, group) in entries.groupBy { it.file }) {
             // edit { } của KTX: gom mọi thay đổi của một tệp rồi apply() một lần (vòng lặp nằm TRONG lambda nên `continue` vẫn đúng chỗ).
-            context.applicationContext.getSharedPreferences(file, Context.MODE_PRIVATE).edit {
+            DeviceStorage.prefs(context, file).edit {
                 for (e in group) {
                     when (e.type) {
                         'b' -> putBoolean(e.key, e.value.toBoolean())

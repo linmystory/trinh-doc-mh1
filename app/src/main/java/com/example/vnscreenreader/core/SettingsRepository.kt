@@ -7,8 +7,8 @@ import androidx.core.content.edit
 /** Lưu tốc độ đọc và cao độ; dùng chung giữa Activity và AccessibilityService. */
 class SettingsRepository(context: Context) {
 
-    private val prefs: SharedPreferences =
-        context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    // Bộ nhớ bảo vệ theo thiết bị: dịch vụ dựng phiên đọc được ngay cả khi máy vừa khởi động và chưa mở khóa ([DeviceStorage]).
+    private val prefs: SharedPreferences = DeviceStorage.prefs(context, PREFS_NAME)
 
     var speechRate: Float
         get() = prefs.getFloat(KEY_RATE, DEFAULT_VALUE).coerceIn(MIN_VALUE, MAX_VALUE)

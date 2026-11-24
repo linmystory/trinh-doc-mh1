@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import android.view.accessibility.AccessibilityNodeInfo
 import androidx.core.content.edit
+import com.example.vnscreenreader.core.DeviceStorage
 import com.example.vnscreenreader.core.S
 import com.example.vnscreenreader.core.t
 
@@ -19,7 +20,8 @@ data class PluginInfo(
 class PluginRegistry(context: Context) {
 
     private val appContext = context.applicationContext
-    private val prefs = appContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    // Trạng thái bật/tắt tiện ích ở bộ nhớ bảo vệ theo thiết bị; script do người dùng nạp (PluginScriptStore) vẫn ở bộ nhớ thường, chỉ có sau khi mở khóa.
+    private val prefs = DeviceStorage.prefs(appContext, PREFS_NAME)
     private val store = PluginScriptStore(appContext)
     private val builtIns: List<ScreenReaderPlugin> = listOf(SkipAdPlugin())
     private val builtInIds: Set<String> = builtIns.mapTo(HashSet()) { it.id }

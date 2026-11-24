@@ -45,6 +45,9 @@ class SpeechEngine(
     @Volatile private var firstTag = ""
     @Volatile private var lastText: String? = null
 
+    /** Đang im lặng hoàn toàn (người dùng đọc chính tả bằng giọng nói, xem [DictationGate]). Đổi qua [setMuted]. */
+    @Volatile private var muted = false
+
     /** Lập kế hoạch đọc (emoji, khoảng lặng) cho từng đoạn; áp cho mọi công cụ. */
     @Volatile var planner: (String) -> List<SpeechPart> = { SpeechPlan.single(it) }
         set(value) {
@@ -148,6 +151,8 @@ class SpeechEngine(
     fun speak(rawText: String, interrupt: Boolean = true) {
         if (rawText.isBlank()) return
         lastText = rawText
+        // Đang im: bỏ hẳn (không xếp hàng) để hết im không có câu cũ ùa ra. [lastText] vẫn ghi nên "đọc lại câu gần nhất" dùng được sau đó.
+        if (muted) return
         val direct: VoiceEngine?
         synchronized(lock) {
             if (closed) return
@@ -171,6 +176,16 @@ class SpeechEngine(
             if (!scheduler.submit(runs, interrupt)) return
             pumpLocked()
         }
+    }
+
+    /**
+     * Bật/tắt im lặng hoàn toàn. Bật thì ngắt ngay câu đang đọc và bỏ mọi lời yêu cầu cho tới khi tắt; tắt thì lời mới đọc lại bình thường.
+     * Gọi được từ luồng bất kỳ.
+     */
+    fun setMuted(value: Boolean) {
+        if (muted == value) return
+        muted = value
+        if (value) stop()
     }
 
     /** Phát đoạn kế tiếp nếu rảnh. Gọi khi đang giữ [lock]. */
@@ -224,6 +239,15 @@ class SpeechEngine(
     fun updateLanguage() {
         val engines = synchronized(lock) { listOfNotNull(primary, second) }
         engines.forEach { it.updateLanguage() }
+    }
+
+    /**
+     * Máy vừa mở khóa (luồng chính). Lúc khởi động chưa mở khóa, engine bên thứ ba chưa gắn được nên đã đọc tạm bằng engine hệ thống: mỗi công cụ
+     * tự quyết có nối lại engine người dùng chọn không ([VoiceEngine.onUserUnlocked]).
+     */
+    fun onUserUnlocked() {
+        val engines = synchronized(lock) { listOfNotNull(primary, second) }
+        engines.forEach { it.onUserUnlocked() }
     }
 
     /** Đổi công cụ TTS thứ nhất (gói rỗng = mặc định hệ thống). Công cụ thứ hai đổi qua [configure]. */

@@ -3,6 +3,7 @@ package com.example.vnscreenreader.gesture
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.core.content.edit
+import com.example.vnscreenreader.core.DeviceStorage
 
 /**
  * Cử chỉ riêng cho từng ứng dụng. Chỉ lưu phần KHÁC bản đồ chung (dạng "CỬ_CHỈ=HÀNH_ĐỘNG;..."), nên đổi cử chỉ chung thì
@@ -38,8 +39,7 @@ object AppGestureOverrides {
 /** Lưu cử chỉ riêng theo gói ứng dụng trong bộ nhớ riêng (SharedPreferences), tối đa [AppGestureOverrides.MAX_APPS] ứng dụng. */
 class AppGestureStore(context: Context) {
 
-    private val prefs: SharedPreferences =
-        context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    private val prefs: SharedPreferences = DeviceStorage.prefs(context, PREFS_NAME)
 
     fun overridesFor(packageName: String?): String? =
         packageName?.let { prefs.getString(KEY_PREFIX + it, null) }?.takeIf { it.isNotBlank() }

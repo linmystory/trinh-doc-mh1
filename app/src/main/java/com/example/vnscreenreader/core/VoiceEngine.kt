@@ -53,6 +53,9 @@ class VoiceEngine(
     private var requestedPackage = initialEnginePackage // engine người dùng CHỌN; đổi cài đặt mới đổi cái này
     private var announceFallback = false
 
+    // Đang đọc bằng engine tạm vì máy chưa mở khóa và engine đã chọn chưa gắn được ([TtsUnlockPolicy]); [onUserUnlocked] nối lại engine đã chọn.
+    private var standIn = false
+
     /** Câu gần nhất ở dạng GỐC (chưa lập kế hoạch) để "đọc lại" lập lại đúng các khoảng lặng. */
     @Volatile private var lastText: String? = null
 
@@ -152,15 +155,20 @@ class VoiceEngine(
         val listener = TextToSpeech.OnInitListener { status -> mainHandler.post { onInitResult(gen, status) } }
         val pkg = synchronized(lock) { enginePackage }
         val engine = if (pkg.isEmpty()) TextToSpeech(appContext, listener) else TextToSpeech(appContext, listener, pkg)
-        val stale = synchronized(lock) {
+        val (stale, replaced) = synchronized(lock) {
             if (closed || gen != generation) {
-                true
+                true to null
             } else {
+                // Hai lần connect() chồng nhau (ví dụ lần thử lại đã hẹn giờ trùng lần nối lại khi mở khóa): engine của lần trước bị thay
+                // thì phải đóng, không để rò kết nối; engine mới chưa khởi tạo xong nên chưa sẵn sàng.
+                val previous = tts
                 tts = engine
-                false
+                if (previous != null) ready = false
+                false to previous
             }
         }
         if (stale) shutdownQuietly(engine)
+        if (replaced != null && replaced !== engine) shutdownQuietly(replaced)
     }
 
     private fun onInitResult(gen: Int, status: Int) {
@@ -173,10 +181,12 @@ class VoiceEngine(
             return
         }
         configure(engine)
+        val standInNow = standInNow(engine)
         val queued = synchronized(lock) {
             if (closed || gen != generation) return
             ready = true
             failures = 0
+            standIn = standIn || standInNow // dấu "đã rơi về engine tạm lúc khóa" được giữ cho tới lần nối lại đúng engine
             val fellBack = announceFallback
             announceFallback = false
             Triple(pendingText, pendingFinished, fellBack).also { pendingText = null; pendingFinished = null }
@@ -196,6 +206,27 @@ class VoiceEngine(
 
     private fun onInitFailed(engine: TextToSpeech, status: Int) {
         Log.e(TAG, "Không khởi tạo được TextToSpeech, status=$status")
+        // Máy chưa mở khóa mà engine người dùng chọn chưa gắn được (engine bên thứ ba thường không chạy trước khi mở khóa): người dùng cần nghe
+        // trình đọc ngay ở màn hình nhập mã nên rơi NGAY về engine mặc định, im lặng; [onUserUnlocked] nối lại engine đã chọn.
+        val unlocked = DeviceStorage.isUnlocked(appContext)
+        val standInAtOnce = synchronized(lock) {
+            if (closed) return
+            if (TtsUnlockPolicy.fallBackAtOnce(unlocked, enginePackage)) {
+                tts = null
+                failures = 0
+                enginePackage = ""
+                standIn = true
+                true
+            } else {
+                false
+            }
+        }
+        if (standInAtOnce) {
+            shutdownQuietly(engine)
+            Log.w(TAG, "Máy chưa mở khóa, engine đã chọn chưa gắn được: dùng tạm engine mặc định")
+            mainHandler.post { connect() }
+            return
+        }
         val retryDelayMs = synchronized(lock) {
             tts = null
             failures++
@@ -377,6 +408,7 @@ class VoiceEngine(
             requestedPackage = newPackage
             enginePackage = newPackage
             announceFallback = false
+            standIn = false // engine đã chọn đổi: kết nối mới tự xác định lại có phải engine tạm không
             ready = false
             failures = 0
             generation++ // vô hiệu callback của engine cũ
@@ -384,6 +416,54 @@ class VoiceEngine(
             pendingFinished = null
             tts.also { tts = null }
         }
+        pending.clear()
+        finishedCallbacks.clear()
+        shutdownQuietly(old)
+        mainHandler.post { connect() }
+    }
+
+    /**
+     * Máy chưa mở khóa và engine người dùng muốn (gói đã chọn, hoặc engine mặc định của hệ thống) không nằm trong các engine gắn được lúc này?
+     * Danh sách engine lấy bằng đúng truy vấn mà TextToSpeech dùng ([TtsEngines.list]), nên trước khi mở khóa chỉ có engine `directBootAware`.
+     * Lỗi bất ngờ thì coi như không phải engine tạm (không nối lại thừa). Chạy trên luồng chính.
+     */
+    private fun standInNow(engine: TextToSpeech): Boolean = try {
+        TtsUnlockPolicy.standInUntilUnlock(
+            userUnlocked = DeviceStorage.isUnlocked(appContext),
+            wanted = { synchronized(lock) { requestedPackage }.ifEmpty { engine.defaultEngine.orEmpty() } },
+            available = { TtsEngines.list(appContext).map { it.packageName } },
+        )
+    } catch (e: RuntimeException) {
+        Log.w(TAG, "Không xác định được engine tạm", e)
+        false
+    }
+
+    /**
+     * Máy vừa mở khóa (gọi trên luồng chính). Đang đọc bằng engine tạm, hoặc engine chưa sẵn sàng (đang chờ lần thử lại), thì nối lại ĐÚNG engine
+     * người dùng chọn ngay; câu mới nhất đang chờ vẫn được đọc khi nối xong. Đang đọc đúng engine thì để yên, chỉ kiểm tra lại giọng của ngôn ngữ
+     * (dữ liệu giọng có thể vừa mở ra; lúc khóa ta không báo "thiếu giọng").
+     */
+    fun onUserUnlocked() {
+        val (reconnect, old) = synchronized(lock) {
+            if (closed) return
+            if (!TtsUnlockPolicy.reconnectAfterUnlock(standIn, ready)) {
+                false to null
+            } else {
+                enginePackage = requestedPackage
+                standIn = false
+                announceFallback = false
+                ready = false
+                failures = 0
+                generation++ // vô hiệu callback của engine cũ
+                true to tts.also { tts = null }
+            }
+        }
+        if (!reconnect) {
+            updateLanguage()
+            return
+        }
+        Log.i(TAG, "Máy đã mở khóa: nối lại engine đã chọn")
+        mainHandler.removeCallbacksAndMessages(null) // bỏ lần thử lại đã hẹn giờ: sắp nối lại ngay
         pending.clear()
         finishedCallbacks.clear()
         shutdownQuietly(old)

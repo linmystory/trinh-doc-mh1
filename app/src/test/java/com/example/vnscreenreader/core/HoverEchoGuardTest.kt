@@ -77,6 +77,75 @@ class HoverEchoGuardTest {
         assertFalse(guard.shouldRead(FakeNode(7), 30))
         assertTrue(guard.shouldRead(FakeNode(8), 60))
     }
+
+    // Cây nhỏ: "dòng", "dòng 1", "dòng 2" nằm trong "cụm" (dòng thông báo bấm được). Hệ thống báo chạm vào dòng rồi vào cụm vài mili giây sau.
+    private val parentOf = mapOf("dòng" to "cụm", "dòng 1" to "cụm", "dòng 2" to "cụm")
+
+    /** Câu hỏi "[key] có chứa phần tử vừa đọc không" như phiên đọc đặt ra: đi từ phần tử vừa đọc lên cha. */
+    private fun containing(key: String): (Any) -> Boolean = { last -> parentOf[last] == key }
+
+    @Test
+    fun theEnclosingElementRightAfterItsChild_isAnEcho() {
+        val guard = HoverEchoGuard(250)
+        assertTrue(guard.shouldRead("dòng", 0))
+        assertFalse(guard.shouldRead("cụm", 5, containing("cụm")))
+    }
+
+    @Test
+    fun theEnclosingElementAfterTheWindow_isRead() {
+        val guard = HoverEchoGuard(250)
+        assertTrue(guard.shouldRead("dòng", 0))
+        assertFalse(guard.shouldRead("cụm", 250, containing("cụm")))
+        assertTrue(HoverEchoGuard(250).apply { shouldRead("dòng", 0) }.shouldRead("cụm", 251, containing("cụm")))
+    }
+
+    @Test
+    fun anElementThatDoesNotContainTheLastOne_isNotBlocked() {
+        // Lướt sang dòng khác trong vài chục ms: phải đọc, dù cụm chứa dòng cũ có hay không.
+        val guard = HoverEchoGuard(250)
+        assertTrue(guard.shouldRead("dòng 1", 0))
+        assertTrue(guard.shouldRead("dòng 2", 5, containing("dòng 2")))
+    }
+
+    @Test
+    fun theContainmentCheck_isOnlyAskedWhenItCanMatter() {
+        // Việc đi lên cây cha tốn gọi hệ thống: không chạy ở lần chạm đầu, ngoài cửa sổ thời gian, sau khi nhấc tay, hay với chính phần tử vừa đọc.
+        var asked = 0
+        val ask: (Any) -> Boolean = { asked++; false }
+        val guard = HoverEchoGuard(250)
+        guard.shouldRead("A", 0, ask)
+        guard.shouldRead("A", 10, ask)
+        guard.shouldRead("B", 1_000, ask)
+        guard.onLift()
+        guard.shouldRead("C", 1_010, ask)
+        assertEquals(0, asked)
+        guard.shouldRead("D", 1_020, ask)
+        assertEquals(1, asked)
+    }
+
+    @Test
+    fun droppingAnEnclosingEcho_doesNotExtendTheWindow() {
+        val guard = HoverEchoGuard(250)
+        assertTrue(guard.shouldRead("dòng", 0))
+        assertFalse(guard.shouldRead("cụm", 200, containing("cụm")))
+        assertTrue(guard.shouldRead("cụm", 300, containing("cụm")))
+    }
+
+    @Test
+    fun theChildStaysRemembered_afterAnEnclosingEchoIsDropped() {
+        val guard = HoverEchoGuard(250)
+        assertTrue(guard.shouldRead("dòng", 0))
+        assertFalse(guard.shouldRead("cụm", 5, containing("cụm")))
+        assertFalse(guard.shouldRead("dòng", 10, containing("dòng")))
+    }
+
+    @Test
+    fun liftingForgetsTheChild_soTheEnclosingElementIsReadNext() {
+        val guard = HoverEchoGuard(250)
+        assertTrue(guard.shouldRead("dòng", 0))
+        guard.onLift()
+        assertTrue(guard.shouldRead("cụm", 5, containing("cụm")))
+    }
 }
 
 class HoverStatsTest {

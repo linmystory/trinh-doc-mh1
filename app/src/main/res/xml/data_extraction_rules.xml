@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Không sao lưu/chuyển dữ liệu ứng dụng (khớp allowBackup="false"): nhãn tùy chỉnh và cài đặt ở lại trên máy. -->
+<!-- Không sao lưu/chuyển dữ liệu ứng dụng (khớp allowBackup="false"): nhãn tùy chỉnh và cài đặt ở lại trên máy.
+     Các miền device_* là bộ nhớ bảo vệ theo thiết bị (nơi lưu cài đặt để dịch vụ chạy được trước khi mở khóa): cũng không sao lưu. -->
 <data-extraction-rules>
     <cloud-backup>
         <exclude domain="root" />
@@ -7,6 +8,10 @@
         <exclude domain="database" />
         <exclude domain="sharedpref" />
         <exclude domain="external" />
+        <exclude domain="device_root" />
+        <exclude domain="device_file" />
+        <exclude domain="device_database" />
+        <exclude domain="device_sharedpref" />
     </cloud-backup>
     <device-transfer>
         <exclude domain="root" />
@@ -14,5 +19,9 @@
         <exclude domain="database" />
         <exclude domain="sharedpref" />
         <exclude domain="external" />
+        <exclude domain="device_root" />
+        <exclude domain="device_file" />
+        <exclude domain="device_database" />
+        <exclude domain="device_sharedpref" />
     </device-transfer>
 </data-extraction-rules>

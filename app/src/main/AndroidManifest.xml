@@ -61,8 +61,14 @@
             android:excludeFromRecents="true"
             android:label="@string/search_title" />
 
+        <!--
+            directBootAware: hệ thống chỉ gắn dịch vụ trợ năng khi máy vừa khởi động và CHƯA mở khóa (màn hình nhập mã) nếu dịch vụ khai
+            báo cờ này; thiếu cờ thì trình đọc im cho tới khi người dùng mở khóa, tức là người khiếm thị không tự nhập được mã. Vì vậy
+            dịch vụ chỉ được dùng bộ nhớ bảo vệ theo thiết bị lúc khởi động (core/DeviceStorage.kt); các hoạt động (Activity) không cần cờ.
+        -->
         <service
             android:name=".service.ScreenReaderService"
+            android:directBootAware="true"
             android:exported="true"
             android:label="@string/service_label"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">

@@ -7,8 +7,7 @@ import androidx.core.content.edit
 /** Lưu [CustomLabels] bền vững; dùng chung giữa dịch vụ (đọc) và giao diện (gán/xóa). */
 class CustomLabelStore(context: Context) {
 
-    private val prefs: SharedPreferences =
-        context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    private val prefs: SharedPreferences = DeviceStorage.prefs(context, PREFS_NAME)
 
     @Volatile private var cache: CustomLabels = CustomLabels.parse(prefs.getString(KEY, null))
 

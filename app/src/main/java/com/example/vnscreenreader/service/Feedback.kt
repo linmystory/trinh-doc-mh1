@@ -30,6 +30,12 @@ internal class DeviceFeedback(context: Context, private val settings: SettingsRe
     private val earcon = EarconPlayer()
     private val throttle = FeedbackThrottle()
 
+    /**
+     * IM âm báo (rung vẫn chạy): micro của ứng dụng khác đang thu giọng nói của người dùng, âm báo sẽ lọt vào bản thu. Do phiên đọc đặt
+     * theo [com.example.vnscreenreader.core.DictationGate]; ghi từ luồng xử lý, đọc cùng luồng đó.
+     */
+    @Volatile var muted: Boolean = false
+
     override fun onFocusChanged() = emit(HapticPlayer.Kind.TICK, EarconPlayer.Kind.FOCUS)
     override fun onBoundary() = emit(HapticPlayer.Kind.HEAVY, EarconPlayer.Kind.BOUNDARY, force = true)
     override fun onActivated() = emit(HapticPlayer.Kind.CLICK, EarconPlayer.Kind.ACTIVATE, force = true)
@@ -37,7 +43,7 @@ internal class DeviceFeedback(context: Context, private val settings: SettingsRe
     private fun emit(h: HapticPlayer.Kind, e: EarconPlayer.Kind, force: Boolean = false) {
         if (!force && !throttle.tryAcquire(SystemClock.uptimeMillis())) return
         if (settings.hapticEnabled) haptic.play(h)
-        if (settings.soundEnabled) {
+        if (settings.soundEnabled && !muted) {
             earcon.setVolume(settings.soundVolume)
             earcon.play(e)
         }

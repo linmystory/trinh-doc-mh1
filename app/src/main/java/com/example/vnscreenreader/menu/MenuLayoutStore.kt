@@ -3,6 +3,7 @@ package com.example.vnscreenreader.menu
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.core.content.edit
+import com.example.vnscreenreader.core.DeviceStorage
 
 /**
  * Lưu bố cục trình đơn phần tử trong bộ nhớ riêng của ứng dụng. Chỉ lưu khi khác mặc định, nên người chưa tùy chỉnh không có gì
@@ -11,8 +12,7 @@ import androidx.core.content.edit
  */
 class MenuLayoutStore(context: Context) {
 
-    private val prefs: SharedPreferences =
-        context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    private val prefs: SharedPreferences = DeviceStorage.prefs(context, PREFS_NAME)
 
     /** Đọc bố cục đang lưu; không có hoặc hỏng thì là mặc định. Không bao giờ ném lỗi: được gọi khi mở trình đơn trong dịch vụ. */
     fun load(): MenuLayout = try {

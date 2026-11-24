@@ -11,6 +11,7 @@ import android.os.Build
 import android.util.Log
 import android.app.NotificationManager
 import android.media.AudioManager
+import android.media.AudioRecordingConfiguration
 import android.os.Handler
 import android.os.Looper
 import android.os.PowerManager
@@ -34,17 +35,22 @@ import com.example.vnscreenreader.ai.mlkit.MlKitImageLabeler
 import com.example.vnscreenreader.ai.mlkit.MlKitTextRecognizer
 import com.example.vnscreenreader.core.CustomLabelStore
 import com.example.vnscreenreader.core.CoalescingReceiver
+import com.example.vnscreenreader.core.DeviceStorage
+import com.example.vnscreenreader.core.DictationGate
+import com.example.vnscreenreader.core.DictationReadback
 import com.example.vnscreenreader.core.Diag
 import com.example.vnscreenreader.core.EventDeduplicator
 import com.example.vnscreenreader.core.HoverEchoGuard
 import com.example.vnscreenreader.core.HoverOutcome
 import com.example.vnscreenreader.core.HoverStats
+import com.example.vnscreenreader.core.MicRecording
 import com.example.vnscreenreader.core.ScreenAnnouncement
 import com.example.vnscreenreader.core.SettingsRepository
 import com.example.vnscreenreader.core.SpeechEngine
 import com.example.vnscreenreader.core.SpeechFormats
 import com.example.vnscreenreader.core.SpeechShield
 import com.example.vnscreenreader.core.SpeechTextBuilder
+import com.example.vnscreenreader.core.StoragePolicy
 import com.example.vnscreenreader.gesture.GestureAction
 import com.example.vnscreenreader.gesture.GestureAnalyzer
 import com.example.vnscreenreader.gesture.GestureMappingStore
@@ -176,6 +182,18 @@ internal class ReaderSession(private val service: AccessibilityService) {
     private val hoverGuard = HoverEchoGuard()
     private val hoverStats = HoverStats()
     @Volatile private var fingerDownSince = 0L
+
+    // Đọc chính tả bằng giọng nói: chỉ truy cập trên luồng xử lý duy nhất của [scope]; [recordingCallback] (luồng chính) chỉ chuyển dữ liệu sang đó.
+    private val dictationGate = DictationGate()
+    private val dictationReadback = DictationReadback()
+    private var dictationMuted = false
+    private var dictationRecheck: Job? = null
+    private var recordingCallbackRegistered = false
+    private val recordingCallback = object : AudioManager.AudioRecordingCallback() {
+        override fun onRecordingConfigChanged(configs: List<AudioRecordingConfiguration>) {
+            guardMain("đổi trạng thái thu âm") { onRecordingsChanged(configs) }
+        }
+    }
 
     // Chỉ truy cập trên luồng xử lý duy nhất của [scope].
     private val liveGate = LiveRegionGate()
@@ -316,6 +334,9 @@ internal class ReaderSession(private val service: AccessibilityService) {
      * ngữ mà không biết lý do: lưu cờ cho màn hình Giọng đọc (có nút cài dữ liệu giọng) và nhắc bằng lời một lần.
      */
     private fun onVoiceStatus(missing: Boolean, locale: Locale) {
+        // Máy chưa mở khóa: dữ liệu giọng của engine có thể còn nằm ở bộ nhớ bị khóa nên "thiếu giọng" chưa chắc đúng. Không nhắc, không lưu cờ;
+        // [onUserUnlocked] cho engine kiểm tra lại ngay sau khi mở khóa.
+        if (missing && !DeviceStorage.isUnlocked(service)) return
         if (settings.ttsVoiceMissing != missing) settings.ttsVoiceMissing = missing
         if (!missing) {
             voiceNoticeLanguage = null
@@ -333,6 +354,88 @@ internal class ReaderSession(private val service: AccessibilityService) {
     /** Gọi trên luồng chính khi cấu hình (ngôn ngữ) đổi. */
     fun onLocaleChanged() {
         speech.updateLanguage()
+    }
+
+    /**
+     * Gọi trên luồng chính khi máy vừa mở khóa lần đầu sau khi khởi động (dịch vụ đã chạy từ lúc còn khóa). Giọng đọc nối lại engine đã chọn
+     * nếu lúc khóa phải đọc tạm bằng engine hệ thống, và kiểm tra lại giọng của ngôn ngữ.
+     */
+    fun onUserUnlocked() {
+        Diag.log("UNLOCK") { "user unlocked: reconnect voice if needed" }
+        speech.onUserUnlocked()
+    }
+
+    /**
+     * Theo dõi việc thu âm của MỌI ứng dụng (không cần quyền ghi âm; hệ thống ẩn tên ứng dụng thu, chỉ cho biết nguồn âm và bản thu có bị câm không).
+     * Mục đích: khi người dùng đọc chính tả bằng nút micro của bàn phím thì trình đọc im lặng để tiếng đọc không lọt vào micro ([DictationGate]).
+     * Gọi trên luồng chính.
+     */
+    private fun registerRecordingCallback() {
+        val audio = service.getSystemService(AudioManager::class.java) ?: return
+        try {
+            audio.registerAudioRecordingCallback(recordingCallback, keyHandler)
+            recordingCallbackRegistered = true
+        } catch (e: RuntimeException) {
+            Log.w(TAG, "Không theo dõi được trạng thái thu âm", e)
+        }
+    }
+
+    private fun unregisterRecordingCallback() {
+        if (!recordingCallbackRegistered) return
+        recordingCallbackRegistered = false
+        try {
+            service.getSystemService(AudioManager::class.java)?.unregisterAudioRecordingCallback(recordingCallback)
+        } catch (e: RuntimeException) {
+            Log.w(TAG, "Không gỡ được bộ theo dõi thu âm", e)
+        }
+    }
+
+    /**
+     * Danh sách thu âm của MỌI ứng dụng đổi (luồng chính): chỉ rút số nguồn và cờ "bị câm" rồi chuyển sang luồng xử lý, nơi hỏi ngữ cảnh gõ chữ
+     * và áp trạng thái IM ([applyRecordings]). Không đọc, không ghi tên ứng dụng thu hay nội dung gì.
+     */
+    private fun onRecordingsChanged(configs: List<AudioRecordingConfiguration>) {
+        if (closed.get()) return
+        val recordings = configs.map { MicRecording(source = it.clientAudioSource, silenced = it.isClientSilenced) }
+        scope.launch { runSafely("thu âm") { applyRecordings(recordings) } }
+    }
+
+    private fun applyRecordings(recordings: List<MicRecording>) {
+        val now = SystemClock.uptimeMillis()
+        dictationGate.update(recordings, now) { typingContextActive() }
+        Diag.log("MIC") {
+            "recordings=${recordings.size} counted=${recordings.count { dictationGate.counts(it) }} " +
+                "sources=${recordings.joinToString(",") { "${it.source}${if (it.silenced) "s" else ""}" }}"
+        }
+        refreshDictationMute()
+    }
+
+    /** Có bàn phím đang mở (một cửa sổ phương thức nhập). Hỏi hệ thống nên [DictationGate] chỉ gọi khi có bản thu đáng tính. Chỉ chạy trên luồng xử lý. */
+    private fun typingContextActive(): Boolean = service.windows.any { it.type == AccessibilityWindowInfo.TYPE_INPUT_METHOD }
+
+    /**
+     * Áp trạng thái IM hiện tại của [dictationGate] lên giọng đọc và âm báo, rồi hẹn kiểm lại đúng lúc nó có thể đổi theo thời gian (hết đuôi
+     * sau khi dừng thu, hoặc van an toàn mở). Bật IM thì dừng ngay câu đang đọc; hết IM thì đọc lại MỘT lần chữ vừa nhập ([DictationReadback]).
+     * Chỉ chạy trên luồng xử lý.
+     */
+    private fun refreshDictationMute() {
+        if (closed.get()) return
+        val now = SystemClock.uptimeMillis()
+        val muted = dictationGate.isMuted(now)
+        if (muted != dictationMuted) {
+            dictationMuted = muted
+            speech.setMuted(muted)
+            feedback.muted = muted
+            Diag.log("MIC") { if (muted) "mute on" else "mute off" }
+            if (muted) dictationReadback.clear() else dictationReadback.take()?.let { speech.speak(it, false) }
+        }
+        dictationRecheck?.cancel()
+        dictationRecheck = dictationGate.nextChangeAt(now)?.let { at ->
+            scope.launch {
+                delay((at - now).coerceAtLeast(1L))
+                runSafely("hết im lặng nhập giọng nói") { refreshDictationMute() }
+            }
+        }
     }
 
     /**
@@ -403,8 +506,12 @@ internal class ReaderSession(private val service: AccessibilityService) {
 
     /** Gọi trên luồng chính. */
     fun start() {
-        com.example.vnscreenreader.core.Diag.init(java.io.File(service.filesDir, "diag.log"))
-        Diag.log("START") { "app ${appVersionText()} Android ${android.os.Build.VERSION.SDK_INT} ${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}" }
+        // Nhật ký ở bộ nhớ bảo vệ theo thiết bị: ghi được cả khi dịch vụ khởi động lúc máy chưa mở khóa (xem [DeviceStorage]).
+        Diag.init(java.io.File(DeviceStorage.filesDir(service), StoragePolicy.DIAG_FILE))
+        Diag.log("START") {
+            "app ${appVersionText()} Android ${android.os.Build.VERSION.SDK_INT} ${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL} " +
+                "unlocked=${DeviceStorage.isUnlocked(service)}"
+        }
         speech.onVoiceStatus = { missing, locale -> onVoiceStatus(missing, locale) }
         overlay.attach()
         applyServiceFlags()
@@ -423,6 +530,7 @@ internal class ReaderSession(private val service: AccessibilityService) {
         settings.register(settingsListener)
         gestureStore.register(gestureListener)
         registerScreenReceiver()
+        registerRecordingCallback()
         syncCallReceiver()
         speech.speak(t(S.MSG_SERVICE_ON))
     }
@@ -892,6 +1000,7 @@ internal class ReaderSession(private val service: AccessibilityService) {
         contentEvents.close()
         locationReader.cancel()
         if (callReceiverRegistered) unregisterCallReceiver()
+        unregisterRecordingCallback()
         keyHandler.removeCallbacksAndMessages(null)
         if (screenReceiverRegistered) {
             try {
@@ -1210,6 +1319,12 @@ internal class ReaderSession(private val service: AccessibilityService) {
      * Ô mật khẩu chỉ đọc ký tự theo quy tắc cũ, không bao giờ đọc từ hay chữ hoa.
      */
     private fun handleTextChanged(event: ReaderEvent) {
+        if (dictationMuted) {
+            // Đang im vì người dùng đọc chính tả: không đọc từng ký tự (bộ nhận dạng thay đi thay lại đoạn đang soạn); ghi lại để đọc MỘT lần khi hết
+            // im. Ô mật khẩu tuyệt đối không ghi lại.
+            if (!event.isPassword) dictationReadback.onTextChanged(event.text, event.fromIndex)
+            return
+        }
         val chars = if (settings.echoChars) {
             SpeechTextBuilder.describeTextChange(
                 fullText = event.text,
@@ -1426,18 +1541,31 @@ internal class ReaderSession(private val service: AccessibilityService) {
         hoverJob?.cancel()
         val delayMs = if (isKey && settings.liftToType) 0 else settings.touchDelayMs
         if (delayMs <= 0) {
-            readHoverTarget(target)
+            readHoverTarget(target, dropEnclosing = true)
             return
         }
         hoverJob = scope.launch {
             delay(delayMs.toLong())
-            runSafely("đọc phần tử đang chạm") { if (menu == null) readHoverTarget(target) }
+            runSafely("đọc phần tử đang chạm") { if (menu == null) readHoverTarget(target, dropEnclosing = false) }
         }
     }
 
-    /** Đọc phần tử đang chạm, trừ khi đó là tiếng vọng của chính phần tử vừa đọc ([HoverEchoGuard]). */
-    private fun readHoverTarget(target: AccessibilityNodeInfo) {
-        if (!hoverGuard.shouldRead(target, SystemClock.uptimeMillis())) {
+    /**
+     * Đọc phần tử đang chạm, trừ khi đó là tiếng vọng ([HoverEchoGuard]): của chính phần tử vừa đọc, hoặc (khi [dropEnclosing]) của phần tử CHỨA nó.
+     * Chạm vào một dòng thì hệ thống báo cho dòng rồi vài mili giây sau cho phần tử chứa nó (dòng thông báo bấm được); không bỏ thì dòng bị đọc, rồi cả
+     * cụm bị đọc tiếp. Chạm có độ trễ (cài đặt độ trễ chạm) đi đường cũ ([dropEnclosing] = false): sự kiện mới đã hủy việc chờ của sự kiện cũ nên
+     * chỉ có MỘT lần đọc.
+     */
+    private fun readHoverTarget(target: AccessibilityNodeInfo, dropEnclosing: Boolean) {
+        val now = SystemClock.uptimeMillis()
+        val read = if (dropEnclosing) {
+            hoverGuard.shouldRead(target, now) { last ->
+                last is AccessibilityNodeInfo && NodeCollector.findAncestorOrSelf(last) { it == target } != null
+            }
+        } else {
+            hoverGuard.shouldRead(target, now)
+        }
+        if (!read) {
             hoverStats.record(HoverOutcome.ECHO)
             return
         }
