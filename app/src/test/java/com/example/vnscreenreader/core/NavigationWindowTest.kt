@@ -1,6 +1,5 @@
 package com.example.vnscreenreader.core
 
-import android.view.accessibility.AccessibilityWindowInfo
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -36,7 +35,9 @@ class NavigationWindowTest {
     @Test
     fun anUndefinedWindowId_isNeverFollowed() {
         // `AccessibilityNodeInfo.getWindowId()` trả -1 khi không rõ: dù danh sách cửa sổ (sai) có -1 cũng không theo.
-        assertEquals(AccessibilityWindowInfo.UNDEFINED_WINDOW_ID, NavigationWindow.UNDEFINED_WINDOW_ID)
+        // Hằng tương ứng của Android (`AccessibilityWindowInfo.UNDEFINED_WINDOW_ID`) KHÔNG công khai trong SDK: tham chiếu nó biên dịch được với
+        // android.jar có API ẩn nhưng làm hỏng biên dịch test trên CI thật (lỗi của v62), nên ở đây chỉ so với giá trị -1 viết tay.
+        assertEquals(-1, NavigationWindow.UNDEFINED_WINDOW_ID)
         assertNull(NavigationWindow.follow(NavigationWindow.UNDEFINED_WINDOW_ID, appWindow, listOf(appWindow, NavigationWindow.UNDEFINED_WINDOW_ID)))
     }
 

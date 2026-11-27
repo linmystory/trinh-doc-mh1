@@ -82,4 +82,23 @@ class TtsUnlockPolicyTest {
         assertTrue(TtsUnlockPolicy.reconnectAfterUnlock(standIn = true, ready = false))
         assertFalse(TtsUnlockPolicy.reconnectAfterUnlock(standIn = false, ready = true))
     }
+
+    @Test
+    fun lockedBootCompletedRetriesAnEngineThatIsWaitingForItsTimer() {
+        // Engine hỏng lúc dịch vụ vừa lên, đang nằm trong khoảng hẹn giờ thử lại: thử ngay thay vì chờ hết hẹn giờ.
+        assertTrue(TtsUnlockPolicy.retryAtLockedBootCompleted(ready = false, connecting = false))
+    }
+
+    @Test
+    fun lockedBootCompletedLeavesAnEngineThatIsStillConnectingAlone() {
+        // Đang chờ phản hồi của lần nối trước: nối thêm một kết nối nữa chỉ làm chậm cả hai.
+        assertFalse(TtsUnlockPolicy.retryAtLockedBootCompleted(ready = false, connecting = true))
+    }
+
+    @Test
+    fun lockedBootCompletedLeavesAReadyEngineAlone() {
+        // Đã sẵn sàng (không đang kết nối): không khựng tiếng chỉ vì có một tin hệ thống.
+        assertFalse(TtsUnlockPolicy.retryAtLockedBootCompleted(ready = true, connecting = false))
+        assertFalse(TtsUnlockPolicy.retryAtLockedBootCompleted(ready = true, connecting = true))
+    }
 }

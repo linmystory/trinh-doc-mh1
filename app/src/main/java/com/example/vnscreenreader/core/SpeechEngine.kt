@@ -250,6 +250,15 @@ class SpeechEngine(
         engines.forEach { it.onUserUnlocked() }
     }
 
+    /**
+     * Hệ thống báo máy khởi động xong nhưng còn khóa (luồng chính): mỗi công cụ chưa gắn được engine thì thử lại ngay ([VoiceEngine.onLockedBootCompleted]),
+     * thay vì chờ hết khoảng hẹn giờ.
+     */
+    fun onLockedBootCompleted() {
+        val engines = synchronized(lock) { listOfNotNull(primary, second) }
+        engines.forEach { it.onLockedBootCompleted() }
+    }
+
     /** Đổi công cụ TTS thứ nhất (gói rỗng = mặc định hệ thống). Công cụ thứ hai đổi qua [configure]. */
     fun changeEngine(newPackage: String) {
         val engine = synchronized(lock) {

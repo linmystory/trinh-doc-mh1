@@ -91,6 +91,7 @@ class ScreenReaderService : AccessibilityService() {
      */
     private fun handleUnlocked() {
         stopWatchingUnlock()
+        BootSignal.lockedBootCompleted.expire() // tin "khởi động xong, còn khóa" hết ý nghĩa: phiên dựng sau không bị báo oan
         val movedLegacy = try {
             DeviceStorage.migrate(applicationContext)
         } catch (e: RuntimeException) {

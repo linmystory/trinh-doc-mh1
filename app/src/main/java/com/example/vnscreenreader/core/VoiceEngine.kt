@@ -85,18 +85,25 @@ class VoiceEngine(
     /** true khi còn câu đang đọc hoặc đang chờ phát (dùng để chọn luồng âm khi chỉnh âm lượng). */
     val isSpeaking: Boolean get() = pending.pendingMessages() > 0
 
-    /** Dừng rồi đóng một engine mà không bao giờ ném lỗi (đóng một dịch vụ đã chết/chưa gắn có thể ném IllegalArgumentException). */
+    /**
+     * Dừng rồi đóng một engine mà không bao giờ ném lỗi (đóng một dịch vụ đã chết/chưa gắn có thể ném IllegalArgumentException) và KHÔNG chờ:
+     * việc chạy ở luồng nền ([AsyncCloser]) vì `stop()`/`shutdown()` chờ tiến trình engine trả lời, lúc máy vừa khởi động có thể chặn luồng chính
+     * hàng chục giây (đúng lúc người dùng vừa nhập xong mã mở khóa). Nơi gọi đã gỡ engine khỏi [tts] và vô hiệu thế hệ của nó ([generation]) trước,
+     * nên không ai dùng lại nó trong lúc nó đang được đóng.
+     */
     private fun shutdownQuietly(engine: TextToSpeech?) {
         if (engine == null) return
-        try {
-            engine.stop()
-        } catch (e: RuntimeException) {
-            Log.w(TAG, "Dừng engine lỗi", e)
-        }
-        try {
-            engine.shutdown()
-        } catch (e: RuntimeException) {
-            Log.w(TAG, "Đóng engine lỗi", e)
+        closer.close("đóng TextToSpeech") {
+            try {
+                engine.stop()
+            } catch (e: RuntimeException) {
+                Log.w(TAG, "Dừng engine lỗi", e)
+            }
+            try {
+                engine.shutdown()
+            } catch (e: RuntimeException) {
+                Log.w(TAG, "Đóng engine lỗi", e)
+            }
         }
     }
 
@@ -470,6 +477,22 @@ class VoiceEngine(
         mainHandler.post { connect() }
     }
 
+    /**
+     * Hệ thống báo máy khởi động xong nhưng còn khóa (gọi trên luồng chính). Engine TTS khai báo `directBootAware` giờ đã chạy được: engine nào lúc dịch vụ vừa
+     * lên đã chưa gắn được và đang nằm trong khoảng hẹn giờ thử lại thì thử NGAY, không chờ hết hẹn giờ ([TtsUnlockPolicy.retryAtLockedBootCompleted]).
+     * Số lần hỏng đã đếm giữ nguyên: đây chỉ là thử sớm hơn lần đã hẹn, không phải làm lại từ đầu. Engine đang kết nối hoặc đã sẵn sàng thì để yên.
+     */
+    fun onLockedBootCompleted() {
+        val retry = synchronized(lock) {
+            !closed && TtsUnlockPolicy.retryAtLockedBootCompleted(ready = ready, connecting = tts != null)
+        }
+        if (!retry) return
+        Log.i(TAG, "Máy khởi động xong (còn khóa): thử nối lại engine ngay")
+        // Không có engine nào đang chờ phản hồi nên không có callback khởi tạo nào đáng giữ: chỉ còn lần connect() đã hẹn giờ, bỏ nó và nối ngay một lần.
+        mainHandler.removeCallbacksAndMessages(null)
+        mainHandler.post { connect() }
+    }
+
     /** Đọc lại câu gần nhất (để nghe lại điều vừa bỏ lỡ). @return false nếu chưa đọc gì. */
     fun repeatLast(): Boolean {
         val text = lastText ?: return false
@@ -525,5 +548,8 @@ class VoiceEngine(
     private companion object {
         const val TAG = "SpeechEngine"
         const val LONG_RETRY_MS = 60_000L
+
+        /** Chung cho mọi [VoiceEngine] trong tiến trình: việc đóng TextToSpeech chạy nền, xem [shutdownQuietly]. */
+        val closer = AsyncCloser(AsyncCloser.daemonPool("vn-tts-closer")) { label, e -> Log.w(TAG, "Lỗi khi $label", e) }
     }
 }

@@ -357,12 +357,23 @@ internal class ReaderSession(private val service: AccessibilityService) {
     }
 
     /**
-     * Gọi trên luồng chính khi máy vừa mở khóa lần đầu sau khi khởi động (dịch vụ đã chạy từ lúc còn khóa). Giọng đọc nối lại engine đã chọn
-     * nếu lúc khóa phải đọc tạm bằng engine hệ thống, và kiểm tra lại giọng của ngôn ngữ.
+     * Gọi trên luồng chính khi máy vừa mở khóa lần đầu sau khi khởi động (dịch vụ đã chạy từ lúc còn khóa). Gắn kho nhãn tùy chỉnh (nằm ở bộ nhớ thường,
+     * lúc khóa chưa mở được nên phần tử được đọc như khi chưa có nhãn nào), rồi cho giọng đọc nối lại engine đã chọn nếu lúc khóa phải đọc tạm bằng
+     * engine hệ thống và kiểm tra lại giọng của ngôn ngữ.
      */
     fun onUserUnlocked() {
-        Diag.log("UNLOCK") { "user unlocked: reconnect voice if needed" }
+        val labelsBound = customLabels.bind()
+        Diag.log("UNLOCK") { "user unlocked: labels bound=$labelsBound, reconnect voice if needed" }
         speech.onUserUnlocked()
+    }
+
+    /**
+     * Người nghe của chốt "khởi động xong, máy còn khóa" ([BootSignal]); giữ một thể hiện duy nhất để gỡ đúng nó trong [close]. Chạy trên luồng chính
+     * (bộ nhận broadcast, hoặc [start] nếu tin đã tới trước khi phiên dựng xong).
+     */
+    private val lockedBootListener: () -> Unit = {
+        Diag.log("LOCKED_BOOT") { "boot completed while locked: retry voice now if it is not ready" }
+        speech.onLockedBootCompleted()
     }
 
     /**
@@ -532,6 +543,9 @@ internal class ReaderSession(private val service: AccessibilityService) {
         registerScreenReceiver()
         registerRecordingCallback()
         syncCallReceiver()
+        // Tin "khởi động xong, còn khóa" chỉ có ích khi dịch vụ lên lúc máy chưa mở khóa (Direct Boot). Gắn SAU khi mọi thứ đã dựng: tin đã tới từ trước
+        // thì người nghe được báo ngay tại đây; [ScreenReaderService.handleUnlocked] cho tin hết hạn khi máy mở khóa.
+        if (!DeviceStorage.isUnlocked(service)) BootSignal.lockedBootCompleted.attach(lockedBootListener)
         speech.speak(t(S.MSG_SERVICE_ON))
     }
 
@@ -993,6 +1007,7 @@ internal class ReaderSession(private val service: AccessibilityService) {
     /** Idempotent. Gọi trên luồng chính (overlay phải gỡ trên luồng chính). */
     fun close() {
         if (!closed.compareAndSet(false, true)) return
+        BootSignal.lockedBootCompleted.detach(lockedBootListener)
         ScreenSearchBridge.clear()
         settings.unregister(settingsListener)
         gestureStore.unregister(gestureListener)

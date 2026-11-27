@@ -8,7 +8,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
 import org.junit.Test
 
-/** Quyền khai báo trong manifest phải đúng bằng quyền mà các tính năng thật sự cần (hiện: chỉ rung). */
+/** Quyền khai báo trong manifest phải đúng bằng quyền mà các tính năng thật sự cần (hiện: rung và nhận tin khởi động xong, đều loại thường). */
 class ManifestPermissionsTest {
 
     private fun manifest(): String? =
@@ -24,7 +24,8 @@ class ManifestPermissionsTest {
         assumeTrue(text != null)
         val active = declared.findAll(text!!).map { it.value }.filter { !it.contains("tools:node=\"remove\"") }
             .mapNotNull { nameOf.find(it)?.groupValues?.get(1) }.toSet()
-        val expected = setOf("android.permission.VIBRATE") + PermissionFeatures.all.flatMap { it.permissions }
+        // Cả hai quyền cố định đều loại thường (không hỏi người dùng): rung phản hồi; nhận LOCKED_BOOT_COMPLETED để nối lại giọng đọc ngay lúc khởi động máy.
+        val expected = setOf("android.permission.VIBRATE", "android.permission.RECEIVE_BOOT_COMPLETED") + PermissionFeatures.all.flatMap { it.permissions }
         assertEquals(expected, active)
     }
 

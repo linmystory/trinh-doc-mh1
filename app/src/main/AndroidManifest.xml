@@ -8,6 +8,11 @@
     -->
     <!-- Rung phản hồi khi chuyển phần tử (quyền loại thường, không cần hỏi người dùng). -->
     <uses-permission android:name="android.permission.VIBRATE" />
+    <!--
+      Nhận tin "khởi động xong, máy còn khóa" (LOCKED_BOOT_COMPLETED) để nối lại giọng đọc ngay khi engine TTS chạy được (service/BootSignalReceiver.kt).
+      Quyền loại thường: không hỏi người dùng, không cho đọc dữ liệu nào.
+    -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <!-- Mỗi nhóm dưới đây thuộc một tính năng TẮT mặc định, chỉ được xin khi người dùng bật tính năng đó (xem PermissionFeatures). -->
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
     <uses-permission android:name="android.permission.READ_CALL_LOG" />
@@ -79,5 +84,18 @@
                 android:name="android.accessibilityservice"
                 android:resource="@xml/accessibility_service_config" />
         </service>
+
+        <!--
+            directBootAware: thiếu cờ này hệ thống không gửi LOCKED_BOOT_COMPLETED cho bộ nhận (tin chỉ gửi một lần, lúc máy còn khóa). Bộ nhận không đụng tới bộ nhớ nào
+            (chỉ ghi nhớ tin trong bộ nhớ tiến trình). exported=false: tin của hệ thống vẫn tới, ứng dụng khác không gửi giả được.
+        -->
+        <receiver
+            android:name=".service.BootSignalReceiver"
+            android:directBootAware="true"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
     </application>
 </manifest>

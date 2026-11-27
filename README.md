@@ -20,7 +20,7 @@ Trình đọc màn hình (screen reader) cho Android dành cho người khiếm 
 - Chế độ phản hồi: chỉ rung / chỉ âm báo / cả hai / tắt, đổi tức thì, không ảnh hưởng giọng đọc.
 - Rung và âm báo (tổng hợp tại chỗ, không tệp âm thanh) khi chuyển phần tử, chạm đầu/cuối, nhấn.
 - Chọn công cụ TTS (engine) ngay trong cài đặt, có hiệu lực tức thì.
-- Chạy ngay ở màn hình nhập mã sau khi khởi động lại máy, trước khi mở khóa lần đầu (Direct Boot, xem "Bản 2.25.0").
+- Chạy ngay ở màn hình nhập mã sau khi khởi động lại máy, trước khi mở khóa lần đầu (Direct Boot, xem "Bản 2.25.0"), và nối lại giọng đọc ngay khi máy khởi động xong (xem "Bản 2.27.0").
 - Cài đặt chia thành 6 menu và 16 trang (xem "Bản 2.21.0" và "Bản 2.23.0"), bố cục thích ứng: máy rộng hiện cây menu + nội dung song song; máy hẹp mở từng tầng, Back lùi từng tầng.
 - Hệ thống tiện ích: plugin dựng sẵn và script JSON nạp từ tệp.
 - Giao diện độ tương phản cao (đen/vàng).
@@ -63,6 +63,66 @@ Cử chỉ mở trình đơn hiển thị ở trang **Trình đơn nhanh** trong
   mục đầu tiên (không đọc tên và số mục trước); cử chỉ không dùng được trong trình đơn chỉ nhắc ngắn một lần.
 - Cài đặt **Đọc hướng dẫn thao tác** (Nội dung được đọc → Cách đọc phần tử, mặc định bật): tắt thì trình đơn chỉ đọc tên mục, không đọc vị trí, chữ "nhóm", tên nhóm khi vào và lời nhắc.
 
+## Bản 2.27.0: nhãn và tiện ích về bộ nhớ thường, nối lại giọng đọc ngay khi máy khởi động xong
+
+Yêu cầu: "Vậy hãy làm theo đề xuất của bạn đi" → làm **đề xuất 2** (xử lý `ACTION_LOCKED_BOOT_COMPLETED`) và **đề xuất 3-B** (đưa `custom_labels`/`plugin_prefs` về bộ nhớ thường). Đề xuất 4 (nâng Compose BOM) làm thành **bản riêng 2.28.0** để hoàn tác riêng được. **Chưa thử được trên máy thật**: thứ tự phát tin lúc khởi động, engine giọng đọc thật, Gradle, lint và Compose đều không chạy được ở môi trường soạn thảo; các tệp `ui/` không biên dịch được ở đây nên **CI là lần biên dịch đầu tiên** của chúng (đã rà từng chỗ gọi `CustomLabelStore`, `PluginRegistry`, `DeviceStorage` trong `ui/`, `MainActivity`, `VnApplication`, `LabelEditorActivity`, `ScreenSearchActivity`: không đổi chữ ký nào).
+
+- **(1) Nhãn tự gán và trạng thái tiện ích về bộ nhớ thường (3-B).**
+  - Vì sao: bản 2.25.0 đưa cả 6 kho sang bộ nhớ bảo vệ theo thiết bị (device-protected) để dịch vụ chạy được lúc còn khóa. Bộ nhớ đó **không bị khóa bằng mã mở khóa của bạn**, chỉ bằng khóa của máy. Nhãn tự gán cho biết bạn dùng ứng dụng nào và bấm nút nào; trạng thái bật/tắt tiện ích đi kèm script bạn nạp (script đã ở bộ nhớ thường). Trình đọc không cần cả hai ở màn hình nhập mã, nên chúng quay về chỗ được bảo vệ bằng mã mở khóa.
+  - Chia kho (`core/StoragePolicy.kt`, nguồn sự thật duy nhất): **bộ nhớ thường** = `custom_labels`, `plugin_prefs`; **bảo vệ theo thiết bị** = `screen_reader_prefs`, `gesture_prefs`, `app_gesture_prefs`, `menu_layout_prefs` (giọng, cử chỉ, bố cục trình đơn: dịch vụ cần ngay lúc khóa). Kho mới thêm vào danh sách mà không khai báo là kho thường thì mặc định ở bộ nhớ bảo vệ theo thiết bị (luôn mở được lúc khóa).
+  - Cách chạy:
+    - `DeviceStorage.credentialPrefs(...)` trả **null** lúc máy còn khóa (mỗi lần gọi kiểm tra lại, không nhớ kết quả null); `DeviceStorage.prefs(...)` với kho thường lúc khóa **ném `IllegalStateException`** có lời giải thích (ném lỗi rõ ràng tốt hơn trả một kho giả rồi mất dữ liệu).
+    - `CustomLabelStore` gắn kho **muộn** (`core/LateBinding.kt`, thuần Kotlin): dựng lúc khóa không mở kho nào, `find` trả null (phần tử được đọc như khi chưa có nhãn nào), `set`/`remove` không làm gì và `set` báo false. `ReaderSession.onUserUnlocked` gọi `bind()` ngay lúc mở khóa. Giao diện (Activity, chỉ chạy sau khi mở khóa) gắn ngay khi tạo. Sau `close()` không mở lại kho (khỏi rò listener của phiên đã bỏ).
+    - `PluginRegistry` mở kho **mỗi lần dùng** và chịu được null: lúc khóa **không biết** tiện ích nào đã bị tắt nên coi như **không tiện ích nào bật** (`isEnabled` false, `setEnabled` không làm gì, `runEnabled` rỗng; nơi gọi báo câu "Chưa có tiện ích nào được bật"), tránh chạy nhầm tiện ích bạn đã tắt.
+  - Nâng cấp (không mất dữ liệu, chỉ chạy khi máy đã mở khóa, chạy lại bao nhiêu lần cũng cho kết quả như nhau):
+    - **Từ 2.24.0 trở về trước** (mọi thứ ở bộ nhớ thường): 4 kho thuộc nhóm bảo vệ theo thiết bị chuyển sang như ở 2.25.0 (không đổi); 2 kho thường **ở yên**.
+    - **Từ 2.25.0/2.26.0** (mọi thứ ở bộ nhớ bảo vệ theo thiết bị): 2 kho thường được chuyển **ngược** về bộ nhớ thường ngay sau khi mở khóa (`core/PrefsRelocation.kt` + `StoragePolicy.planMove`, bản chuyển thật do `Context.moveSharedPreferencesFrom` làm: sao chép rồi xóa bản gốc, cả tệp `.xml` lẫn `.xml.bak`). Quy tắc: bản cũ không có → không làm gì; chỉ bản cũ có → **chuyển**; **cả hai nơi đều có** (lần chuyển trước dừng giữa chừng, người dùng đã ghi tiếp ở bộ nhớ thường) → **giữ bản ở bộ nhớ thường, xóa bản cũ**, không bao giờ ghi đè bản mới hơn. Chuyển hỏng (đĩa đầy, lỗi tệp) → dữ liệu ở lại chỗ cũ, ghi nhật ký, lần mở kho sau thử lại. Mỗi kho được xử lý độc lập; nhiều luồng cùng xử lý một kho thì chỉ chuyển một lần.
+  - Sao lưu: không đổi (`allowBackup="false"`; `data_extraction_rules.xml` đã loại mọi miền, kể cả `device_*`).
+- **(2) Nối lại giọng đọc ngay khi máy khởi động xong (đề xuất 2).**
+  - Vấn đề: lúc dịch vụ lên ở màn hình nhập mã mà engine giọng đọc chưa gắn được, bản cũ thử lại theo thang 1 → 2 → 4 → 8 → 16 giây (tổng khoảng 31 giây) rồi mới rơi về engine mặc định. Nếu engine hệ thống chỉ chạy được sau đó vài giây thì người dùng nghe im lặng suốt khoảng chờ. Hệ thống phát `ACTION_LOCKED_BOOT_COMPLETED` đúng lúc máy khởi động xong nhưng chưa mở khóa, khi mọi dịch vụ `directBootAware` (kể cả engine giọng đọc của hệ thống) đã chạy được.
+  - Cách làm:
+    - `service/BootSignalReceiver.kt`: bộ nhận khai báo `directBootAware="true"` (thiếu cờ này hệ thống không gửi tin cho nó: tin chỉ gửi **một lần**, lúc máy còn khóa), `exported="false"` (tin của hệ thống vẫn tới, ứng dụng khác không gửi giả được), chỉ lọc đúng một action. `onReceive` chỉ gọi `BootSignal.lockedBootCompleted.arrive()`: không đụng bộ nhớ nào, không việc nặng.
+    - `core/LockedBootSignal.kt` (thuần Kotlin): chốt nhớ tin giữa bộ nhận và phiên đọc. **Đúng ở cả hai thứ tự**: người nghe gắn trước tin thì được báo khi tin tới; gắn sau tin (phiên dựng xong muộn) thì được báo ngay. Chỉ gắn khi dịch vụ **khởi động lúc còn khóa**; tin **hết hạn khi mở khóa** (`ScreenReaderService.handleUnlocked`), nên phiên dựng lại về sau (dịch vụ nối lại) không bị báo oan; gỡ người nghe của phiên cũ không gỡ nhầm người nghe của phiên mới. Người nghe chạy **ngoài khóa** (gọi ngược vào chốt không tự khóa chết) và mọi ngoại lệ thời gian chạy của nó được bắt và ghi nhật ký, **không bao giờ thoát ra `onReceive`** (lỗi nặng `Error` vẫn đi tiếp).
+    - `VoiceEngine.onLockedBootCompleted` + `TtsUnlockPolicy.retryAtLockedBootCompleted(ready, connecting)`: chỉ nối lại khi engine **chưa sẵn sàng và không đang nối** (tức đang chờ hẹn thử lại); khi đó hủy hẹn giờ đang chờ và nối ngay trên luồng chính. Đang sẵn sàng hoặc đang nối thì để yên (không khựng tiếng). Không đổi bộ đếm thất bại: nếu lần nối này cũng hỏng, thang thử lại vẫn đi tiếp như cũ rồi rơi về engine mặc định. `SpeechEngine` chuyển lời gọi cho cả engine chính và engine thứ hai.
+    - `AndroidManifest.xml`: thêm quyền `RECEIVE_BOOT_COMPLETED` (loại thường: không hỏi người dùng, không cho đọc dữ liệu nào) và bộ nhận trên.
+  - Tác dụng phụ cần biết: hệ thống có thể dựng tiến trình ứng dụng lúc khởi động máy **ngay cả khi dịch vụ trợ năng đang tắt** để giao tin này. Bộ nhận chỉ ghi tin vào RAM (không tin nào được lưu xuống đĩa, không bộ nhớ nào bị mở).
+- **(3) Chốt chặn API của bộ công cụ ngoại tuyến** bắt `Intent.ACTION_LOCKED_BOOT_COMPLETED` vì ký hiệu này chưa nằm trong cơ sở đã qua CI. Đã đối chiếu trang tham chiếu chính thức của Android (API công khai từ API 24; cần `RECEIVE_BOOT_COMPLETED` và bộ nhận `directBootAware`) rồi mới thêm vào danh sách đã xác minh; chốt chặn sau đó đạt.
+- **(4) Kiểm thử:** **986 bài JVM đạt** (908 ở bản 2.26.0, thêm 78): `LateBindingTest` (12), `LockedBootSignalTest` (17), `PrefsRelocationTest` (15), `StoragePolicyTest` (20) là bốn tệp mới; `TtsUnlockPolicyTest` thêm 3 bài (14); `DirectBootSourceTest` thêm 11 bài quét mã nguồn và manifest (19: bộ nhận riêng tư và đúng quyền; kho thường chỉ mở qua `credentialPrefs` và không mở ở khởi tạo thuộc tính; kho bảo vệ theo thiết bị chỉ mở qua `prefs`; chuyển kho đúng chiều; bộ nhận chỉ ghi tin; người nghe chỉ gắn lúc khóa và gỡ khi đóng...). `ManifestPermissionsTest` cập nhật danh sách quyền. **61 phép đột biến** (cố ý đổi một dòng trong mã chính) đều bị bài kiểm thử bắt, sau khi siết 4 bài lúc đầu để sót (mở kho thường ở thuộc tính đặt tên khác `prefs`; bỏ lời gọi chuyển kho trước khi mở; gọi callback đóng trong khóa; thu hẹp `catch` còn một loại ngoại lệ). Các bài đa luồng chạy lặp 25 lần không lỗi chập chờn; mọi chỗ chờ đều có hạn, hỏng thì thất bại thay vì treo. Cảnh báo biên dịch vẫn 9 như cũ.
+- **Cách thử trên máy:**
+  1. *Nâng cấp giữ dữ liệu:* cài đè lên bản đang chạy (2.25.0/2.26.0) có sẵn nhãn tự gán và vài tiện ích đã bật. Sau khi mở khóa, nhãn vẫn đọc đúng và tiện ích vẫn bật. Nếu dịch vụ khởi động lúc còn khóa, nhật ký chẩn đoán có `UNLOCK user unlocked: labels bound=true …` (`labels bound=false` nghĩa là kho nhãn chưa mở được lúc đó: hãy gửi dòng này).
+  2. *Khởi động lại, chưa mở khóa:* chạm bàn phím số, phải nghe từng số như ở 2.25.0; nếu trước đây có đoạn im lặng đầu tiên thì nay giọng phải tới sớm hơn. Mở khóa rồi xem nhật ký chẩn đoán: dòng `LOCKED_BOOT boot completed while locked: …` cho biết tin đã tới phiên đọc (xuất hiện khi dịch vụ khởi động lúc còn khóa).
+  3. *Lúc còn khóa:* phần tử đọc **không** có nhãn tự gán; sau khi mở khóa nhãn áp dụng lại. Đây là chủ ý.
+  4. Có gì lạ: gửi các dòng `START`, `LOCKED_BOOT`, `UNLOCK` của nhật ký chẩn đoán.
+- **Giới hạn đã biết:**
+  1. Chưa thử trên máy thật. Thứ tự hệ thống gắn dịch vụ trợ năng so với lúc phát `LOCKED_BOOT_COMPLETED` tùy máy (thường dịch vụ được gắn trước nên tin tới sau khi phiên đã dựng); cả hai thứ tự đã được xử lý và kiểm thử bằng JVM, nhưng việc thật trên máy chưa quan sát được.
+  2. Một số hãng tùy biến Android có thể trì hoãn hoặc không gửi tin này cho ứng dụng chưa mở khóa; khi đó giọng đọc vẫn dùng thang thử lại cũ (31 giây rồi rơi về engine mặc định), không tệ hơn bản trước.
+  3. Lúc còn khóa không có nhãn tự gán và không chạy tiện ích (đánh đổi đã chọn vì riêng tư); người dùng đã đặt nhiều nhãn sẽ thấy khác biệt ở màn hình nhập mã so với 2.25.0/2.26.0.
+  4. Các mục (1)-(5) của "Giới hạn đã biết" ở bản 2.25.0 vẫn đúng.
+- **Nếu CI đỏ:** các tệp mới (`core/LateBinding.kt`, `core/LockedBootSignal.kt`, `core/PrefsRelocation.kt`, `service/BootSignalReceiver.kt` và 4 tệp kiểm thử mới) **không cần xóa** vì tải lên không xóa tệp; còn tệp nào hỏng biên dịch thì trả các tệp đã sửa về bản 2.26.0: `core/StoragePolicy.kt`, `core/DeviceStorage.kt`, `core/CustomLabelStore.kt`, `plugin/PluginRegistry.kt`, `service/ReaderSession.kt`, `service/ScreenReaderService.kt`, `core/VoiceEngine.kt`, `core/SpeechEngine.kt`, `core/TtsUnlockPolicy.kt`, `AndroidManifest.xml` và các kiểm thử `DirectBootSourceTest.kt`, `ManifestPermissionsTest.kt`, `TtsUnlockPolicyTest.kt`. Nếu chỉ một nhóm hỏng thì có thể hoàn tác riêng: nhóm giọng đọc lúc khởi động = `VoiceEngine`, `SpeechEngine`, `TtsUnlockPolicy`, `ReaderSession`, `ScreenReaderService`, manifest + bộ nhận; nhóm kho = `StoragePolicy`, `DeviceStorage`, `CustomLabelStore`, `PluginRegistry`. Hai nhóm đã đan vào nhau ở `ReaderSession` và `ScreenReaderService`, nên hoàn tác một nhóm thì cần đối chiếu hai tệp đó.
+
+## Bản 2.26.0: đóng giọng đọc ở luồng nền, sửa bài kiểm thử hỏng trên CI của bản 2.25.0, nâng công cụ build, rà soát lỗi
+
+Yêu cầu: "Tiếp" (làm đề xuất 1 đã nêu), đồng thời rà soát lỗi và cập nhật công nghệ mới nhất. Đề xuất 2 (xử lý `ACTION_LOCKED_BOOT_COMPLETED`) và 3-B (đưa `custom_labels`/`plugin_prefs` về bộ nhớ thường) **chưa được duyệt nên không làm**. Dữ liệu và cài đặt của người dùng không đổi.
+
+- **(1) Đóng TextToSpeech ở luồng nền.**
+  - Nguyên nhân: `TextToSpeech.stop()` và `shutdown()` là lời gọi binder đồng bộ, chờ tiến trình của engine trả lời. Lúc máy vừa khởi động (hoặc engine đang cập nhật, bị tắt) lời gọi này có thể kéo dài hàng chục giây: trình đọc mã nguồn mở Backtalk đo được luồng chính bị chặn 13.958 ms trên một máy, đúng lúc người dùng vừa nhập xong mã mở khóa. Trước đây `VoiceEngine.shutdownQuietly` gọi thẳng trên luồng chính ở 8 chỗ (nối, thử lại, khôi phục, đổi engine, mở khóa, tắt).
+  - Cách sửa: lớp thuần Kotlin mới `core/AsyncCloser.kt`. `shutdownQuietly` chỉ xếp việc `stop()` rồi `shutdown()` vào nhóm luồng daemon (tối đa 4 luồng, luồng nhàn rỗi quá 30 giây tự thoát); luồng chính chỉ tốn thời gian xếp việc. Nhiều luồng để một lần đóng bị kẹt không giữ chân các lần đóng khác. Lỗi lúc đóng được ghi nhật ký, không ném ra; bộ thực thi từ chối thì đóng tại chỗ (chậm còn hơn rò rỉ kết nối); lỗi nặng (`Error`) không bị nuốt.
+  - Cố ý giữ nguyên: `VoiceEngine.stop()` (ngắt tiếng đang đọc) vẫn đồng bộ vì phải dừng ngay và không nằm trên đường đóng/mở lại engine; `DeviceStorage.migrate` vẫn chạy trên luồng chính vì chỉ là vài lần kiểm tra và đổi tên tệp, đưa sang luồng nền chỉ thêm nguy cơ chạy đua với việc dựng phiên đọc.
+- **(2) Sửa bài kiểm thử hỏng trên CI của bản 2.25.0.**
+  - Báo cáo CI: bản dựng (APK) đạt nhưng bước kiểm thử + lint đỏ và báo cáo thiếu thư mục `tests/`. Nguyên nhân: `NavigationWindowTest` dùng hằng `AccessibilityWindowInfo.UNDEFINED_WINDOW_ID`; hằng này có trong `android.jar` đầy đủ dùng để kiểm thử ngoại tuyến nhưng **không thuộc SDK công khai**, nên biên dịch kiểm thử trên CI thật báo lỗi. Đã đổi sang giá trị `-1` (kèm chú thích). APK của bản 2.25.0 không bị ảnh hưởng.
+  - Chốt chặn mới trong bộ công cụ kiểm thử ngoại tuyến (không nằm trong repo): lấy mọi tham chiếu dạng `LớpAndroid.THÀNH_VIÊN` trong mã chính và test; ký hiệu nào không có trong cơ sở (338 ký hiệu của mã chính bản 2.25.0 đã qua CI) hoặc danh sách đã xác minh thủ công là API công khai thì báo lỗi. Chốt chặn đã bắt đúng lỗi này trên mã chưa sửa. Giới hạn: không bắt phương thức ẩn gọi trên một biến (`node.hidden()`); chỗ đó vẫn do CI thật kiểm.
+- **(3) Nâng công nghệ** (báo cáo lint của CI đối chiếu với Google Maven và Gradle chỉ ra bốn bản mới):
+  - Gradle 9.9.1 → **9.9.2** (bản vá bảo mật). Checksum SHA-256 `971fcd71…c76b` trong `gradle-wrapper.properties` là kết quả tự tính trên tệp phân phối thật tải từ kho GitHub chính thức của Gradle, khớp từng ký tự với checksum Gradle công bố.
+  - AGP 9.5.1 → **9.5.2** và lifecycle-runtime-compose 2.11.0 → **2.11.1** (cả hai là bản vá).
+  - **Chưa** nâng Compose BOM 2026.11.01 (Compose 1.13.0, Material3 1.5.0): Compose 1.13 đòi biên dịch với compileSdk **37.1** trong khi dự án dùng 37; nâng BOM mà không đổi compileSdk thì bước kiểm tra siêu dữ liệu AAR (`checkDebugAarMetadata`) làm hỏng bản dựng. Muốn nâng cần đổi compileSdk sang 37.1 (máy dựng phải có nền tảng SDK 37.1) và xử lý thay đổi của Material3 1.5.0; không thử được ở môi trường soạn thảo nên nên làm thành một bản riêng, để nếu CI đỏ chỉ cần hoàn tác vài dòng.
+  - targetSdk giữ **36**: Android 17 siết "Background audio hardening" (âm thanh, audio focus và lời gọi chỉnh âm lượng của ứng dụng chạy nền bị từ chối nếu không có vòng đời hợp lệ; với ứng dụng nhắm 37 là dịch vụ foreground đang chạy), chưa thử được với dịch vụ trợ năng trên máy thật. Trang "thay đổi cho mọi ứng dụng" của Android 17 không có mục nào chạm tới dịch vụ trợ năng, `TextToSpeech` hay Direct Boot; mã không tự xin audio focus (giọng đọc do engine TTS quản lý) và đọc lại mức âm lượng thật sau khi chỉnh nên không báo sai.
+- **(4) Rà soát lỗi** (quét mã phần chính + đọc kỹ `ScreenReaderService`, `DeviceStorage` và đường đóng/mở engine):
+  - Không có: `!!`, `runBlocking`, `GlobalScope`, `PendingIntent`, `SharedPreferences.commit()`, `TODO/FIXME`; quyền INTERNET bị gỡ, `allowBackup=false`. Cả 3 bộ nhận phát sóng đều có gỡ đăng ký tương ứng và dùng `RECEIVER_NOT_EXPORTED`. Mọi chỗ gọi `.first()`/`.last()` đều đứng sau điều kiện kiểm tra rỗng; mọi `catch (Exception)` trong coroutine đều ném lại `CancellationException`; `Thread.sleep` duy nhất (`MenuOverlay.awaitHidden`) chạy ở luồng nền và từ chối chạy trên luồng chính.
+  - Hai lỗi thật, đều ở phần kiểm thử: (a) bài kiểm thử dùng hằng ẩn (mục 2); (b) `AsyncCloserTest` có thể **treo** thay vì thất bại nếu ai đó đổi `close()` thành chạy đồng bộ (phát hiện nhờ phép đột biến, đã sửa cho chờ có hạn).
+  - Không tìm thấy lỗi thời gian chạy chắc chắn nào trong mã ứng dụng. Quét mã không thay được thử trên máy thật.
+- **Kiểm thử:** 908 bài JVM đạt (895 ở bản 2.25.0, thêm 13): `AsyncCloserTest` (12 bài) và 1 bài quét mã trong `DirectBootSourceTest` (việc đóng TextToSpeech chỉ đi qua `AsyncCloser`). 10 phép đột biến (cố ý đổi một dòng ở `AsyncCloser`/`VoiceEngine`) đều bị bài kiểm thử bắt. Chưa chạy được ở môi trường soạn thảo: Gradle, lint, Compose, máy thật.
+- **Nếu CI đỏ:** (1) lỗi biên dịch ở `AsyncCloser.kt`/`VoiceEngine.kt` → hoàn tác 2 tệp đó cùng `AsyncCloserTest.kt`; (2) lỗi tải Gradle hoặc plugin → trả `gradle-wrapper.properties` về Gradle 9.9.1 (checksum cũ `d8a18a7a…a228`) và `libs.versions.toml` về `agp = "9.5.1"`, `lifecycle = "2.11.0"`.
+
 ## Bản 2.25.0: vuốt trong bàn phím (biểu tượng cảm xúc, bộ nhớ tạm), nhập bằng giọng nói, đọc hai lần ở vùng thông báo, chạy trước khi mở khóa
 
 Yêu cầu: (1) mở bàn phím, vào bảng biểu tượng cảm xúc hoặc bộ nhớ tạm thì vuốt nhảy sang dòng khác của ứng dụng thay vì đi tiếp trong bảng; (2) chạm nút nhập bằng giọng nói của bàn phím thì không ghi âm và không hiện chữ vào ô nhập; (3) các dòng trong vùng thông báo bị đọc hai lần khi chạm, đáng lẽ một lần rồi thôi khi nhấc tay; (4) sau khi tắt nguồn rồi bật lại, trình đọc không chạy khi máy chưa mở khóa, trong khi các trình đọc khác (bộ đọc hỗ trợ Android và các trình đọc lớn) vẫn chạy. **Chưa thử được trên máy thật** (xem "Giới hạn đã biết" ở cuối mục): bàn phím thật, vùng thông báo thật, bộ nhận dạng giọng nói, khởi động lại máy, giọng đọc thật đều không chạy được trong môi trường dựng của mình; phần giao diện Compose vẫn không biên dịch được ở đây nên **CI là lần biên dịch đầu tiên** của phần nằm ngoài lõi (mọi tệp `core/` và `service/` đã biên dịch với android.jar và chạy kiểm thử JVM).
@@ -88,7 +148,7 @@ Yêu cầu: (1) mở bàn phím, vào bảng biểu tượng cảm xúc hoặc b
   - **Nguyên nhân 3 (phụ):** engine giọng đọc bên thứ ba thường không chạy được trước khi mở khóa. Bản cũ chờ khoảng 31 giây thử lại rồi mới rơi về engine mặc định kèm câu "Engine giọng đọc đã chọn không dùng được. Đang dùng engine mặc định." Trong lúc đó không nghe gì.
   - Cách sửa:
     - `AndroidManifest.xml`: `ScreenReaderService` thêm `android:directBootAware="true"`. **Chỉ** dịch vụ (Activity không cần; có bài kiểm thử giữ điều này).
-    - `core/DeviceStorage.kt` và `core/StoragePolicy.kt`: toàn bộ **6 kho cài đặt** (cài đặt chung, cử chỉ, cử chỉ riêng theo ứng dụng, nhãn tự gán, bố cục trình đơn, bật/tắt tiện ích) cùng **nhật ký lỗi và nhật ký chẩn đoán** chuyển sang bộ nhớ bảo vệ theo thiết bị (device-protected), mở được ngay khi máy khởi động xong. Dịch vụ nhờ đó dựng phiên ngay lúc khóa và đọc đúng tốc độ, giọng, cử chỉ bạn đã chọn.
+    - `core/DeviceStorage.kt` và `core/StoragePolicy.kt`: toàn bộ **6 kho cài đặt** (cài đặt chung, cử chỉ, cử chỉ riêng theo ứng dụng, nhãn tự gán, bố cục trình đơn, bật/tắt tiện ích) cùng **nhật ký lỗi và nhật ký chẩn đoán** chuyển sang bộ nhớ bảo vệ theo thiết bị (device-protected), mở được ngay khi máy khởi động xong. Dịch vụ nhờ đó dựng phiên ngay lúc khóa và đọc đúng tốc độ, giọng, cử chỉ bạn đã chọn. **(Từ bản 2.27.0 chỉ còn 4 kho ở đây: nhãn tự gán và bật/tắt tiện ích đã về bộ nhớ thường, xem "Bản 2.27.0".)**
     - **Nâng cấp từ bản cũ tự chuyển dữ liệu** (không mất cài đặt): `VnApplication` chuyển ngay khi tiến trình khởi động mà máy đã mở khóa (`moveSharedPreferencesFrom`, `FileMigration`). Nếu tiến trình khởi động lúc còn khóa thì chuyển ngay sau khi mở khóa.
     - Script tiện ích do bạn nạp (JSON) **vẫn ở bộ nhớ thường**, nên lúc còn khóa chỉ có tiện ích dựng sẵn; script dùng được sau khi mở khóa.
     - `ScreenReaderService`: nếu được gắn lúc khóa thì đăng ký nghe `ACTION_USER_UNLOCKED` (đăng ký trước, kiểm tra lại sau, không lỡ tin). Khi mở khóa: dựng lại phiên nếu lúc khóa chưa dựng được (hoặc vừa chuyển dữ liệu cũ), không thì báo cho giọng đọc.
@@ -731,6 +791,7 @@ Script là JSON khai báo, không chứa mã thực thi. Xem mẫu trong `sample
 | `BIND_ACCESSIBILITY_SERVICE` (dịch vụ) | Đọc và điều khiển giao diện để làm trình đọc màn hình |
 | `canTakeScreenshot` (cấu hình dịch vụ) | OCR/mô tả ảnh; ảnh chỉ nằm trong RAM, giải phóng ngay |
 | `VIBRATE` | Rung phản hồi khi chuyển phần tử |
+| `RECEIVE_BOOT_COMPLETED` | Nhận tin "máy khởi động xong, còn khóa" để nối lại giọng đọc ngay (bộ nhận `BootSignalReceiver`, chỉ ghi tin vào RAM). Quyền loại thường: không hỏi người dùng, không cho đọc dữ liệu nào |
 | `<queries>`: TTS_SERVICE, MAIN/LAUNCHER | Liệt kê công cụ TTS; tra tên ứng dụng khi đọc thông báo (không dùng `QUERY_ALL_PACKAGES`) |
 | Không có INTERNET / ACCESS_NETWORK_STATE | Mọi xử lý trên máy, không gửi dữ liệu đi đâu |
 
@@ -754,7 +815,7 @@ Việc còn lại: chạy bản debug với en-XA/ar-XB, cỡ chữ lớn nhất
 ## Build
 - Android Studio (bản hỗ trợ AGP 9.5): mở thư mục dự án, chờ sync, chọn *Build → Build APK(s)*.
 - Dòng lệnh: `./gradlew :app:testDebugUnitTest :app:lintDebug :app:assembleDebug`
-  (Gradle wrapper đã ghim Gradle 9.9.1 kèm checksum SHA-256).
+  (Gradle wrapper đã ghim Gradle 9.9.2 kèm checksum SHA-256).
 - GitHub Actions: workflow `.github/workflows/build.yml` tự chạy test, lint và build APK mỗi lần push.
 - **Bản release đã ký:** khóa KHÔNG nằm trong repo. `app/build.gradle.kts` chỉ ký khi đủ 4 biến môi trường
   `RELEASE_KEYSTORE_PATH`, `RELEASE_KEYSTORE_PASSWORD`, `RELEASE_KEY_ALIAS`, `RELEASE_KEY_PASSWORD` (thiếu thì ra APK
@@ -766,16 +827,19 @@ Việc còn lại: chạy bản debug với en-XA/ar-XB, cỡ chữ lớn nhất
 ## Công nghệ (cập nhật 11/2026)
 | Thành phần | Phiên bản |
 |---|---|
-| Android Gradle Plugin | 9.5.1 (Kotlin tích hợp sẵn, không còn plugin `kotlin-android`) |
-| Gradle | 9.9.1 |
+| Android Gradle Plugin | 9.5.2 (Kotlin tích hợp sẵn, không còn plugin `kotlin-android`) |
+| Gradle | 9.9.2 |
 | Kotlin / Compose compiler plugin | 2.4.21 |
-| Compose BOM | 2026.09.00 |
+| Compose BOM | 2026.09.00 (2026.11.01 đòi compileSdk 37.1, chưa nâng) |
+| lifecycle-runtime-compose | 2.11.1 |
 | compileSdk / targetSdk / minSdk | 37 / 36 / 35 (Android 15+) |
 | JDK | 17 trở lên (CI dùng 21) |
 
 Phiên bản phụ thuộc nằm tập trung tại `gradle/libs.versions.toml`.
 
 **Đối chiếu 13/11/2026 với trang phát hành chính thức:** Kotlin 2.4.21, Compose BOM 2026.09.00 (ui 1.12.1, Material3 1.4.0), core-ktx 1.19.1, activity-compose 1.13.0, lifecycle 2.11.0, coroutines 1.11.0, ML Kit (text-recognition 16.0.1, image-labeling 17.0.9), JUnit 4.13.2 (bản cuối của nhánh 4) và các action CI (checkout v7, setup-java v6, setup-android v4, setup-gradle v6, upload-artifact v7) đều là bản ổn định mới nhất. Cố ý **chưa** nâng: Compose 1.13.0-rc01 / Material3 1.5.0-rc01 (bản thử nghiệm; chờ BOM ổn định kế tiếp), activity 1.14 và lifecycle 2.12 (alpha), targetSdk 37 (Google Play mới yêu cầu API 36 từ 31/8/2026; nâng 37 cần thử hành vi mới trên máy thật), JUnit 6 (cần plugin ngoài cho AGP, không có lợi ích rõ).
+
+**Đối chiếu 26/11/2026:** báo cáo lint thật của CI (bản 2.25.0) tự đối chiếu với Google Maven và Gradle, chỉ báo bốn bản mới: Gradle 9.9.2, AGP 9.5.2 và lifecycle-runtime-compose 2.11.1 (đã nâng, đều là bản vá), Compose BOM 2026.11.01 (**chưa** nâng, lý do ở "Bản 2.26.0"). Các thư viện khác trong danh mục vẫn là bản mới nhất. Compose 1.13.0 / Material3 1.5.0 đã ổn định từ BOM 2026.11.01 nhưng đòi compileSdk 37.1; targetSdk vẫn giữ 36.
 
 ## Yêu cầu
 - Android 15 (API 35) trở lên, JDK 17 trở lên.

@@ -31,4 +31,12 @@ object TtsUnlockPolicy {
      * đang chờ lần thử lại có thể còn tới 60 giây) thì nối lại ngay. Đang đọc đúng engine thì để yên, tránh khựng tiếng lúc mở khóa.
      */
     fun reconnectAfterUnlock(standIn: Boolean, ready: Boolean): Boolean = standIn || !ready
+
+    /**
+     * Hệ thống báo máy khởi động xong nhưng còn khóa (`ACTION_LOCKED_BOOT_COMPLETED`): mọi dịch vụ `directBootAware`, kể cả engine TTS của hệ thống, giờ đã
+     * chạy được. Engine chưa sẵn sàng ([ready] = false) và KHÔNG đang chờ phản hồi của lần kết nối trước ([connecting] = false, tức đang nằm trong khoảng hẹn
+     * giờ thử lại 1→2→4→8→16 giây hay 60 giây) thì thử ngay, khỏi chờ hết hẹn giờ. Đang chờ phản hồi thì để nó tự xong: thêm một kết nối nữa chỉ làm
+     * chậm cả hai. Đã sẵn sàng thì để yên, tránh khựng tiếng.
+     */
+    fun retryAtLockedBootCompleted(ready: Boolean, connecting: Boolean): Boolean = !ready && !connecting
 }

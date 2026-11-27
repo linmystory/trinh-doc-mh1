@@ -1,11 +1,11 @@
 # Version catalog: nguồn duy nhất cho phiên bản phụ thuộc/plugin (cập nhật 11/2026).
 [versions]
-agp = "9.5.1"                 # AGP 9.x: Kotlin tích hợp sẵn (built-in Kotlin); 9.5 cần Gradle >= 9.6, JDK >= 17, compileSdk tối đa 37
+agp = "9.5.2"                 # AGP 9.x: Kotlin tích hợp sẵn (built-in Kotlin); 9.5 cần Gradle >= 9.6, JDK >= 17, compileSdk tối đa 37
 kotlin = "2.4.21"             # dùng cho Compose compiler plugin; KGP được AGP kéo theo
-composeBom = "2026.09.00"
+composeBom = "2026.09.00"     # CHƯA nâng 2026.11.01 (Compose 1.13): bản đó đòi compileSdk 37.1 chứ không phải 37 nên có thể làm hỏng bước build
 coreKtx = "1.19.1"
 activityCompose = "1.13.0"
-lifecycle = "2.11.0"
+lifecycle = "2.11.1"
 coroutines = "1.11.0"
 junit = "4.13.2"
 mlkitTextRecognition = "16.0.1"  # bản gói sẵn mô hình Latin (ổn định, cập nhật gần nhất 08/2024)
