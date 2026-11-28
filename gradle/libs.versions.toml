@@ -1,8 +1,8 @@
 # Version catalog: nguồn duy nhất cho phiên bản phụ thuộc/plugin (cập nhật 11/2026).
 [versions]
-agp = "9.5.2"                 # AGP 9.x: Kotlin tích hợp sẵn (built-in Kotlin); 9.5 cần Gradle >= 9.6, JDK >= 17, compileSdk tối đa 37
+agp = "9.5.2"                 # AGP 9.x: Kotlin tích hợp sẵn (built-in Kotlin); 9.5 cần Gradle >= 9.6, JDK >= 17, hỗ trợ tối đa API 37 (37.1 là bản nhỏ của API 37, cú pháp compileSdk có minorApiLevel từ AGP 8.13)
 kotlin = "2.4.21"             # dùng cho Compose compiler plugin; KGP được AGP kéo theo
-composeBom = "2026.09.00"     # CHƯA nâng 2026.11.01 (Compose 1.13): bản đó đòi compileSdk 37.1 chứ không phải 37 nên có thể làm hỏng bước build
+composeBom = "2026.11.01"     # Compose 1.13.0 + Material3 1.5.0; đòi Kotlin >= 2.2 và compileSdk 37.1 (khai báo ở app/build.gradle.kts). Hoàn tác: 2026.09.00 kèm compileSdk = 37
 coreKtx = "1.19.1"
 activityCompose = "1.13.0"
 lifecycle = "2.11.1"

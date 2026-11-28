@@ -6,16 +6,22 @@ plugins {
 android {
     namespace = "com.example.vnscreenreader"
 
-    // Biên dịch với Android 17 (API 37); targetSdk giữ 36 (đạt yêu cầu Google Play từ 31/8/2026)
-    // cho tới khi đã kiểm thử hành vi mới của Android 17 trên thiết bị thật.
-    compileSdk = 37
+    // Biên dịch với Android 17 QPR1 (API 37.1): Compose 1.13 (BOM 2026.11.01) đòi compileSdk 37.1, là bản nhỏ của API 37 nên khai báo bằng
+    // minorApiLevel (AGP >= 8.13), không viết được thành một số nguyên. Máy dựng cần gói "Android SDK Platform 37.1"
+    // (workflow CI cài ở bước riêng; AGP cũng tự tải gói còn thiếu). Hoàn tác về Compose cũ: composeBom = "2026.09.00" và compileSdk = 37.
+    // targetSdk giữ 36 (đạt yêu cầu Google Play từ 31/8/2026) cho tới khi đã kiểm thử hành vi mới của Android 17 trên thiết bị thật.
+    compileSdk {
+        version = release(37) {
+            minorApiLevel = 1
+        }
+    }
 
     defaultConfig {
         applicationId = "com.example.vnscreenreader"
         minSdk = 35 // Android 15+: bỏ mọi nhánh tương thích cũ; ngôn ngữ theo ứng dụng có sẵn trong hệ thống
         targetSdk = 36
-        versionCode = 65
-        versionName = "2.27.0"
+        versionCode = 67
+        versionName = "2.29.0"
     }
 
     // Ký bản release: chỉ khi đủ 4 biến môi trường (CI secrets / máy cá nhân). Khóa KHÔNG nằm trong repo.

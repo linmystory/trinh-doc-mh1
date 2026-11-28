@@ -34,6 +34,7 @@
     <string name="sp_typed">Carácter introducido</string>
     <string name="sp_deleted_char">Carácter eliminado</string>
     <string name="sp_deleted">Eliminado</string>
+    <string name="sp_deleted_text">Eliminado: %1$s</string>
     <string name="sp_space">espacio</string>
     <string name="sp_whitespace">espacio en blanco</string>
     <string name="sp_newline">nueva línea</string>
@@ -208,8 +209,10 @@
     <string name="sec_feedback_sum">Solo vibración, solo sonido, ambos, desactivado</string>
     <string name="sec_gestures">Gestos personalizados</string>
     <string name="sec_gestures_sum">Asignar una acción a cada gesto</string>
-    <string name="sec_menus">Menús rápidos</string>
-    <string name="sec_menus_sum">Menú general completo y menú del elemento personalizable</string>
+    <string name="sec_menus_general">Menú general</string>
+    <string name="sec_menus_general_sum">Cómo abrirlo y todas sus funciones, por grupos</string>
+    <string name="sec_menus_quick">Menú de acciones rápidas</string>
+    <string name="sec_menus_quick_sum">Su propio menú del elemento: añada, quite, reordene o reemplace funciones</string>
     <string name="sec_labels">Mis etiquetas</string>
     <string name="sec_labels_sum">Etiquetas que diste a los botones</string>
     <string name="sec_plugins">Complementos y scripts</string>
@@ -278,7 +281,7 @@
     <string name="hp_limit_secure">Android bloquea las capturas en pantallas seguras (contraseñas, banca).</string>
     <string name="hp_limit_edge">Android no permite que un servicio de accesibilidad capture deslizamientos desde el borde ni caracteres dibujados.</string>
     <string name="hp_translation_note">Las traducciones se han generado automáticamente y aún no las han revisado hablantes nativos; avísanos si ves algún problema de redacción.</string>
-    <string name="mn_title">Menús rápidos</string>
+    <string name="mn_title">Menús</string>
     <string name="mn_global_head">Menú general</string>
     <string name="mn_local_head">Menú del elemento</string>
     <string name="mn_local_extra">Al final se añaden las acciones de la aplicación. Los elementos de edición solo aparecen en campos de texto.</string>
@@ -514,6 +517,10 @@
     <string name="vo2_first_lang_title">Idioma del primer motor</string>
     <string name="vo2_first_lang_desc">Qué idioma lee el primer motor. Por defecto, el de la aplicación.</string>
     <string name="vo2_first_lang_auto">Igual que el idioma de la aplicación</string>
+    <string name="vo2_slot_title">Motor que se está ajustando</string>
+    <string name="vo2_slot_desc">Elige el primer o el segundo motor para ver y cambiar sus ajustes.</string>
+    <string name="vo2_slot_first">Primer motor</string>
+    <string name="vo2_slot_second">Segundo motor</string>
     <string name="rd_lift_title">Escribir al levantar el dedo</string>
     <string name="rd_lift_desc">Activado: en el teclado, deslice hasta una tecla para oírla y levante el dedo para escribirla. Desactivado por defecto; tocar dos veces sigue funcionando. Iniciar un deslizamiento cancela la escritura.</string>
     <string name="rd_touch_delay_title">Retraso al tocar</string>
@@ -675,7 +682,7 @@
     <string name="hub_audio">Voz y sonido</string>
     <string name="hub_audio_sum">Voz de lectura, sonidos, vibración</string>
     <string name="hub_content_sum">Elementos, enfoque, notificaciones</string>
-    <string name="hub_control_sum">Gestos, menús rápidos, escritura, teclas físicas</string>
+    <string name="hub_control_sum">Gestos, menús, escritura, teclas físicas</string>
     <string name="hub_tools">Herramientas</string>
     <string name="hub_tools_sum">Etiquetas, complementos, copia de seguridad, registros</string>
     <string name="sec_read_elements">Cómo se leen los elementos</string>
@@ -780,8 +787,8 @@
         <item quantity="other">El menú ya tiene %1$d funciones, el máximo. Quite o reemplace una para añadir otra.</item>
     </plurals>
     <plurals name="hp_menus_body">
-        <item quantity="one">El menú general contiene todas las funciones de la aplicación, repartidas en grupos. El menú del elemento es su propia lista de hasta %1$d función: añada, quite, reordene o reemplace funciones en Controles, Menús rápidos. Cada menú se abre con el gesto que usted le asigne. Con un menú abierto, deslice a la derecha o a la izquierda para cambiar de elemento, o toque la pantalla y deslice un dedo para oír cada elemento; pulse dos veces para elegir.</item>
-        <item quantity="many">El menú general contiene todas las funciones de la aplicación, repartidas en grupos. El menú del elemento es su propia lista de hasta %1$d de funciones: añada, quite, reordene o reemplace funciones en Controles, Menús rápidos. Cada menú se abre con el gesto que usted le asigne. Con un menú abierto, deslice a la derecha o a la izquierda para cambiar de elemento, o toque la pantalla y deslice un dedo para oír cada elemento; pulse dos veces para elegir.</item>
-        <item quantity="other">El menú general contiene todas las funciones de la aplicación, repartidas en grupos. El menú del elemento es su propia lista de hasta %1$d funciones: añada, quite, reordene o reemplace funciones en Controles, Menús rápidos. Cada menú se abre con el gesto que usted le asigne. Con un menú abierto, deslice a la derecha o a la izquierda para cambiar de elemento, o toque la pantalla y deslice un dedo para oír cada elemento; pulse dos veces para elegir.</item>
+        <item quantity="one">El menú general contiene todas las funciones de la aplicación, repartidas en grupos. El menú del elemento es su propia lista de hasta %1$d función: añada, quite, reordene o reemplace funciones en Controles, Menú de acciones rápidas. Cada menú se abre con el gesto que usted le asigne. Con un menú abierto, deslice a la derecha o a la izquierda para cambiar de elemento, o toque la pantalla y deslice un dedo para oír cada elemento; pulse dos veces para elegir.</item>
+        <item quantity="many">El menú general contiene todas las funciones de la aplicación, repartidas en grupos. El menú del elemento es su propia lista de hasta %1$d de funciones: añada, quite, reordene o reemplace funciones en Controles, Menú de acciones rápidas. Cada menú se abre con el gesto que usted le asigne. Con un menú abierto, deslice a la derecha o a la izquierda para cambiar de elemento, o toque la pantalla y deslice un dedo para oír cada elemento; pulse dos veces para elegir.</item>
+        <item quantity="other">El menú general contiene todas las funciones de la aplicación, repartidas en grupos. El menú del elemento es su propia lista de hasta %1$d funciones: añada, quite, reordene o reemplace funciones en Controles, Menú de acciones rápidas. Cada menú se abre con el gesto que usted le asigne. Con un menú abierto, deslice a la derecha o a la izquierda para cambiar de elemento, o toque la pantalla y deslice un dedo para oír cada elemento; pulse dos veces para elegir.</item>
     </plurals>
 </resources>

@@ -31,10 +31,11 @@ class SettingsMenuTest {
     }
 
     @Test
-    fun designHasSixMenusAndSixteenPages() {
+    fun designHasSixMenusAndSeventeenPages() {
         assertEquals(6, SettingsMenu.entries.size)
-        assertEquals(16, SettingsPage.entries.size) // bản 2.23.0 đã bỏ trang "Kiểm tra cử chỉ"
-        assertEquals(16, SettingsMenu.entries.sumOf { it.pages.size })
+        // Bản 2.23.0 bỏ trang "Kiểm tra cử chỉ" (16); bản 2.29.0 tách "Trình đơn nhanh" thành hai trang (17).
+        assertEquals(17, SettingsPage.entries.size)
+        assertEquals(17, SettingsMenu.entries.sumOf { it.pages.size })
     }
 
     @Test
@@ -45,7 +46,7 @@ class SettingsMenuTest {
             "hub_start" to listOf("status"),
             "hub_audio" to listOf("voice", "feedback"),
             "hub_content" to listOf("read_elements", "focus", "notifications"),
-            "hub_control" to listOf("gestures", "appgestures", "menus", "touch_typing", "hardware_keys"),
+            "hub_control" to listOf("gestures", "appgestures", "menus_general", "menus_quick", "touch_typing", "hardware_keys"),
             "hub_tools" to listOf("labels", "plugins", "backup", "log"),
             "hub_help" to listOf("help"),
         )
@@ -89,6 +90,18 @@ class SettingsMenuTest {
         assertEquals(SettingsDestination.Page(SettingsPage.NOTIFICATIONS), SettingsNav.resolve("notifications"))
         assertEquals(SettingsDestination.Page(SettingsPage.LOG), SettingsNav.resolve("log"))
         assertEquals(SettingsDestination.Page(SettingsPage.GESTURES), SettingsNav.resolve("gestures"))
+    }
+
+    @Test
+    fun theOldQuickMenusKeyOpensTheEditablePage() {
+        // Trang "Trình đơn nhanh" đã tách làm hai: khóa cũ còn nằm trong trạng thái đã lưu phải mở trang chỉnh được.
+        assertEquals(SettingsDestination.Page(SettingsPage.MENUS_QUICK), SettingsNav.resolve("menus"))
+        assertEquals(SettingsPage.MENUS_QUICK, SettingsNav.pageForKey("menus"))
+        // Hai trang mới nằm cạnh nhau trong menu Điều khiển, đúng thứ tự: chung rồi hành động nhanh.
+        val pages = SettingsMenu.CONTROL.pages
+        assertEquals(pages.indexOf(SettingsPage.MENUS_GENERAL) + 1, pages.indexOf(SettingsPage.MENUS_QUICK))
+        assertEquals(SettingsMenu.CONTROL, SettingsNav.menuOf(SettingsPage.MENUS_GENERAL))
+        assertEquals(SettingsMenu.CONTROL, SettingsNav.menuOf(SettingsPage.MENUS_QUICK))
     }
 
     @Test

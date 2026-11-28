@@ -49,7 +49,6 @@ import com.example.vnscreenreader.core.SettingsRepository
 import com.example.vnscreenreader.core.SpeechEngine
 import com.example.vnscreenreader.core.SpeechFormats
 import com.example.vnscreenreader.core.SpeechShield
-import com.example.vnscreenreader.core.SpeechTextBuilder
 import com.example.vnscreenreader.core.StoragePolicy
 import com.example.vnscreenreader.gesture.GestureAction
 import com.example.vnscreenreader.gesture.GestureAnalyzer
@@ -64,7 +63,8 @@ import com.example.vnscreenreader.core.LiftToTypePolicy
 import com.example.vnscreenreader.core.ListRange
 import com.example.vnscreenreader.core.LiveRegionGate
 import com.example.vnscreenreader.core.PackageSet
-import com.example.vnscreenreader.core.TypingEcho
+import com.example.vnscreenreader.core.TextChangePlanner
+import com.example.vnscreenreader.core.TextMemory
 import com.example.vnscreenreader.core.VolumeStreamPolicy
 import com.example.vnscreenreader.core.WindowFocusMemory
 import com.example.vnscreenreader.core.SelectionSpeech
@@ -94,6 +94,7 @@ import com.example.vnscreenreader.menu.MenuLayoutStore
 import com.example.vnscreenreader.menu.MenuState
 import com.example.vnscreenreader.menu.Menus
 import com.example.vnscreenreader.node.NodeCollector
+import com.example.vnscreenreader.node.isKeyboardKey
 import com.example.vnscreenreader.node.toSnapshot
 import android.view.accessibility.AccessibilityNodeInfo
 import com.example.vnscreenreader.plugin.PluginRegistry
@@ -202,6 +203,9 @@ internal class ReaderSession(private val service: AccessibilityService) {
     private var focusJob: Job? = null
     private var lastCaret = -1
     private var lastTextLength = -1
+
+    // Văn bản gần nhất của ô đang gõ: mốc "trước" khi ứng dụng không gửi beforeText và số đếm vô dụng (xem [handleTextChanged]).
+    private val textMemory = TextMemory()
 
     // Chỉ truy cập trên luồng chính (onKeyEvent, Handler chính).
     private val keyHandler = Handler(Looper.getMainLooper())
@@ -515,37 +519,45 @@ internal class ReaderSession(private val service: AccessibilityService) {
         "?"
     }
 
-    /** Gọi trên luồng chính. */
+    /**
+     * Gọi trên luồng chính. Mỗi bước phụ được bọc [guardMain]: một bước hỏng (lớp phủ, đăng ký bộ nhận, nạp cài đặt...) chỉ làm mất đúng tính năng đó và được ghi
+     * nhật ký, KHÔNG làm cả phiên chết. Phiên chết lúc máy vừa khởi động thì chế độ khám phá bằng chạm của hệ thống vẫn bật mà không ai đọc/nhấn: người dùng
+     * không nhập nổi mã mở khóa. Hai việc cốt lõi (đọc sự kiện, đọc nội dung đổi) chỉ là `scope.launch` nên không ném.
+     */
     fun start() {
         // Nhật ký ở bộ nhớ bảo vệ theo thiết bị: ghi được cả khi dịch vụ khởi động lúc máy chưa mở khóa (xem [DeviceStorage]).
-        Diag.init(java.io.File(DeviceStorage.filesDir(service), StoragePolicy.DIAG_FILE))
+        guardMain("khởi tạo nhật ký") { Diag.init(java.io.File(DeviceStorage.filesDir(service), StoragePolicy.DIAG_FILE)) }
         Diag.log("START") {
             "app ${appVersionText()} Android ${android.os.Build.VERSION.SDK_INT} ${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL} " +
                 "unlocked=${DeviceStorage.isUnlocked(service)}"
         }
         speech.onVoiceStatus = { missing, locale -> onVoiceStatus(missing, locale) }
-        overlay.attach()
-        applyServiceFlags()
-        applyVerbosity()
-        navigator.scrollAdjustsSliders = settings.scrollAdjustsSliders
-        applyVoiceMode()
+        guardMain("gắn lớp phủ tô sáng") { overlay.attach() }
+        guardMain("áp cờ dịch vụ") { applyServiceFlags() }
+        guardMain("áp cài đặt chi tiết") { applyVerbosity() }
+        guardMain("áp cài đặt cuộn") { navigator.scrollAdjustsSliders = settings.scrollAdjustsSliders }
+        guardMain("áp chế độ công cụ đọc") { applyVoiceMode() }
         scope.launch { processEvents() }
         scope.launch { processContentEvents() }
-        ScreenSearchBridge.register { query ->
-            // Chờ cửa sổ ứng dụng quay lại (màn hình nhập từ khóa vừa đóng) rồi mới tìm.
-            scope.launch {
-                delay(SEARCH_RESUME_DELAY_MS)
-                runSafely("tìm chữ") { navigator.search(query) }
+        guardMain("đăng ký tìm chữ") {
+            ScreenSearchBridge.register { query ->
+                // Chờ cửa sổ ứng dụng quay lại (màn hình nhập từ khóa vừa đóng) rồi mới tìm.
+                scope.launch {
+                    delay(SEARCH_RESUME_DELAY_MS)
+                    runSafely("tìm chữ") { navigator.search(query) }
+                }
             }
         }
-        settings.register(settingsListener)
-        gestureStore.register(gestureListener)
-        registerScreenReceiver()
-        registerRecordingCallback()
-        syncCallReceiver()
+        guardMain("đăng ký nghe cài đặt") { settings.register(settingsListener) }
+        guardMain("đăng ký nghe cử chỉ") { gestureStore.register(gestureListener) }
+        guardMain("đăng ký bộ nhận màn hình") { registerScreenReceiver() }
+        guardMain("đăng ký theo dõi micro") { registerRecordingCallback() }
+        guardMain("đăng ký bộ nhận cuộc gọi") { syncCallReceiver() }
         // Tin "khởi động xong, còn khóa" chỉ có ích khi dịch vụ lên lúc máy chưa mở khóa (Direct Boot). Gắn SAU khi mọi thứ đã dựng: tin đã tới từ trước
         // thì người nghe được báo ngay tại đây; [ScreenReaderService.handleUnlocked] cho tin hết hạn khi máy mở khóa.
-        if (!DeviceStorage.isUnlocked(service)) BootSignal.lockedBootCompleted.attach(lockedBootListener)
+        guardMain("gắn tin khởi động xong") {
+            if (!DeviceStorage.isUnlocked(service)) BootSignal.lockedBootCompleted.attach(lockedBootListener)
+        }
         speech.speak(t(S.MSG_SERVICE_ON))
     }
 
@@ -1263,6 +1275,7 @@ internal class ReaderSession(private val service: AccessibilityService) {
             // Trình đơn đang mở: focus do ứng dụng/bàn phím tự đặt không được đổi phần tử chọn hay ngắt lời trình đơn.
             AccessibilityEvent.TYPE_VIEW_FOCUSED -> {
                 resetCaretMark() // sang ô nhập khác: mốc con trỏ cũ không còn ý nghĩa
+                textMemory.clear() // và văn bản nhớ của ô cũ cũng vậy
                 if (menu == null) event.source?.let { navigator.focusOn(it, interrupt = interruptAllowed()) }
             }
 
@@ -1334,35 +1347,49 @@ internal class ReaderSession(private val service: AccessibilityService) {
      * Ô mật khẩu chỉ đọc ký tự theo quy tắc cũ, không bao giờ đọc từ hay chữ hoa.
      */
     private fun handleTextChanged(event: ReaderEvent) {
+        // Mốc "trước" để biết ĐÃ SỬA GÌ: văn bản trước do ứng dụng gửi; không có và số đếm cũng vô dụng (0/0) thì dùng văn bản nhớ của chính ô này.
+        // Ô mật khẩu không bao giờ được nhớ.
+        val fieldKey = textFieldKey(event)
+        val before = event.beforeText
+            ?: if (event.addedCount <= 0 && event.removedCount <= 0 && !event.isPassword) textMemory.recall(fieldKey) else null
+        if (event.isPassword) textMemory.clear() else textMemory.remember(fieldKey, event.text)
         if (dictationMuted) {
             // Đang im vì người dùng đọc chính tả: không đọc từng ký tự (bộ nhận dạng thay đi thay lại đoạn đang soạn); ghi lại để đọc MỘT lần khi hết
             // im. Ô mật khẩu tuyệt đối không ghi lại.
             if (!event.isPassword) dictationReadback.onTextChanged(event.text, event.fromIndex)
             return
         }
-        val chars = if (settings.echoChars) {
-            SpeechTextBuilder.describeTextChange(
-                fullText = event.text,
-                fromIndex = event.fromIndex,
-                addedCount = event.addedCount,
-                removedCount = event.removedCount,
-                isPassword = event.isPassword,
-                speakPasswordChars = settings.speakPasswords,
-            )
-        } else {
-            null
+        // Đọc theo điều thực sự đổi (so văn bản trước/sau), không theo số đếm của ứng dụng: số đếm hay sai hoặc bằng 0 nên xóa ký tự có lúc
+        // không đọc gì, còn chữ đang soạn (Telex) thì bị đọc lại cả từ.
+        val plan = TextChangePlanner.plan(
+            fullText = event.text,
+            beforeText = before,
+            fromIndex = event.fromIndex,
+            addedCount = event.addedCount,
+            removedCount = event.removedCount,
+            isPassword = event.isPassword,
+            speakPasswordChars = settings.speakPasswords,
+            echoChars = settings.echoChars,
+            echoWords = settings.echoWords,
+        )
+        // Chỉ ghi nhật ký khi đã bật đọc ký tự mà sự kiện đổi văn bản vẫn im (để biết ứng dụng nào báo số đếm sai); không ghi chữ, chỉ cờ và số.
+        if (settings.echoChars && plan.chars == null) {
+            Diag.log("TEXT") {
+                "silent pw=${event.isPassword} before=${event.beforeText != null} memory=${before != null && event.beforeText == null} " +
+                    "from=${event.fromIndex} added=${event.addedCount} removed=${event.removedCount}"
+            }
         }
-        val word = if (settings.echoWords && !event.isPassword) {
-            TypingEcho.completedWord(event.text, event.fromIndex, event.addedCount)
-        } else {
-            null
+        plan.word?.let { speech.speak(it, true) }
+        plan.chars?.let { chars ->
+            val capital = settings.speakCapitals && !event.isPassword && plan.typed?.isUpperCase() == true
+            speech.speak(if (capital) t(S.MSG_CAPITAL, chars) else chars, plan.word == null)
         }
-        if (word != null) speech.speak(word, true)
-        if (chars != null) {
-            val typed = if (event.addedCount == 1) event.text.getOrNull(event.fromIndex) else null
-            val capital = settings.speakCapitals && !event.isPassword && typed != null && typed.isUpperCase()
-            speech.speak(if (capital) t(S.MSG_CAPITAL, chars) else chars, word == null)
-        }
+    }
+
+    /** Khóa nhận ra "cùng một ô nhập" (gói, lớp, mã view); null nếu không đủ thông tin thì không dùng văn bản nhớ. */
+    private fun textFieldKey(event: ReaderEvent): String? {
+        val source = event.source ?: return null
+        return "${event.packageName}|${event.className}|${source.viewIdResourceName ?: source.hashCode()}"
     }
 
     /**
@@ -1384,6 +1411,7 @@ internal class ReaderSession(private val service: AccessibilityService) {
             if (title.isNotEmpty() && menu == null && audible) speech.speak(title, false)
             return
         }
+        textMemory.clear() // cửa sổ ứng dụng mới: văn bản nhớ của ô cũ không còn đúng
         val menuWasOpen = menu != null
         if (menuWasOpen) Diag.log("MENU") { "closed by window change" }
         setMenu(null) // cửa sổ đổi: trình đơn (nhất là của phần tử) đã lỗi thời
@@ -1551,7 +1579,11 @@ internal class ReaderSession(private val service: AccessibilityService) {
      * Phím bàn phím luôn đọc ngay khi bật nhập bằng nhấc tay: nhấc tay là gõ nên phải biết chắc đang ở phím nào.
      */
     private fun onHoverTarget(target: AccessibilityNodeInfo) {
-        val isKey = target.isTextEntryKey || target.window?.type == AccessibilityWindowInfo.TYPE_INPUT_METHOD
+        val isKey = target.isKeyboardKey()
+        // Nhật ký chẩn đoán cho phím và cho màn hình khóa (nhập mã mở khóa): lớp, cờ bấm được; không có chữ.
+        if (Diag.enabled && (isKey || navigator.isKeyguardShowing())) {
+            Diag.log("HOVER_KEY") { "key=$isKey pkg=${target.packageName} cls=${target.className} clickable=${target.isClickable}" }
+        }
         liftToType.onHover(isKey)
         hoverJob?.cancel()
         val delayMs = if (isKey && settings.liftToType) 0 else settings.touchDelayMs

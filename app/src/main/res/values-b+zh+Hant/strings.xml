@@ -34,6 +34,7 @@
     <string name="sp_typed">已輸入字符</string>
     <string name="sp_deleted_char">已刪除字符</string>
     <string name="sp_deleted">已刪除</string>
+    <string name="sp_deleted_text">已刪除：%1$s</string>
     <string name="sp_space">空格</string>
     <string name="sp_whitespace">空白</string>
     <string name="sp_newline">換行</string>
@@ -208,8 +209,10 @@
     <string name="sec_feedback_sum">僅震動、僅聲音、兩者、關閉</string>
     <string name="sec_gestures">自訂手勢</string>
     <string name="sec_gestures_sum">為每個手勢分配功能</string>
-    <string name="sec_menus">快捷選單</string>
-    <string name="sec_menus_sum">完整的通用選單和可自訂的元素選單</string>
+    <string name="sec_menus_general">通用選單</string>
+    <string name="sec_menus_general_sum">開啟方式及其全部功能，按分組列出</string>
+    <string name="sec_menus_quick">快捷操作選單</string>
+    <string name="sec_menus_quick_sum">你自己的元素選單：添加、刪除、調整順序或替換功能</string>
     <string name="sec_labels">我的標籤</string>
     <string name="sec_labels_sum">您為按鈕設定的標籤</string>
     <string name="sec_plugins">外掛程式與指令碼</string>
@@ -278,7 +281,7 @@
     <string name="hp_limit_secure">Android 會在安全界面（密碼、銀行）阻止截屏。</string>
     <string name="hp_limit_edge">Android 不允許無障礙服務捕獲從螢幕邊緣滑動或手繪字符的手勢。</string>
     <string name="hp_translation_note">翻譯由機器生成，尚未經母語者審校；如發現措辭問題，歡迎反饋。</string>
-    <string name="mn_title">快捷選單</string>
+    <string name="mn_title">選單</string>
     <string name="mn_global_head">通用選單</string>
     <string name="mn_local_head">元素選單</string>
     <string name="mn_local_extra">末尾會加入應用程式自己的操作。文本編輯項僅在輸入框中顯示。</string>
@@ -514,6 +517,10 @@
     <string name="vo2_first_lang_title">第一引擎的語言</string>
     <string name="vo2_first_lang_desc">第一引擎朗讀的語言。預設跟隨應用程式語言。</string>
     <string name="vo2_first_lang_auto">與應用程式語言相同</string>
+    <string name="vo2_slot_title">正在設定的引擎</string>
+    <string name="vo2_slot_desc">選擇第一或第二引擎，查看並更改其設定。</string>
+    <string name="vo2_slot_first">第一引擎</string>
+    <string name="vo2_slot_second">第二引擎</string>
     <string name="rd_lift_title">抬手輸入</string>
     <string name="rd_lift_desc">開啟：在鍵盤上滑到某個按鍵即可聽到讀音，抬起手指即輸入該鍵。預設關閉；雙擊仍然可用。開始滑動手勢會取消輸入。</string>
     <string name="rd_touch_delay_title">觸控延遲</string>
@@ -675,7 +682,7 @@
     <string name="hub_audio">語音與聲音</string>
     <string name="hub_audio_sum">朗讀語音、提示音、震動</string>
     <string name="hub_content_sum">元素、焦點、通知</string>
-    <string name="hub_control_sum">手勢、快捷選單、輸入、實體按鍵</string>
+    <string name="hub_control_sum">手勢、選單、輸入、實體按鍵</string>
     <string name="hub_tools">工具</string>
     <string name="hub_tools_sum">標籤、外掛程式、備份、日誌</string>
     <string name="sec_read_elements">元素朗讀方式</string>
@@ -754,6 +761,6 @@
         <item quantity="other">選單已有%1$d項功能，已達上限。請刪除或替換一項後再添加。</item>
     </plurals>
     <plurals name="hp_menus_body">
-        <item quantity="other">通用選單包含應用程式的全部功能，分為若干分組。元素選單是你自己的列表，最多%1$d項功能：可在“控制”中的“快捷選單”裡添加、刪除、調整順序或替換。每個選單都用你為它指定的手勢開啟。選單開啟時，向右或向左滑動可切換項目，也可以觸控螢幕並滑動手指逐項聽讀；雙擊即可選擇。</item>
+        <item quantity="other">通用選單包含應用程式的全部功能，分為若干分組。元素選單是你自己的列表，最多%1$d項功能：可在“控制”中的“快捷操作選單”裡添加、刪除、調整順序或替換。每個選單都用你為它指定的手勢開啟。選單開啟時，向右或向左滑動可切換項目，也可以觸控螢幕並滑動手指逐項聽讀；雙擊即可選擇。</item>
     </plurals>
 </resources>

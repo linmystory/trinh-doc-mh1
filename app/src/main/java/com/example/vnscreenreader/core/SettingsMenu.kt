@@ -14,7 +14,10 @@ enum class SettingsPage(val key: String) {
     NOTIFICATIONS("notifications"),
     GESTURES("gestures"),
     APP_GESTURES("appgestures"),
-    MENUS("menus"),
+    /** Trình đơn chung: cách mở và danh sách mọi chức năng, chia nhóm (chỉ xem). */
+    MENUS_GENERAL("menus_general"),
+    /** Trình đơn hành động nhanh: trình đơn phần tử do người dùng tự sắp xếp (thêm, bớt, đổi thứ tự, thay chức năng). */
+    MENUS_QUICK("menus_quick"),
     TOUCH_TYPING("touch_typing"),
     HARDWARE_KEYS("hardware_keys"),
     LABELS("labels"),
@@ -37,7 +40,8 @@ enum class SettingsMenu(val key: String, val pages: List<SettingsPage>) {
         listOf(
             SettingsPage.GESTURES,
             SettingsPage.APP_GESTURES,
-            SettingsPage.MENUS,
+            SettingsPage.MENUS_GENERAL,
+            SettingsPage.MENUS_QUICK,
             SettingsPage.TOUCH_TYPING,
             SettingsPage.HARDWARE_KEYS,
         ),
@@ -68,12 +72,14 @@ sealed interface SettingsDestination {
 object SettingsNav {
     /**
      * Khóa của các trang ở bản trước mà nay đã tách, gộp hoặc bỏ: "Chi tiết đọc" (reading) tách thành nhiều trang, lấy trang
-     * đầu; "Quyền" (permissions) đã gộp vào "Trạng thái và quyền"; "Kiểm tra cử chỉ" (gesturetest) đã bỏ, về trang Cử chỉ.
+     * đầu; "Quyền" (permissions) đã gộp vào "Trạng thái và quyền"; "Kiểm tra cử chỉ" (gesturetest) đã bỏ, về trang Cử chỉ;
+     * "Trình đơn nhanh" (menus) tách thành hai trang riêng, về trang chỉnh được (hành động nhanh) vì đó là phần người dùng hay vào.
      */
     private val LEGACY_PAGE_KEYS: Map<String, SettingsPage> = mapOf(
         "reading" to SettingsPage.READ_ELEMENTS,
         "permissions" to SettingsPage.STATUS,
         "gesturetest" to SettingsPage.GESTURES,
+        "menus" to SettingsPage.MENUS_QUICK,
     )
 
     private val pageByKey: Map<String, SettingsPage> = SettingsPage.entries.associateBy { it.key }

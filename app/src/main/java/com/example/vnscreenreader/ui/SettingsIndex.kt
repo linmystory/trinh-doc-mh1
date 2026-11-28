@@ -25,6 +25,8 @@ internal val SETTINGS_INDEX: Map<String, List<IndexString>> = mapOf(
         IndexString(R.string.vo_lang_head, true),
         IndexString(R.string.vo2_mode_title, true),
         IndexString(R.string.vo2_mode_desc, false),
+        IndexString(R.string.vo2_slot_title, true),
+        IndexString(R.string.vo2_slot_desc, false),
         IndexString(R.string.vo2_first_head, true),
         IndexString(R.string.vo2_first_lang_title, true),
         IndexString(R.string.vo2_first_lang_desc, false),
@@ -100,10 +102,12 @@ internal val SETTINGS_INDEX: Map<String, List<IndexString>> = mapOf(
         IndexString(R.string.ag_edit_title, true),
         IndexString(R.string.ag_pick_title, true),
     ),
-    "menus" to listOf(
+    "menus_quick" to listOf(
         IndexString(R.string.mn_local_head, true),
         IndexString(R.string.mn_add, true),
         IndexString(R.string.mn_reset, true),
+    ),
+    "menus_general" to listOf(
         IndexString(R.string.menu_global_title, true),
         IndexString(R.string.mn_general_desc, false),
         IndexString(R.string.menu_group_reading, true),

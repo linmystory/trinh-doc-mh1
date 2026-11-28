@@ -46,6 +46,19 @@ object ClickTargetPolicy {
             compareBy<Int>({ if (candidates[it].probe.link) 0 else 1 }, { candidates[it].depth }, { it }),
         )
 
-    /** Có nên giả lập chạm vào giữa phần tử khi mọi cách nhấn bằng hành động đều thất bại? Chỉ trong nội dung web. */
-    fun shouldTapFallback(insideWeb: Boolean, isWebRootItself: Boolean): Boolean = insideWeb && !isWebRootItself
+    /**
+     * Có nên giả lập chạm vào giữa phần tử khi mọi cách nhấn bằng hành động đều thất bại?
+     * - Trong nội dung web (nút tự vẽ), trừ chính gốc WebView.
+     * - Lúc màn hình khóa đang hiện ([keyguardShowing], gồm cả màn hình nhập mã sau khi khởi động): nút do hệ thống vẽ (bàn phím số) có thể từ chối
+     *   ACTION_CLICK (hệ thống tạm tắt cờ "bấm được" của phím khi ngón tay đang chạm, để nhập bằng cách nhấc tay) nhưng vẫn nhận cú chạm thật;
+     *   không nhấn được ở đó nghĩa là người dùng không mở khóa được máy.
+     */
+    fun shouldTapFallback(insideWeb: Boolean, isWebRootItself: Boolean, keyguardShowing: Boolean = false): Boolean =
+        if (insideWeb) !isWebRootItself else keyguardShowing
+
+    /**
+     * Có được nhấn "điều khiển bên cạnh" khi nhấn chính phần tử thất bại? KHÔNG với phím ([isKey]: phím bàn phím chữ/số) và KHÔNG lúc màn hình khóa
+     * đang hiện: bên cạnh một phím luôn là phím khác, nhấn nhầm là gõ sai một ký tự hay chữ số mà người dùng không thể thấy để biết (mã mở khóa sai).
+     */
+    fun mayClickNearby(isKey: Boolean, keyguardShowing: Boolean): Boolean = !isKey && !keyguardShowing
 }

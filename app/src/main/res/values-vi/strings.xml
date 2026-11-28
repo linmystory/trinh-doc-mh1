@@ -34,6 +34,7 @@
     <string name="sp_typed">Đã nhập ký tự</string>
     <string name="sp_deleted_char">Đã xóa ký tự</string>
     <string name="sp_deleted">Đã xóa</string>
+    <string name="sp_deleted_text">Đã xóa %1$s</string>
     <string name="sp_space">dấu cách</string>
     <string name="sp_whitespace">khoảng trắng</string>
     <string name="sp_newline">xuống dòng</string>
@@ -208,8 +209,10 @@
     <string name="sec_feedback_sum">Chỉ rung, chỉ âm báo, cả hai, tắt</string>
     <string name="sec_gestures">Cử chỉ tùy chỉnh</string>
     <string name="sec_gestures_sum">Gán chức năng cho từng cử chỉ</string>
-    <string name="sec_menus">Trình đơn nhanh</string>
-    <string name="sec_menus_sum">Trình đơn chung đủ chức năng và trình đơn phần tử tùy chỉnh</string>
+    <string name="sec_menus_general">Trình đơn chung</string>
+    <string name="sec_menus_general_sum">Cách mở và mọi chức năng của trình đơn, chia theo nhóm</string>
+    <string name="sec_menus_quick">Trình đơn hành động nhanh</string>
+    <string name="sec_menus_quick_sum">Trình đơn phần tử của riêng bạn: thêm, bớt, đổi thứ tự, thay chức năng</string>
     <string name="sec_labels">Nhãn của tôi</string>
     <string name="sec_labels_sum">Nhãn tự gán cho nút</string>
     <string name="sec_plugins">Tiện ích và kịch bản</string>
@@ -278,7 +281,7 @@
     <string name="hp_limit_secure">Android chặn chụp màn hình ở màn hình bảo mật (mật khẩu, ngân hàng).</string>
     <string name="hp_limit_edge">Android không cho dịch vụ hỗ trợ tiếp cận bắt cử chỉ vuốt từ cạnh màn hình hay vẽ ký tự.</string>
     <string name="hp_translation_note">Bản dịch các ngôn ngữ ngoài tiếng Việt do máy dịch và chưa được người bản ngữ rà soát; mong bạn góp ý khi gặp câu chưa tự nhiên.</string>
-    <string name="mn_title">Trình đơn nhanh</string>
+    <string name="mn_title">Trình đơn</string>
     <string name="mn_global_head">Trình đơn chung</string>
     <string name="mn_local_head">Trình đơn của phần tử</string>
     <string name="mn_local_extra">Cuối trình đơn có thêm hành động riêng của ứng dụng. Mục chỉnh sửa văn bản chỉ hiện ở ô nhập liệu.</string>
@@ -514,6 +517,10 @@
     <string name="vo2_first_lang_title">Ngôn ngữ của công cụ thứ nhất</string>
     <string name="vo2_first_lang_desc">Công cụ thứ nhất đọc ngôn ngữ nào. Mặc định theo ngôn ngữ của ứng dụng.</string>
     <string name="vo2_first_lang_auto">Theo ngôn ngữ ứng dụng</string>
+    <string name="vo2_slot_title">Công cụ đang cài đặt</string>
+    <string name="vo2_slot_desc">Chọn công cụ thứ nhất hoặc công cụ thứ hai để xem và đổi cài đặt của nó.</string>
+    <string name="vo2_slot_first">Công cụ thứ nhất</string>
+    <string name="vo2_slot_second">Công cụ thứ hai</string>
     <string name="rd_lift_title">Nhập phím bằng nhấc tay</string>
     <string name="rd_lift_desc">Bật: trên bàn phím, rê ngón tay tới phím để nghe, nhấc tay lên là gõ phím đó. Mặc định tắt; chạm hai lần vẫn dùng được. Bắt đầu một cú vuốt thì hủy việc gõ.</string>
     <string name="rd_touch_delay_title">Độ trễ chạm</string>
@@ -675,7 +682,7 @@
     <string name="hub_audio">Giọng nói và âm thanh</string>
     <string name="hub_audio_sum">Giọng đọc, âm báo, rung</string>
     <string name="hub_content_sum">Phần tử, tiêu điểm, thông báo</string>
-    <string name="hub_control_sum">Cử chỉ, trình đơn nhanh, gõ phím, phím cứng</string>
+    <string name="hub_control_sum">Cử chỉ, trình đơn, gõ phím, phím cứng</string>
     <string name="hub_tools">Công cụ</string>
     <string name="hub_tools_sum">Nhãn, tiện ích, sao lưu, nhật ký</string>
     <string name="sec_read_elements">Cách đọc phần tử</string>
@@ -754,6 +761,6 @@
         <item quantity="other">Trình đơn đã có %1$d chức năng, là mức tối đa. Hãy xóa hoặc thay một mục để thêm chức năng khác.</item>
     </plurals>
     <plurals name="hp_menus_body">
-        <item quantity="other">Trình đơn chung có đủ mọi chức năng của ứng dụng, chia thành các nhóm. Trình đơn phần tử là danh sách riêng của bạn, tối đa %1$d chức năng: thêm, xóa, đổi thứ tự hoặc thay chức năng tại Điều khiển, Trình đơn nhanh. Mỗi trình đơn mở bằng cử chỉ bạn gán cho nó. Khi trình đơn đang mở, vuốt phải hoặc trái để chuyển mục, hoặc chạm và lướt ngón tay trên màn hình để nghe từng mục; chạm hai lần để chọn.</item>
+        <item quantity="other">Trình đơn chung có đủ mọi chức năng của ứng dụng, chia thành các nhóm. Trình đơn phần tử là danh sách riêng của bạn, tối đa %1$d chức năng: thêm, xóa, đổi thứ tự hoặc thay chức năng tại Điều khiển, Trình đơn hành động nhanh. Mỗi trình đơn mở bằng cử chỉ bạn gán cho nó. Khi trình đơn đang mở, vuốt phải hoặc trái để chuyển mục, hoặc chạm và lướt ngón tay trên màn hình để nghe từng mục; chạm hai lần để chọn.</item>
     </plurals>
 </resources>

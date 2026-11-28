@@ -12,18 +12,24 @@ import android.view.KeyEvent
 import android.view.accessibility.AccessibilityEvent
 import com.example.vnscreenreader.CrashLogger
 import com.example.vnscreenreader.core.DeviceStorage
+import com.example.vnscreenreader.core.TouchExplorationPolicy
 
 /**
  * Lớp vỏ vòng đời của dịch vụ. Toàn bộ logic nằm trong [ReaderSession]; mỗi lần hệ thống kết nối
  * dịch vụ sẽ tạo một phiên mới và đóng phiên cũ (nếu còn).
  *
- * Mọi callback từ hệ thống đều bọc lỗi: một ngoại lệ chưa bắt trong dịch vụ trợ năng làm sập cả tiến trình, người dùng
- * đang dựa vào nó để điều khiển máy sẽ mất giọng đọc đột ngột. Lỗi được ghi nhật ký rồi bỏ qua.
+ * Mọi callback từ hệ thống đều bọc lỗi ([guarded]): một ngoại lệ chưa bắt trong dịch vụ trợ năng làm sập cả tiến trình, người dùng
+ * đang dựa vào nó để điều khiển máy sẽ mất giọng đọc đột ngột. Lỗi được ghi nhật ký rồi bỏ qua. Lỗi nạp lớp ([LinkageError]) cũng được bắt: nó không
+ * phải [Exception] nhưng vẫn xảy ra được (khởi tạo tĩnh hỏng lúc máy còn khóa).
  *
- * Chạy được trước khi mở khóa (Direct Boot): dịch vụ khai báo `android:directBootAware` nên sau khi khởi động lại hệ thống gắn nó ngay ở màn hình
+ * Chạy được trước khi mở khóa (Direct Boot): dịch vụ khai `android:directBootAware` nên sau khi khởi động lại hệ thống gắn nó ngay ở màn hình
  * nhập mã, để người khiếm thị nghe và tự nhập mã mở khóa. Lúc đó bộ nhớ thường còn bị khóa, nên mọi thứ phiên đọc cần lúc khởi động nằm ở bộ nhớ
  * bảo vệ theo thiết bị ([DeviceStorage]). Khi máy mở khóa ([Intent.ACTION_USER_UNLOCKED]): dựng lại phiên nếu lúc khóa chưa dựng được, hoặc cho giọng
  * đọc nối lại engine người dùng chọn.
+ *
+ * Chế độ an toàn: không dựng/khởi động được phiên thì không có ai đọc và ai nhấn thay người dùng, nhưng hệ thống vẫn giữ màn hình ở chế độ khám phá bằng chạm
+ * (cờ khai trong accessibility_service_config.xml) nên không nhập nổi mã mở khóa. Khi đó tắt cờ này ([setTouchExploration]) để màn hình nhận chạm bình thường;
+ * có phiên chạy được thì bật lại ([TouchExplorationPolicy]).
  */
 class ScreenReaderService : AccessibilityService() {
 
@@ -38,21 +44,44 @@ class ScreenReaderService : AccessibilityService() {
         watchUnlock()
     }
 
-    /** Tạo và khởi động phiên mới, đóng phiên cũ nếu còn. Chạy trên luồng chính. */
+    /**
+     * Tạo và khởi động phiên mới, đóng phiên cũ nếu còn. Chạy trên luồng chính.
+     * Không dựng hoặc không khởi động được thì vào chế độ an toàn (trả màn hình về chạm thường); thành công thì bật lại khám phá bằng chạm.
+     */
     private fun openSession() {
         closeSession()
-        val created = try {
-            ReaderSession(this)
-        } catch (e: RuntimeException) {
-            report("tạo phiên đọc", e)
+        val created = guarded("tạo phiên đọc", null) { ReaderSession(this) }
+        if (created == null) {
+            setTouchExploration(false)
             return
         }
         session = created
-        try {
+        val started = guarded("khởi động phiên đọc", false) {
             created.start()
-        } catch (e: RuntimeException) {
-            report("khởi động phiên đọc", e)
+            true
+        }
+        if (!started) {
             closeSession() // dọn phần đã đăng ký dở dang, không để rò bộ nhận/engine
+            setTouchExploration(false)
+            return
+        }
+        setTouchExploration(true)
+    }
+
+    /**
+     * Bật/tắt chế độ khám phá bằng chạm của hệ thống ([TouchExplorationPolicy]). Chỉ đặt lại `serviceInfo` khi cờ thật sự đổi.
+     * Cờ do [ReaderSession.start] đặt (hai ngón chuyển tiếp, tiêu điểm chi tiết) nằm trong cùng `serviceInfo` và được giữ nguyên.
+     */
+    private fun setTouchExploration(enabled: Boolean) {
+        guarded("đặt chế độ khám phá bằng chạm") {
+            val info = serviceInfo
+            if (info != null) {
+                val flags = TouchExplorationPolicy.withTouchExploration(info.flags, enabled)
+                if (flags != info.flags) {
+                    info.flags = flags
+                    serviceInfo = info
+                }
+            }
         }
     }
 
@@ -65,12 +94,11 @@ class ScreenReaderService : AccessibilityService() {
         val receiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) = handleUnlocked()
         }
-        try {
+        val registered = guarded("theo dõi mở khóa", false) {
             registerReceiver(receiver, IntentFilter(Intent.ACTION_USER_UNLOCKED), Context.RECEIVER_NOT_EXPORTED)
-        } catch (e: RuntimeException) {
-            report("theo dõi mở khóa", e)
-            return
+            true
         }
+        if (!registered) return
         unlockReceiver = receiver
         if (DeviceStorage.isUnlocked(this)) handleUnlocked()
     }
@@ -92,31 +120,18 @@ class ScreenReaderService : AccessibilityService() {
     private fun handleUnlocked() {
         stopWatchingUnlock()
         BootSignal.lockedBootCompleted.expire() // tin "khởi động xong, còn khóa" hết ý nghĩa: phiên dựng sau không bị báo oan
-        val movedLegacy = try {
-            DeviceStorage.migrate(applicationContext)
-        } catch (e: RuntimeException) {
-            report("chuyển dữ liệu sau khi mở khóa", e)
-            false
-        }
+        val movedLegacy = guarded("chuyển dữ liệu sau khi mở khóa", false) { DeviceStorage.migrate(applicationContext) }
         val current = session
         if (current == null || movedLegacy) {
             openSession()
             return
         }
-        try {
-            current.onUserUnlocked()
-        } catch (e: RuntimeException) {
-            report("xử lý sau khi mở khóa", e)
-        }
+        guarded("xử lý sau khi mở khóa") { current.onUserUnlocked() }
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (event == null) return
-        try {
-            session?.offer(event)
-        } catch (e: RuntimeException) {
-            report("nhận sự kiện trợ năng", e)
-        }
+        guarded("nhận sự kiện trợ năng") { session?.offer(event) }
     }
 
     /**
@@ -124,40 +139,24 @@ class ScreenReaderService : AccessibilityService() {
      * không bao giờ được hệ thống gọi nữa (bản gốc ghi đè cả hai là mã chết).
      * Lỗi → trả false để hệ thống tự xử lý cử chỉ thay vì nuốt mất.
      */
-    override fun onGesture(gestureEvent: AccessibilityGestureEvent): Boolean = try {
-        session?.handleGesture(gestureEvent.gestureId) ?: false
-    } catch (e: RuntimeException) {
-        report("xử lý cử chỉ", e)
-        false
-    }
+    override fun onGesture(gestureEvent: AccessibilityGestureEvent): Boolean =
+        guarded("xử lý cử chỉ", false) { session?.handleGesture(gestureEvent.gestureId) ?: false }
 
     /**
      * Chạy trên luồng chính, phải trả về nhanh. Trả về true = đã tiêu thụ phím (ứng dụng không nhận được).
      * Mọi lỗi đều trả về false để không bao giờ làm kẹt bàn phím của người dùng.
      */
-    override fun onKeyEvent(event: KeyEvent): Boolean = try {
-        session?.onKeyEvent(event) ?: false
-    } catch (e: RuntimeException) {
-        report("xử lý phím", e)
-        false
-    }
+    override fun onKeyEvent(event: KeyEvent): Boolean =
+        guarded("xử lý phím", false) { session?.onKeyEvent(event) ?: false }
 
     override fun onInterrupt() {
-        try {
-            session?.interrupt()
-        } catch (e: RuntimeException) {
-            report("ngắt giọng đọc", e)
-        }
+        guarded("ngắt giọng đọc") { session?.interrupt() }
     }
 
     /** Người dùng đổi ngôn ngữ ứng dụng khi dịch vụ đang chạy: giọng đọc phải đổi theo. */
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
-        try {
-            session?.onLocaleChanged()
-        } catch (e: RuntimeException) {
-            report("đổi ngôn ngữ giọng đọc", e)
-        }
+        guarded("đổi ngôn ngữ giọng đọc") { session?.onLocaleChanged() }
     }
 
     override fun onUnbind(intent: Intent?): Boolean {
@@ -175,14 +174,29 @@ class ScreenReaderService : AccessibilityService() {
     private fun closeSession() {
         val current = session
         session = null
-        try {
-            current?.close()
-        } catch (e: RuntimeException) {
-            report("đóng phiên đọc", e)
-        }
+        guarded("đóng phiên đọc") { current?.close() }
     }
 
-    private fun report(what: String, e: RuntimeException) {
+    /**
+     * Chạy [block]; ngoại lệ hoặc lỗi nạp lớp được ghi lại rồi trả [fallback]. Một lỗi ở đây không được làm sập tiến trình của dịch vụ trợ năng.
+     * Không bắt lỗi hết bộ nhớ/tràn ngăn xếp: không có cách xử lý đúng ở tầng này.
+     */
+    private inline fun <T> guarded(what: String, fallback: T, block: () -> T): T = try {
+        block()
+    } catch (e: Exception) {
+        report(what, e)
+        fallback
+    } catch (e: LinkageError) {
+        report(what, e)
+        fallback
+    }
+
+    /** Như trên cho việc không trả giá trị. */
+    private inline fun guarded(what: String, block: () -> Unit) {
+        guarded(what, Unit, block)
+    }
+
+    private fun report(what: String, e: Throwable) {
         Log.w(TAG, "Lỗi khi $what", e)
         CrashLogger.recordNonFatal(what, e)
     }

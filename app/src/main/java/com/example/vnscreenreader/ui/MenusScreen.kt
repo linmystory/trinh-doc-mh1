@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.sp
 import com.example.vnscreenreader.R
 import com.example.vnscreenreader.core.Diag
 import com.example.vnscreenreader.gesture.GestureAction
+import com.example.vnscreenreader.gesture.GestureMapping
 import com.example.vnscreenreader.gesture.GestureMappingStore
 import com.example.vnscreenreader.menu.MenuGroup
 import com.example.vnscreenreader.menu.MenuItem
@@ -49,16 +50,50 @@ import com.example.vnscreenreader.menu.Menus
 /** Hộp thoại chọn chức năng đang mở cho việc gì: thêm mới ([replacing] = null) hay thay cho một mục có sẵn. */
 private data class PickerTarget(val replacing: GestureAction?)
 
+/** Dòng "Mở bằng: <cử chỉ>." hoặc lời nhắc chưa gán cử chỉ, theo cấu hình THỰC TẾ của người dùng ([GestureMappingStore]). */
+@Composable
+private fun gestureText(mapping: GestureMapping, action: GestureAction): String {
+    val gestures = mapping.gesturesFor(action)
+    return if (gestures.isEmpty()) {
+        stringResource(R.string.mn_gesture_none)
+    } else {
+        stringResource(R.string.mn_gesture_line, gestures.joinToString(", ") { it.label })
+    }
+}
+
+private fun itemText(items: List<MenuItem>): String = items.mapIndexed { i, item -> "${i + 1}. ${item.label}" }.joinToString("\n")
+
 /**
- * Trang "Trình đơn nhanh": trình đơn phần tử do người dùng tự sắp xếp (thêm, bớt, đổi thứ tự, thay chức năng) rồi đến phần giải
- * thích trình đơn chung. Cử chỉ mở trình đơn lấy từ cấu hình THỰC TẾ của người dùng ([GestureMappingStore]); danh sách trình đơn
- * chung lấy thẳng từ mã ([Menus]) nên không bao giờ lệch.
+ * Trang "Trình đơn chung" (chỉ xem): cách mở và danh sách đủ mọi chức năng, chia theo nhóm. Cử chỉ mở lấy từ cấu hình THỰC TẾ của
+ * người dùng; danh sách lấy thẳng từ mã ([Menus]) nên không bao giờ lệch với trình đơn thật. Trang riêng, tách khỏi trình đơn hành
+ * động nhanh để mỗi trang chỉ có phần của mình, gọn hơn cho người nghe bằng trình đọc màn hình.
+ */
+@Composable
+fun GeneralMenuScreen() {
+    val context = LocalContext.current
+    val mapping = remember { GestureMappingStore(context).load() }
+
+    // Không tiêu đề trang: vào thẳng nội dung (tên trang đã đọc ở thẻ vừa bấm).
+    ScreenColumn(stringResource(R.string.sec_menus_general), showTitle = false) {
+        SectionHeading(stringResource(R.string.menu_global_title))
+        BodyText(gestureText(mapping, GestureAction.OPEN_GLOBAL_MENU) + " " + stringResource(R.string.mn_general_desc))
+        BodyText(itemText(Menus.global()))
+        // Mỗi nhóm là MỘT khối chữ bắt đầu bằng tên nhóm, liệt kê đúng những gì người dùng nghe khi mở nhóm đó.
+        MenuGroup.entries.forEach { group ->
+            BodyText(group.title + ".\n" + itemText(Menus.submenu(group.kind).orEmpty()))
+        }
+    }
+}
+
+/**
+ * Trang "Trình đơn hành động nhanh": trình đơn phần tử do người dùng tự sắp xếp (thêm, bớt, đổi thứ tự, thay chức năng). Cử chỉ
+ * mở trình đơn lấy từ cấu hình THỰC TẾ của người dùng ([GestureMappingStore]).
  *
  * Mọi thay đổi lưu ngay vào [MenuLayoutStore]; dịch vụ đọc bố cục mỗi lần mở trình đơn nên có hiệu lực tức thì, không cần khởi
  * động lại. Mỗi mục là MỘT điểm dừng của trình đọc màn hình; chạm vào mở hộp thoại chỉ gồm các thao tác áp dụng được.
  */
 @Composable
-fun MenusScreen() {
+fun QuickMenuScreen() {
     val context = LocalContext.current
     // Chuỗi dựng lúc bấm phải lấy từ LocalResources (đổi theo ngôn ngữ/cấu hình), không từ LocalContext.current.getString().
     val resources = LocalResources.current
@@ -70,15 +105,6 @@ fun MenusScreen() {
     var picker by remember { mutableStateOf<PickerTarget?>(null) }
     var confirmReset by remember { mutableStateOf(false) }
 
-    @Composable
-    fun gestureText(action: GestureAction): String {
-        val gestures = mapping.gesturesFor(action)
-        return if (gestures.isEmpty()) stringResource(R.string.mn_gesture_none)
-        else stringResource(R.string.mn_gesture_line, gestures.joinToString(", ") { it.label })
-    }
-
-    fun itemText(items: List<MenuItem>): String = items.mapIndexed { i, item -> "${i + 1}. ${item.label}" }.joinToString("\n")
-
     // Mọi thay đổi đi qua đây: lưu ngay, rồi báo kết quả bằng vùng thông báo trực tiếp (liveRegion). [op] chỉ để ghi nhật ký chẩn
     // đoán (tên thao tác và số mục còn lại, không có chữ nào của người dùng).
     fun commit(op: String, newLayout: MenuLayout, message: String) {
@@ -88,12 +114,12 @@ fun MenusScreen() {
         Diag.log("MENU_EDIT") { "$op count=${newLayout.actions.size}" }
     }
 
-    // Không tiêu đề trang: vào thẳng nội dung. Phần của người dùng (chỉnh được) đứng trước phần tra cứu.
-    ScreenColumn(stringResource(R.string.sec_menus), showTitle = false) {
+    // Không tiêu đề trang: vào thẳng nội dung.
+    ScreenColumn(stringResource(R.string.sec_menus_quick), showTitle = false) {
         SectionHeading(stringResource(R.string.mn_local_head))
         BodyText(
             pluralStringResource(R.plurals.mn_local_desc, MenuLayout.MAX_ITEMS, MenuLayout.MAX_ITEMS) + " " +
-                gestureText(GestureAction.OPEN_LOCAL_MENU) + " " + stringResource(R.string.mn_local_extra),
+                gestureText(mapping, GestureAction.OPEN_LOCAL_MENU) + " " + stringResource(R.string.mn_local_extra),
         )
         BodyText(stringResource(R.string.mn_counter, layout.actions.size, MenuLayout.MAX_ITEMS))
 
@@ -111,14 +137,6 @@ fun MenusScreen() {
         }
         if (layout.isCustomized) {
             PrimaryButton(stringResource(R.string.mn_reset)) { confirmReset = true }
-        }
-
-        SectionHeading(stringResource(R.string.menu_global_title))
-        BodyText(gestureText(GestureAction.OPEN_GLOBAL_MENU) + " " + stringResource(R.string.mn_general_desc))
-        BodyText(itemText(Menus.global()))
-        // Mỗi nhóm là MỘT khối chữ bắt đầu bằng tên nhóm, liệt kê đúng những gì người dùng nghe khi mở nhóm đó.
-        MenuGroup.entries.forEach { group ->
-            BodyText(group.title + ".\n" + itemText(Menus.submenu(group.kind).orEmpty()))
         }
     }
 

@@ -29,6 +29,7 @@ import com.example.vnscreenreader.core.TraversalOrder
 import com.example.vnscreenreader.core.SpeechDetail
 import com.example.vnscreenreader.core.Verbosity
 import com.example.vnscreenreader.gesture.AppGestureStore
+import com.example.vnscreenreader.node.isKeyboardKey
 import com.example.vnscreenreader.node.isLinkLike
 import com.example.vnscreenreader.core.FocusLocator
 import com.example.vnscreenreader.core.FocusTracker
@@ -331,37 +332,57 @@ class FocusNavigator(
 
     /**
      * Kích hoạt phần tử đang chọn. Thứ tự: ACTION_CLICK lên nút bấm được gần nhất (kể cả nút chỉ khai báo hành động
-     * nhấn, như thẻ liên kết trong WebView) → nhấn con bấm được → nhấn điều khiển cạnh dòng chữ → (chỉ trong nội
-     * dung web) giả lập chạm giữa phần tử. Câu báo lỗi do [ActionDispatcher] đọc theo kết quả trả về.
+     * nhấn, như thẻ liên kết trong WebView) → nhấn con bấm được → nhấn điều khiển cạnh dòng chữ (KHÔNG với phím và ở màn hình khóa:
+     * [ClickTargetPolicy.mayClickNearby]) → giả lập chạm giữa phần tử (trong nội dung web và ở màn hình khóa:
+     * [ClickTargetPolicy.shouldTapFallback]). Câu báo lỗi do [ActionDispatcher] đọc theo kết quả trả về. Mỗi lần kích hoạt ghi một dòng nhật ký chẩn đoán
+     * (chỉ siêu dữ liệu: kết quả, gói, lớp, cờ), để biết vì sao một phím không nhấn được.
      */
     internal fun activate(): ActivateOutcome {
-        val selected = currentNode ?: return ActivateOutcome.NOTHING_SELECTED
+        val selected = currentNode ?: return loggedActivation(ActivateOutcome.NOTHING_SELECTED, null, "none")
         val node = if (selected.refresh()) selected else relocateCurrent() ?: run {
             release()
-            return ActivateOutcome.GONE
+            return loggedActivation(ActivateOutcome.GONE, null, "gone")
         }
         // Ứng dụng người dùng đã chọn "chạm thẳng": gửi cú chạm thật vào giữa phần tử trước (ACTION_CLICK không có tác dụng ở
         // một số ứng dụng tự vẽ giao diện); chạm không phát được thì rơi về cách thường bên dưới.
         if (appStore.isRawTap(node.packageName?.toString()) && clicker.tapCenter(node)) {
             feedback.onActivated()
             invalidateCache()
-            return ActivateOutcome.TAPPED
+            return loggedActivation(ActivateOutcome.TAPPED, node, "rawTap")
         }
         val candidates = clicker.candidates(node)
         if (candidates.any { it.performAction(AccessibilityNodeInfo.ACTION_CLICK) }) {
             feedback.onActivated()
             invalidateCache()
-            return ActivateOutcome.CLICKED
+            return loggedActivation(ActivateOutcome.CLICKED, node, "click candidates=${candidates.size}")
         }
+        val keyguard = clicker.isKeyguardShowing()
+        val key = node.isKeyboardKey()
         // Dòng chữ không bấm được (hoặc bấm không có tác dụng): thường là nhãn của một ô tích/nút nằm ngay cạnh.
-        if (activateNearby(node)) return ActivateOutcome.CLICKED_NEARBY
-        if (ClickTargetPolicy.shouldTapFallback(clicker.isInsideWeb(node), clicker.isWebRoot(node)) && clicker.tapCenter(node)) {
+        // Không áp dụng cho phím và ở màn hình khóa: bên cạnh một phím là phím khác, nhấn nhầm là gõ sai.
+        if (ClickTargetPolicy.mayClickNearby(key, keyguard) && activateNearby(node)) {
+            return loggedActivation(ActivateOutcome.CLICKED_NEARBY, node, "nearby")
+        }
+        val insideWeb = clicker.isInsideWeb(node)
+        if (ClickTargetPolicy.shouldTapFallback(insideWeb, clicker.isWebRoot(node), keyguard) && clicker.tapCenter(node)) {
             feedback.onActivated()
             invalidateCache()
-            return ActivateOutcome.TAPPED
+            return loggedActivation(ActivateOutcome.TAPPED, node, "tapFallback web=$insideWeb keyguard=$keyguard key=$key")
         }
-        return if (candidates.isEmpty()) ActivateOutcome.CANNOT_CLICK else ActivateOutcome.CLICK_FAILED
+        val outcome = if (candidates.isEmpty()) ActivateOutcome.CANNOT_CLICK else ActivateOutcome.CLICK_FAILED
+        return loggedActivation(outcome, node, "failed candidates=${candidates.size} web=$insideWeb keyguard=$keyguard key=$key")
     }
+
+    /** Ghi một dòng chẩn đoán cho một lần kích hoạt rồi trả lại [outcome]. Không ghi chữ trên màn hình: chỉ gói, lớp và cờ của nút. */
+    private fun loggedActivation(outcome: ActivateOutcome, node: AccessibilityNodeInfo?, detail: String): ActivateOutcome {
+        com.example.vnscreenreader.core.Diag.log("ACTIVATE") {
+            "$outcome $detail pkg=${node?.packageName} cls=${node?.className} clickable=${node?.isClickable} enabled=${node?.isEnabled}"
+        }
+        return outcome
+    }
+
+    /** Màn hình khóa đang hiện? Cho nhật ký chẩn đoán của phiên đọc. */
+    fun isKeyguardShowing(): Boolean = clicker.isKeyguardShowing()
 
     /**
      * Nút đang chọn đã cũ: tìm lại phần tử theo vết (khớp mạnh: mã hoặc nhãn) trong cây hiện tại và chọn lại KHÔNG

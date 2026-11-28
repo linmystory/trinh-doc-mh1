@@ -60,6 +60,7 @@ A = [
 ("sp_typed","Character entered","Đã nhập ký tự","Caractère saisi","Carácter introducido","Символ введён","تم إدخال حرف","已输入字符"),
 ("sp_deleted_char","Character deleted","Đã xóa ký tự","Caractère supprimé","Carácter eliminado","Символ удалён","تم حذف حرف","已删除字符"),
 ("sp_deleted","Deleted","Đã xóa","Supprimé","Eliminado","Удалено","تم الحذف","已删除"),
+("sp_deleted_text","Deleted %1$s","Đã xóa %1$s","Supprimé : %1$s","Eliminado: %1$s","Удалено: %1$s","تم حذف %1$s","已删除：%1$s"),
 ("sp_space","space","dấu cách","espace","espacio","пробел","مسافة","空格"),
 ("sp_whitespace","whitespace","khoảng trắng","espace blanc","espacio en blanco","пробельный символ","مسافة بيضاء","空白"),
 ("sp_newline","new line","xuống dòng","nouvelle ligne","nueva línea","новая строка","سطر جديد","换行"),

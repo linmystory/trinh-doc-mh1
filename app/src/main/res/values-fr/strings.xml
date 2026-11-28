@@ -34,6 +34,7 @@
     <string name="sp_typed">Caractère saisi</string>
     <string name="sp_deleted_char">Caractère supprimé</string>
     <string name="sp_deleted">Supprimé</string>
+    <string name="sp_deleted_text">Supprimé : %1$s</string>
     <string name="sp_space">espace</string>
     <string name="sp_whitespace">espace blanc</string>
     <string name="sp_newline">nouvelle ligne</string>
@@ -208,8 +209,10 @@
     <string name="sec_feedback_sum">Vibration seule, son seul, les deux, désactivé</string>
     <string name="sec_gestures">Gestes personnalisés</string>
     <string name="sec_gestures_sum">Attribuer une action à chaque geste</string>
-    <string name="sec_menus">Menus rapides</string>
-    <string name="sec_menus_sum">Menu général complet et menu de l\'élément personnalisable</string>
+    <string name="sec_menus_general">Menu général</string>
+    <string name="sec_menus_general_sum">Comment l\'ouvrir et toutes ses fonctions, par groupes</string>
+    <string name="sec_menus_quick">Menu d\'actions rapides</string>
+    <string name="sec_menus_quick_sum">Votre menu de l\'élément : ajoutez, retirez, réordonnez ou remplacez des fonctions</string>
     <string name="sec_labels">Mes étiquettes</string>
     <string name="sec_labels_sum">Étiquettes que vous avez données aux boutons</string>
     <string name="sec_plugins">Modules et scripts</string>
@@ -278,7 +281,7 @@
     <string name="hp_limit_secure">Android bloque les captures d\'écran sur les écrans sécurisés (mots de passe, banque).</string>
     <string name="hp_limit_edge">Android ne permet pas à un service d\'accessibilité de capter les balayages depuis le bord ni les caractères dessinés.</string>
     <string name="hp_translation_note">Les traductions ont été produites automatiquement et n\'ont pas encore été relues par des locuteurs natifs ; signalez toute formulation douteuse.</string>
-    <string name="mn_title">Menus rapides</string>
+    <string name="mn_title">Menus</string>
     <string name="mn_global_head">Menu général</string>
     <string name="mn_local_head">Menu de l\'élément</string>
     <string name="mn_local_extra">Les actions de l\'application s\'ajoutent à la fin. Les éléments d\'édition n\'apparaissent que dans les champs de saisie.</string>
@@ -514,6 +517,10 @@
     <string name="vo2_first_lang_title">Langue du premier moteur</string>
     <string name="vo2_first_lang_desc">Quelle langue le premier moteur lit. Par défaut, celle de l\'application.</string>
     <string name="vo2_first_lang_auto">Comme la langue de l\'application</string>
+    <string name="vo2_slot_title">Moteur en cours de réglage</string>
+    <string name="vo2_slot_desc">Choisissez le premier ou le second moteur pour voir et modifier ses réglages.</string>
+    <string name="vo2_slot_first">Premier moteur</string>
+    <string name="vo2_slot_second">Second moteur</string>
     <string name="rd_lift_title">Saisir en levant le doigt</string>
     <string name="rd_lift_desc">Activé : sur le clavier, glissez sur une touche pour l\'entendre, puis levez le doigt pour la saisir. Désactivé par défaut ; le double toucher fonctionne toujours. Commencer un balayage annule la saisie.</string>
     <string name="rd_touch_delay_title">Délai de toucher</string>
@@ -675,7 +682,7 @@
     <string name="hub_audio">Voix et son</string>
     <string name="hub_audio_sum">Voix de lecture, sons, vibrations</string>
     <string name="hub_content_sum">Éléments, focus, notifications</string>
-    <string name="hub_control_sum">Gestes, menus rapides, saisie, touches physiques</string>
+    <string name="hub_control_sum">Gestes, menus, saisie, touches physiques</string>
     <string name="hub_tools">Outils</string>
     <string name="hub_tools_sum">Étiquettes, modules, sauvegarde, journaux</string>
     <string name="sec_read_elements">Façon de lire les éléments</string>
@@ -780,8 +787,8 @@
         <item quantity="other">Le menu contient déjà %1$d fonctions, le maximum. Retirez-en ou remplacez-en une pour en ajouter une autre.</item>
     </plurals>
     <plurals name="hp_menus_body">
-        <item quantity="one">Le menu général contient toutes les fonctions de l\'application, réparties en groupes. Le menu de l\'élément est votre propre liste de %1$d fonction au maximum : ajoutez, retirez, réordonnez ou remplacez-les dans Commandes, Menus rapides. Chaque menu s\'ouvre avec le geste que vous lui attribuez. Lorsqu\'un menu est ouvert, balayez vers la droite ou la gauche pour changer d\'élément, ou touchez l\'écran et faites glisser un doigt pour entendre chaque élément ; appuyez deux fois pour choisir.</item>
-        <item quantity="many">Le menu général contient toutes les fonctions de l\'application, réparties en groupes. Le menu de l\'élément est votre propre liste de %1$d fonctions au maximum : ajoutez, retirez, réordonnez ou remplacez-les dans Commandes, Menus rapides. Chaque menu s\'ouvre avec le geste que vous lui attribuez. Lorsqu\'un menu est ouvert, balayez vers la droite ou la gauche pour changer d\'élément, ou touchez l\'écran et faites glisser un doigt pour entendre chaque élément ; appuyez deux fois pour choisir.</item>
-        <item quantity="other">Le menu général contient toutes les fonctions de l\'application, réparties en groupes. Le menu de l\'élément est votre propre liste de %1$d fonctions au maximum : ajoutez, retirez, réordonnez ou remplacez-les dans Commandes, Menus rapides. Chaque menu s\'ouvre avec le geste que vous lui attribuez. Lorsqu\'un menu est ouvert, balayez vers la droite ou la gauche pour changer d\'élément, ou touchez l\'écran et faites glisser un doigt pour entendre chaque élément ; appuyez deux fois pour choisir.</item>
+        <item quantity="one">Le menu général contient toutes les fonctions de l\'application, réparties en groupes. Le menu de l\'élément est votre propre liste de %1$d fonction au maximum : ajoutez, retirez, réordonnez ou remplacez-les dans Commandes, Menu d\'actions rapides. Chaque menu s\'ouvre avec le geste que vous lui attribuez. Lorsqu\'un menu est ouvert, balayez vers la droite ou la gauche pour changer d\'élément, ou touchez l\'écran et faites glisser un doigt pour entendre chaque élément ; appuyez deux fois pour choisir.</item>
+        <item quantity="many">Le menu général contient toutes les fonctions de l\'application, réparties en groupes. Le menu de l\'élément est votre propre liste de %1$d fonctions au maximum : ajoutez, retirez, réordonnez ou remplacez-les dans Commandes, Menu d\'actions rapides. Chaque menu s\'ouvre avec le geste que vous lui attribuez. Lorsqu\'un menu est ouvert, balayez vers la droite ou la gauche pour changer d\'élément, ou touchez l\'écran et faites glisser un doigt pour entendre chaque élément ; appuyez deux fois pour choisir.</item>
+        <item quantity="other">Le menu général contient toutes les fonctions de l\'application, réparties en groupes. Le menu de l\'élément est votre propre liste de %1$d fonctions au maximum : ajoutez, retirez, réordonnez ou remplacez-les dans Commandes, Menu d\'actions rapides. Chaque menu s\'ouvre avec le geste que vous lui attribuez. Lorsqu\'un menu est ouvert, balayez vers la droite ou la gauche pour changer d\'élément, ou touchez l\'écran et faites glisser un doigt pour entendre chaque élément ; appuyez deux fois pour choisir.</item>
     </plurals>
 </resources>

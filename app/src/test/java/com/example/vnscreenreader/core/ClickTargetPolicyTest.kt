@@ -60,4 +60,35 @@ class ClickTargetPolicyTest {
         assertFalse(ClickTargetPolicy.shouldTapFallback(insideWeb = true, isWebRootItself = true))
         assertFalse(ClickTargetPolicy.shouldTapFallback(insideWeb = false, isWebRootItself = false))
     }
+
+    @Test fun tapFallbackAlsoOnTheLockScreen_withoutChangingTheWebRules() {
+        // Màn hình khóa đang hiện: nút của hệ thống (bàn phím số) có thể từ chối ACTION_CLICK nhưng nhận cú chạm thật.
+        assertTrue(ClickTargetPolicy.shouldTapFallback(insideWeb = false, isWebRootItself = false, keyguardShowing = true))
+        // Luật của web giữ nguyên, bất kể màn hình khóa.
+        assertTrue(ClickTargetPolicy.shouldTapFallback(insideWeb = true, isWebRootItself = false, keyguardShowing = true))
+        assertFalse(ClickTargetPolicy.shouldTapFallback(insideWeb = true, isWebRootItself = true, keyguardShowing = true))
+        assertFalse(ClickTargetPolicy.shouldTapFallback(insideWeb = true, isWebRootItself = true, keyguardShowing = false))
+        // Không nói gì về màn hình khóa = không khóa: gọi kiểu cũ vẫn cho kết quả cũ.
+        assertFalse(ClickTargetPolicy.shouldTapFallback(false, false))
+    }
+
+    @Test fun neverClicksTheNeighbourOfAKeyOrOnTheLockScreen() {
+        assertTrue(ClickTargetPolicy.mayClickNearby(isKey = false, keyguardShowing = false)) // ô tích cạnh dòng chữ: như trước
+        assertFalse(ClickTargetPolicy.mayClickNearby(isKey = true, keyguardShowing = false)) // phím chữ/số: bên cạnh là phím khác
+        assertFalse(ClickTargetPolicy.mayClickNearby(isKey = false, keyguardShowing = true)) // bàn phím số nhập mã mở khóa
+        assertFalse(ClickTargetPolicy.mayClickNearby(isKey = true, keyguardShowing = true))
+    }
+
+    @Test fun theNeighbourPickerWouldHaveChosenTheWrongDigitOnANumberPad() {
+        // Vì sao cần chặn: bàn phím số 3 cột (mỗi phím 300x200 px, sát nhau). Phím "5" không nhấn được thì bộ chọn "điều khiển bên cạnh" chọn phím "4"
+        // (cùng hàng, cách 0 px, mã nhỏ hơn) và gõ sai chữ số. Chính sách mayClickNearby chặn đúng tình huống này.
+        val five = NearbyControlPicker.Box(300, 200, 600, 400)
+        val neighbours = listOf(
+            NearbyControlPicker.Candidate(6, NearbyControlPicker.Box(600, 200, 900, 400), checkable = false, clickable = true),
+            NearbyControlPicker.Candidate(4, NearbyControlPicker.Box(0, 200, 300, 400), checkable = false, clickable = true),
+        )
+        assertEquals(4, NearbyControlPicker.pick(five, neighbours))
+        assertFalse(ClickTargetPolicy.mayClickNearby(isKey = false, keyguardShowing = true))
+        assertFalse(ClickTargetPolicy.mayClickNearby(isKey = true, keyguardShowing = false))
+    }
 }

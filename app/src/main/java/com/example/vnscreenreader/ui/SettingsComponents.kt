@@ -157,7 +157,8 @@ fun LabeledSlider(
 /**
  * Chọn một trong NHIỀU lựa chọn mà không dàn cả danh sách giữa màn hình: trang chỉ có tiêu đề, mô tả và MỘT nút ghi lựa chọn hiện
  * tại (đọc ra "tên: lựa chọn"); chạm vào mở hộp thoại danh sách cuộn được, mỗi hàng là một nút chọn đọc "tên, đang chọn/không chọn".
- * Chọn xong hộp thoại tự đóng. Dùng khi có từ khoảng 5 lựa chọn trở lên (ví dụ ngôn ngữ giọng đọc); ít hơn thì dùng [SettingChoice].
+ * Chọn xong hộp thoại tự đóng. Dùng khi có từ khoảng 5 lựa chọn trở lên (ví dụ ngôn ngữ giọng đọc), hoặc khi muốn trang gọn (ví dụ
+ * phần công cụ giọng nói: số công cụ, công cụ đang cài đặt, đọc theo từ hay câu); còn lại dùng [SettingChoice].
  */
 @Composable
 fun SettingPicker(

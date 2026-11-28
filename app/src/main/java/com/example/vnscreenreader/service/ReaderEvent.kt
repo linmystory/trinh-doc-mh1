@@ -30,6 +30,8 @@ class ReaderEvent(
     val itemCount: Int = -1,
     /** Cờ CONTENT_CHANGE_TYPE_* của TYPE_WINDOW_CONTENT_CHANGED. */
     val contentChangeTypes: Int = 0,
+    /** Văn bản của ô nhập TRƯỚC khi đổi (chỉ TYPE_VIEW_TEXT_CHANGED); null nếu ứng dụng không gửi. Dùng để biết đã xóa/chèn gì. */
+    val beforeText: String? = null,
 ) {
     fun dedupKey(): String =
         "$type|${source?.viewIdResourceName}|$text|$fromIndex|$toIndex|$addedCount|$removedCount"
@@ -55,6 +57,7 @@ class ReaderEvent(
                 toIndex = event.toIndex,
                 itemCount = event.itemCount,
                 contentChangeTypes = event.contentChangeTypes,
+                beforeText = if (event.eventType == AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED) event.beforeText?.toString() else null,
             )
         }
     }

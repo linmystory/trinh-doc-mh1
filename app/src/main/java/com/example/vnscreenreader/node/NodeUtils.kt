@@ -4,6 +4,7 @@ import android.graphics.Rect
 import com.example.vnscreenreader.core.PagerHints
 import android.os.Build
 import android.view.accessibility.AccessibilityNodeInfo
+import android.view.accessibility.AccessibilityWindowInfo
 import com.example.vnscreenreader.core.CheckedState
 import com.example.vnscreenreader.core.ClickProbe
 import com.example.vnscreenreader.core.ClickTargetPolicy
@@ -55,6 +56,13 @@ fun AccessibilityNodeInfo.isLinkLike(): Boolean {
     if (ex.getString(CHROME_ROLE_KEY) == "link") return true
     return !ex.getString(TARGET_URL_KEY).isNullOrBlank()
 }
+
+/**
+ * Phím của bàn phím nhập liệu (chữ, số, xóa...): được đánh dấu là phím nhập, hoặc nằm trong cửa sổ bàn phím (IME). Nhấc tay là gõ
+ * ([com.example.vnscreenreader.core.LiftToTypePolicy]) và nhấn phím thất bại thì không nhấn phím bên cạnh ([ClickTargetPolicy.mayClickNearby]).
+ */
+fun AccessibilityNodeInfo.isKeyboardKey(): Boolean =
+    isTextEntryKey || window?.type == AccessibilityWindowInfo.TYPE_INPUT_METHOD
 
 private const val CHROME_ROLE_KEY = "AccessibilityNodeInfo.chromeRole"
 private const val TARGET_URL_KEY = "AccessibilityNodeInfo.targetUrl"

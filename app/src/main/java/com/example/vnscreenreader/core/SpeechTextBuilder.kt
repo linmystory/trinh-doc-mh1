@@ -44,6 +44,9 @@ object SpeechTextBuilder {
 
     private const val MASK_CHARS = "•*●·∗"
 
+    /** Xóa nhiều hơn chừng này ký tự (xóa cả đoạn, cắt) thì chỉ nói "Đã xóa", không đọc lại cả đoạn. */
+    const val MAX_DELETED_SPOKEN_CHARS = 24
+
     /**
      * Tạo câu đọc cho một phần tử: nhãn, vai trò và trạng thái. [detail] chỉ đổi phần phụ (xem [Verbosity]);
      * mặc định giữ đúng cách đọc cũ.
@@ -98,7 +101,10 @@ object SpeechTextBuilder {
         removedCount: Int,
         isPassword: Boolean,
         speakPasswordChars: Boolean = false,
+        beforeText: String? = null,
     ): String? {
+        // Có văn bản trước khi đổi thì so sánh trước/sau (đúng cả khi ứng dụng báo số đếm sai); không so được thì dùng số đếm như dưới.
+        TextEdits.diff(beforeText, fullText)?.let { return describeEdit(it, isPassword, speakPasswordChars) }
         if (isPassword && !speakPasswordChars) {
             return when {
                 addedCount > 0 -> t(S.SP_TYPED)
@@ -119,6 +125,44 @@ object SpeechTextBuilder {
             }
         }
         return if (removedCount > 0) t(S.SP_DELETED) else null
+    }
+
+    /**
+     * Mô tả một lần sửa đã biết chính xác ([TextEdits.diff]):
+     * - có chèn (kể cả thay thế khi đang soạn chữ): đọc đoạn mới chèn, như gõ thường;
+     * - chỉ xóa: "Đã xóa" kèm điều vừa xóa (dấu cách, xuống dòng... đọc bằng tên; xóa dài thì chỉ nói "Đã xóa");
+     * - ô mật khẩu (khi chưa cho đọc mật khẩu) không bao giờ lộ ký tự: chỉ "Đã nhập ký tự" / "Đã xóa ký tự".
+     */
+    fun describeEdit(edit: TextEdit, isPassword: Boolean, speakPasswordChars: Boolean = false): String? {
+        if (edit.isEmpty) return null
+        if (isPassword && !speakPasswordChars) {
+            return t(if (edit.added.isNotEmpty()) S.SP_TYPED else S.SP_DELETED_CHAR)
+        }
+        val added = edit.added
+        if (added.isNotEmpty()) {
+            return when {
+                added == " " -> t(S.SP_SPACE)
+                added.isBlank() -> t(S.SP_WHITESPACE)
+                // Ô mật khẩu thường che ký tự thành chấm: đọc "đã nhập ký tự" thay vì "chấm".
+                isPassword && added.all { it in MASK_CHARS } -> t(S.SP_TYPED)
+                else -> added
+            }
+        }
+        val removed = edit.removed
+        return when {
+            isPassword && removed.all { it in MASK_CHARS } -> t(S.SP_DELETED_CHAR)
+            removed.length > MAX_DELETED_SPOKEN_CHARS -> t(S.SP_DELETED)
+            else -> t(S.SP_DELETED_TEXT, nameOfDeleted(removed))
+        }
+    }
+
+    /** Tên đọc được của điều vừa xóa: ký tự trắng đọc bằng tên (TTS không đọc được dấu cách), còn lại giữ nguyên. */
+    private fun nameOfDeleted(removed: String): String = when {
+        removed == " " -> t(S.SP_SPACE)
+        removed == "\n" -> t(S.SP_NEWLINE)
+        removed == "\t" -> t(S.SP_TAB)
+        removed.isBlank() -> t(S.SP_WHITESPACE)
+        else -> removed
     }
 
     /** Các trạng thái theo thứ tự đọc: chọn/bật, mô tả trạng thái của app, giá trị, lỗi, vô hiệu hóa. */

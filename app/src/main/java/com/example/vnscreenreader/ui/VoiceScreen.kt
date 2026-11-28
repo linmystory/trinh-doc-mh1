@@ -16,6 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -83,14 +84,15 @@ fun VoiceScreen() {
             onValueChangeFinished = { settings.pitch = pitch },
         )
 
-        // Một công cụ duy nhất, hoặc cả hai công cụ (mỗi công cụ một ngôn ngữ).
+        // Một công cụ duy nhất, hoặc cả hai công cụ (mỗi công cụ một ngôn ngữ). Mọi lựa chọn ở đây là danh sách chọn gọn (bấm ra
+        // danh sách, chọn một): trang không còn dài ra vì mỗi tùy chọn bày hết các phương án.
         val modes = VoiceMode.entries
         val modeLabels = listOf(
             stringResource(R.string.vo2_mode_single),
             stringResource(R.string.vo2_mode_both),
         )
         var voiceMode by remember { mutableStateOf(settings.voiceMode) }
-        SettingChoice(
+        SettingPicker(
             title = stringResource(R.string.vo2_mode_title),
             description = stringResource(R.string.vo2_mode_desc),
             options = modeLabels,
@@ -101,40 +103,73 @@ fun VoiceScreen() {
             },
         )
 
-        SectionHeading(
-            stringResource(if (voiceMode == VoiceMode.BOTH) R.string.vo2_first_head else R.string.vo_engine_head),
-        )
-        EnginePicker(
-            currentPackage = enginePackage,
-            engines = engines,
-            systemDefaultLabel = systemDefaultLabel,
-        ) {
-            enginePackage = it
-            settings.ttsEngine = it
+        // Dùng hai công cụ: chọn công cụ nào đang cài đặt (mặc định công cụ thứ nhất) và cách tách giọng; trang chỉ hiện phần của công
+        // cụ đang chọn. Dùng một công cụ thì không có hai mục này và luôn là công cụ thứ nhất.
+        var voiceSlot by remember { mutableIntStateOf(0) }
+        val slot = if (voiceMode == VoiceMode.BOTH) voiceSlot else 0
+        if (voiceMode == VoiceMode.BOTH) {
+            SettingPicker(
+                title = stringResource(R.string.vo2_slot_title),
+                description = stringResource(R.string.vo2_slot_desc),
+                options = listOf(stringResource(R.string.vo2_slot_first), stringResource(R.string.vo2_slot_second)),
+                selectedIndex = slot,
+                onSelect = { voiceSlot = it },
+            )
+            // Đọc theo từ hay theo câu để chuyển giữa hai giọng: dùng chung cho cả hai công cụ nên đứng ngoài phần của từng công cụ.
+            val splits = SplitMode.entries
+            var voiceSplit by remember { mutableStateOf(settings.voiceSplit) }
+            SettingPicker(
+                title = stringResource(R.string.vo2_split_title),
+                description = stringResource(R.string.vo2_split_desc),
+                options = listOf(stringResource(R.string.vo2_split_word), stringResource(R.string.vo2_split_sentence)),
+                selectedIndex = splits.indexOf(voiceSplit),
+                onSelect = {
+                    voiceSplit = splits[it]
+                    settings.voiceSplit = voiceSplit
+                },
+            )
         }
-        // Ngôn ngữ công cụ thứ nhất: mặc định theo ngôn ngữ ứng dụng.
+
+        SectionHeading(
+            stringResource(
+                when {
+                    voiceMode != VoiceMode.BOTH -> R.string.vo_engine_head
+                    slot == 0 -> R.string.vo2_first_head
+                    else -> R.string.vo2_engine_head
+                },
+            ),
+        )
+        // Danh sách ngôn ngữ dùng chung cho cả hai công cụ.
         val voiceLanguageTags = listOf("en", "vi", "fr", "es", "de", "it", "pt", "zh", "ru", "ar", "ja", "ko")
         val voiceLanguageNames = voiceLanguageTags.map { tag ->
             java.util.Locale.forLanguageTag(tag).let { it.getDisplayLanguage(it) }
                 .replaceFirstChar { c -> c.titlecase() }
         }
-        var firstLanguage by remember { mutableStateOf(settings.firstLanguage) }
-        SettingPicker(
-            title = stringResource(R.string.vo2_first_lang_title),
-            description = stringResource(R.string.vo2_first_lang_desc),
-            options = listOf(stringResource(R.string.vo2_first_lang_auto)) + voiceLanguageNames,
-            selectedIndex = if (firstLanguage.isBlank()) 0 else voiceLanguageTags.indexOf(firstLanguage) + 1,
-            onSelect = {
-                firstLanguage = if (it == 0) "" else voiceLanguageTags[it - 1]
-                settings.firstLanguage = firstLanguage
-            },
-        )
-        BodyText(stringResource(R.string.vo_engine_note))
-
-        if (voiceMode == VoiceMode.BOTH) {
+        if (slot == 0) {
+            EnginePicker(
+                currentPackage = enginePackage,
+                engines = engines,
+                systemDefaultLabel = systemDefaultLabel,
+            ) {
+                enginePackage = it
+                settings.ttsEngine = it
+            }
+            // Ngôn ngữ công cụ thứ nhất: mặc định theo ngôn ngữ ứng dụng.
+            var firstLanguage by remember { mutableStateOf(settings.firstLanguage) }
+            SettingPicker(
+                title = stringResource(R.string.vo2_first_lang_title),
+                description = stringResource(R.string.vo2_first_lang_desc),
+                options = listOf(stringResource(R.string.vo2_first_lang_auto)) + voiceLanguageNames,
+                selectedIndex = if (firstLanguage.isBlank()) 0 else voiceLanguageTags.indexOf(firstLanguage) + 1,
+                onSelect = {
+                    firstLanguage = if (it == 0) "" else voiceLanguageTags[it - 1]
+                    settings.firstLanguage = firstLanguage
+                },
+            )
+            BodyText(stringResource(R.string.vo_engine_note))
+        } else {
             var secondPackage by remember { mutableStateOf(settings.secondEngine) }
             var secondLanguage by remember { mutableStateOf(settings.secondLanguage) }
-            SectionHeading(stringResource(R.string.vo2_engine_head))
             EnginePicker(
                 currentPackage = secondPackage,
                 engines = engines,
@@ -143,34 +178,18 @@ fun VoiceScreen() {
                 secondPackage = it
                 settings.secondEngine = it
             }
-            val languageTags = voiceLanguageTags
-            val languageNames = voiceLanguageNames
             SettingPicker(
                 title = stringResource(R.string.vo2_lang_title),
                 description = stringResource(R.string.vo2_lang_desc),
-                options = languageNames,
-                selectedIndex = languageTags.indexOf(secondLanguage),
+                options = voiceLanguageNames,
+                selectedIndex = voiceLanguageTags.indexOf(secondLanguage),
                 onSelect = {
-                    secondLanguage = languageTags[it]
+                    secondLanguage = voiceLanguageTags[it]
                     settings.secondLanguage = secondLanguage
                 },
             )
-            if (voiceMode == VoiceMode.BOTH) {
-                val splits = SplitMode.entries
-                var voiceSplit by remember { mutableStateOf(settings.voiceSplit) }
-                SettingChoice(
-                    title = stringResource(R.string.vo2_split_title),
-                    description = stringResource(R.string.vo2_split_desc),
-                    options = listOf(stringResource(R.string.vo2_split_word), stringResource(R.string.vo2_split_sentence)),
-                    selectedIndex = splits.indexOf(voiceSplit),
-                    onSelect = {
-                        voiceSplit = splits[it]
-                        settings.voiceSplit = voiceSplit
-                    },
-                )
-            }
-            BodyText(stringResource(R.string.vo2_note))
         }
+        if (voiceMode == VoiceMode.BOTH) BodyText(stringResource(R.string.vo2_note))
 
         PrimaryButton(stringResource(R.string.vo_test)) {
             previewEngine?.shutdown()

@@ -2,6 +2,7 @@ package com.example.vnscreenreader.service
 
 import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.GestureDescription
+import android.app.KeyguardManager
 import android.graphics.Path
 import android.graphics.Rect
 import android.view.accessibility.AccessibilityNodeInfo
@@ -37,6 +38,13 @@ internal class ClickResolver(private val service: AccessibilityService) {
         chainOf(node).any { NodeCollector.isWebRoot(it) || NodeCollector.hasHtmlNavigation(it) }
 
     fun isWebRoot(node: AccessibilityNodeInfo): Boolean = NodeCollector.isWebRoot(node)
+
+    /** Màn hình khóa đang hiện (kể cả màn hình nhập mã lúc máy vừa khởi động)? Hệ thống không trả lời được thì coi như không. */
+    fun isKeyguardShowing(): Boolean = try {
+        service.getSystemService(KeyguardManager::class.java)?.isKeyguardLocked == true
+    } catch (e: RuntimeException) {
+        false
+    }
 
     /**
      * Giả lập một cú chạm vào giữa phần tử khi ACTION_CLICK không có tác dụng (nút web tự vẽ). Chỉ dùng trong nội dung

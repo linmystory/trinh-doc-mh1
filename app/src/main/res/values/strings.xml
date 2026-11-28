@@ -34,6 +34,7 @@
     <string name="sp_typed">Character entered</string>
     <string name="sp_deleted_char">Character deleted</string>
     <string name="sp_deleted">Deleted</string>
+    <string name="sp_deleted_text">Deleted %1$s</string>
     <string name="sp_space">space</string>
     <string name="sp_whitespace">whitespace</string>
     <string name="sp_newline">new line</string>
@@ -208,8 +209,10 @@
     <string name="sec_feedback_sum">Haptic only, sound only, both, off</string>
     <string name="sec_gestures">Custom gestures</string>
     <string name="sec_gestures_sum">Assign an action to each gesture</string>
-    <string name="sec_menus">Quick menus</string>
-    <string name="sec_menus_sum">Complete general menu and your own element menu</string>
+    <string name="sec_menus_general">General menu</string>
+    <string name="sec_menus_general_sum">How to open it and every function it holds, in groups</string>
+    <string name="sec_menus_quick">Quick action menu</string>
+    <string name="sec_menus_quick_sum">Your own element menu: add, remove, reorder or replace functions</string>
     <string name="sec_labels">My labels</string>
     <string name="sec_labels_sum">Labels you gave to buttons</string>
     <string name="sec_plugins">Plugins and scripts</string>
@@ -278,7 +281,7 @@
     <string name="hp_limit_secure">Android blocks screenshots on secure screens (passwords, banking).</string>
     <string name="hp_limit_edge">Android doesn\'t let an accessibility service capture edge swipes or drawn characters.</string>
     <string name="hp_translation_note">Translations were produced by machine and have not yet been reviewed by native speakers; please report wording problems.</string>
-    <string name="mn_title">Quick menus</string>
+    <string name="mn_title">Menus</string>
     <string name="mn_global_head">General menu</string>
     <string name="mn_local_head">Element menu</string>
     <string name="mn_local_extra">The app\'s own actions are added at the end. Text editing items appear only in input fields.</string>
@@ -514,6 +517,10 @@
     <string name="vo2_first_lang_title">Language of the first engine</string>
     <string name="vo2_first_lang_desc">Which language the first engine reads. The default follows the app language.</string>
     <string name="vo2_first_lang_auto">Same as the app language</string>
+    <string name="vo2_slot_title">Engine being set up</string>
+    <string name="vo2_slot_desc">Choose the first or the second engine to see and change its settings.</string>
+    <string name="vo2_slot_first">First engine</string>
+    <string name="vo2_slot_second">Second engine</string>
     <string name="rd_lift_title">Type by lifting your finger</string>
     <string name="rd_lift_desc">On: on the keyboard, slide to a key to hear it, then lift your finger to type it. Off by default; double-tap still works. Starting a swipe cancels typing.</string>
     <string name="rd_touch_delay_title">Touch delay</string>
@@ -675,7 +682,7 @@
     <string name="hub_audio">Voice and sound</string>
     <string name="hub_audio_sum">Reading voice, sounds, vibration</string>
     <string name="hub_content_sum">Elements, focus, notifications</string>
-    <string name="hub_control_sum">Gestures, quick menus, typing, hardware keys</string>
+    <string name="hub_control_sum">Gestures, menus, typing, hardware keys</string>
     <string name="hub_tools">Tools</string>
     <string name="hub_tools_sum">Labels, plugins, backup, logs</string>
     <string name="sec_read_elements">How elements are read</string>
@@ -767,7 +774,7 @@
         <item quantity="other">The menu already has %1$d functions, the maximum. Remove or replace one to add another.</item>
     </plurals>
     <plurals name="hp_menus_body">
-        <item quantity="one">The general menu has every function of the app, split into groups. The element menu is your own list of up to %1$d function: add, remove, reorder or replace them in Controls, Quick menus. Each menu opens with the gesture you assign to it. While a menu is open, swipe right or left to move between items, or touch the screen and slide a finger to hear each item; double-tap to choose.</item>
-        <item quantity="other">The general menu has every function of the app, split into groups. The element menu is your own list of up to %1$d functions: add, remove, reorder or replace them in Controls, Quick menus. Each menu opens with the gesture you assign to it. While a menu is open, swipe right or left to move between items, or touch the screen and slide a finger to hear each item; double-tap to choose.</item>
+        <item quantity="one">The general menu has every function of the app, split into groups. The element menu is your own list of up to %1$d function: add, remove, reorder or replace them in Controls, Quick action menu. Each menu opens with the gesture you assign to it. While a menu is open, swipe right or left to move between items, or touch the screen and slide a finger to hear each item; double-tap to choose.</item>
+        <item quantity="other">The general menu has every function of the app, split into groups. The element menu is your own list of up to %1$d functions: add, remove, reorder or replace them in Controls, Quick action menu. Each menu opens with the gesture you assign to it. While a menu is open, swipe right or left to move between items, or touch the screen and slide a finger to hear each item; double-tap to choose.</item>
     </plurals>
 </resources>

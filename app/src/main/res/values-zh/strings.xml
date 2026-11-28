@@ -34,6 +34,7 @@
     <string name="sp_typed">已输入字符</string>
     <string name="sp_deleted_char">已删除字符</string>
     <string name="sp_deleted">已删除</string>
+    <string name="sp_deleted_text">已删除：%1$s</string>
     <string name="sp_space">空格</string>
     <string name="sp_whitespace">空白</string>
     <string name="sp_newline">换行</string>
@@ -208,8 +209,10 @@
     <string name="sec_feedback_sum">仅振动、仅声音、两者、关闭</string>
     <string name="sec_gestures">自定义手势</string>
     <string name="sec_gestures_sum">为每个手势分配功能</string>
-    <string name="sec_menus">快捷菜单</string>
-    <string name="sec_menus_sum">完整的通用菜单和可自定义的元素菜单</string>
+    <string name="sec_menus_general">通用菜单</string>
+    <string name="sec_menus_general_sum">打开方式及其全部功能，按分组列出</string>
+    <string name="sec_menus_quick">快捷操作菜单</string>
+    <string name="sec_menus_quick_sum">你自己的元素菜单：添加、删除、调整顺序或替换功能</string>
     <string name="sec_labels">我的标签</string>
     <string name="sec_labels_sum">您为按钮设置的标签</string>
     <string name="sec_plugins">插件与脚本</string>
@@ -278,7 +281,7 @@
     <string name="hp_limit_secure">Android 会在安全界面（密码、银行）阻止截屏。</string>
     <string name="hp_limit_edge">Android 不允许无障碍服务捕获从屏幕边缘滑动或手绘字符的手势。</string>
     <string name="hp_translation_note">翻译由机器生成，尚未经母语者审校；如发现措辞问题，欢迎反馈。</string>
-    <string name="mn_title">快捷菜单</string>
+    <string name="mn_title">菜单</string>
     <string name="mn_global_head">通用菜单</string>
     <string name="mn_local_head">元素菜单</string>
     <string name="mn_local_extra">末尾会加入应用自己的操作。文本编辑项仅在输入框中显示。</string>
@@ -514,6 +517,10 @@
     <string name="vo2_first_lang_title">第一引擎的语言</string>
     <string name="vo2_first_lang_desc">第一引擎朗读的语言。默认跟随应用语言。</string>
     <string name="vo2_first_lang_auto">与应用语言相同</string>
+    <string name="vo2_slot_title">正在设置的引擎</string>
+    <string name="vo2_slot_desc">选择第一或第二引擎，查看并更改其设置。</string>
+    <string name="vo2_slot_first">第一引擎</string>
+    <string name="vo2_slot_second">第二引擎</string>
     <string name="rd_lift_title">抬手输入</string>
     <string name="rd_lift_desc">开启：在键盘上滑到某个按键即可听到读音，抬起手指即输入该键。默认关闭；双击仍然可用。开始滑动手势会取消输入。</string>
     <string name="rd_touch_delay_title">触摸延迟</string>
@@ -675,7 +682,7 @@
     <string name="hub_audio">语音与声音</string>
     <string name="hub_audio_sum">朗读语音、提示音、振动</string>
     <string name="hub_content_sum">元素、焦点、通知</string>
-    <string name="hub_control_sum">手势、快捷菜单、输入、实体按键</string>
+    <string name="hub_control_sum">手势、菜单、输入、实体按键</string>
     <string name="hub_tools">工具</string>
     <string name="hub_tools_sum">标签、插件、备份、日志</string>
     <string name="sec_read_elements">元素朗读方式</string>
@@ -754,6 +761,6 @@
         <item quantity="other">菜单已有%1$d项功能，已达上限。请删除或替换一项后再添加。</item>
     </plurals>
     <plurals name="hp_menus_body">
-        <item quantity="other">通用菜单包含应用的全部功能，分为若干分组。元素菜单是你自己的列表，最多%1$d项功能：可在“控制”中的“快捷菜单”里添加、删除、调整顺序或替换。每个菜单都用你为它指定的手势打开。菜单打开时，向右或向左滑动可切换项目，也可以触摸屏幕并滑动手指逐项听读；双击即可选择。</item>
+        <item quantity="other">通用菜单包含应用的全部功能，分为若干分组。元素菜单是你自己的列表，最多%1$d项功能：可在“控制”中的“快捷操作菜单”里添加、删除、调整顺序或替换。每个菜单都用你为它指定的手势打开。菜单打开时，向右或向左滑动可切换项目，也可以触摸屏幕并滑动手指逐项听读；双击即可选择。</item>
     </plurals>
 </resources>

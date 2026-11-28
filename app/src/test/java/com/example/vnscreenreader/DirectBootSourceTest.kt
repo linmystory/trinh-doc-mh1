@@ -297,4 +297,78 @@ class DirectBootSourceTest {
         assertTrue("không được động tới số lần hỏng đã đếm", !body.contains("failures"))
         assertTrue("SpeechEngine phải chuyển tin cho từng công cụ", speech!!.contains("it.onLockedBootCompleted()"))
     }
+
+    // ---- Chế độ an toàn: lỗi "không nhập được mã mở khóa sau khi khởi động lại" ----
+
+    @Test
+    fun theServiceReturnsThePlainTouchscreenWhenNoSessionRuns() {
+        val code = sources().entries.firstOrNull { fileName(it.key) == "ScreenReaderService.kt" }?.value
+        assumeTrue(code != null)
+        // Không có phiên thì không ai đọc và không ai nhấn thay người dùng, mà hệ thống vẫn giữ chế độ khám phá bằng chạm: phải tắt cờ đó.
+        val body = Regex("""private fun openSession\(\) \{.*?\n    }\n""", RegexOption.DOT_MATCHES_ALL).find(code!!)?.value
+        assertTrue("không thấy openSession", body != null)
+        assertEquals("tắt cả khi dựng lẫn khi khởi động phiên thất bại", 2, Regex("""setTouchExploration\(false\)""").findAll(body!!).count())
+        assertEquals("thành công thì bật lại đúng một lần", 1, Regex("""setTouchExploration\(true\)""").findAll(body).count())
+        assertTrue("bật lại chỉ SAU khi start() chạy xong", body.indexOf("created.start()") in 0 until body.indexOf("setTouchExploration(true)"))
+        // Số học cờ nằm ở lõi thuần có kiểm thử, không viết tay trong dịch vụ.
+        assertTrue(code.contains("TouchExplorationPolicy.withTouchExploration("))
+        assertFalse("không viết tay phép toán cờ trong dịch vụ", code.contains("FLAG_REQUEST_TOUCH_EXPLORATION_MODE"))
+    }
+
+    @Test
+    fun everyServiceCallbackAlsoCatchesLinkageErrors() {
+        val code = sources().entries.firstOrNull { fileName(it.key) == "ScreenReaderService.kt" }?.value
+        assumeTrue(code != null)
+        // Lỗi nạp lớp (khởi tạo tĩnh hỏng lúc máy còn khóa) không phải Exception: bắt thiếu là cả tiến trình sập và trình đọc chết theo.
+        assertTrue(code!!.contains("catch (e: LinkageError)"))
+        assertFalse("mọi callback phải đi qua guarded, không tự bắt RuntimeException", code.contains("catch (e: RuntimeException)"))
+        for (callback in listOf("onAccessibilityEvent", "onGesture", "onKeyEvent", "onInterrupt", "onConfigurationChanged")) {
+            val body = Regex("""override fun $callback\(.*?\n    (?:}|\S[^\n]*\n)""", RegexOption.DOT_MATCHES_ALL).find(code)?.value
+            assertTrue("không thấy $callback", body != null)
+            assertTrue("$callback phải đi qua guarded", body!!.contains("guarded("))
+        }
+    }
+
+    @Test
+    fun anOptionalStepFailingDoesNotKillTheSession() {
+        val code = sources().entries.firstOrNull { fileName(it.key) == "ReaderSession.kt" }?.value
+        assumeTrue(code != null)
+        // Phiên chết lúc máy vừa khởi động = cờ khám phá bằng chạm vẫn bật mà không ai nhấn: không nhập nổi mã. Bước phụ hỏng chỉ được mất đúng tính năng của nó.
+        val body = Regex("""fun start\(\) \{.*?\n    }\n""", RegexOption.DOT_MATCHES_ALL).find(code!!)?.value
+        assertTrue("không thấy ReaderSession.start", body != null)
+        val lines = body!!.lines()
+        for (step in listOf(
+            "Diag.init(", "overlay.attach()", "applyServiceFlags()", "applyVerbosity()", "applyVoiceMode()", "ScreenSearchBridge.register",
+            "settings.register(", "gestureStore.register(", "registerScreenReceiver()", "registerRecordingCallback()", "syncCallReceiver()",
+            "BootSignal.lockedBootCompleted.attach(",
+        )) {
+            val at = lines.indexOfFirst { it.contains(step) }
+            assertTrue("start() không còn gọi $step", at >= 0)
+            // Bước phải CÙNG DÒNG với guardMain("...") { ... } hoặc là dòng đầu của khối guardMain("...") { mở ngay dòng trước (không được "mượn" guardMain của bước khác).
+            val guarded = lines[at].contains("guardMain(") ||
+                (at > 0 && lines[at - 1].trimEnd().endsWith("{") && lines[at - 1].contains("guardMain("))
+            assertTrue("$step phải nằm trong guardMain", guarded)
+        }
+        // Hai việc cốt lõi chỉ là scope.launch (không ném) và nằm trong start().
+        assertTrue(body.contains("scope.launch { processEvents() }"))
+        assertTrue(body.contains("scope.launch { processContentEvents() }"))
+    }
+
+    @Test
+    fun activationNeverPressesANeighbouringKeyAndTapsOnTheLockScreen() {
+        val code = sources().entries.firstOrNull { fileName(it.key) == "FocusNavigator.kt" }?.value
+        assumeTrue(code != null)
+        val body = Regex("""internal fun activate\(\): ActivateOutcome \{.*?\n    }\n""", RegexOption.DOT_MATCHES_ALL).find(code!!)?.value
+        assertTrue("không thấy FocusNavigator.activate", body != null)
+        // Hai điều kiện lấy từ hệ thống thật, không được thay bằng hằng: có phải phím không, màn hình khóa có đang hiện không.
+        assertTrue(body!!.contains("val key = node.isKeyboardKey()"))
+        assertTrue(body.contains("val keyguard = clicker.isKeyguardShowing()"))
+        // Nhấn "điều khiển bên cạnh" chỉ khi không phải phím và không ở màn hình khóa: bên cạnh một phím là phím khác (gõ sai chữ số).
+        assertTrue(Regex("""ClickTargetPolicy\.mayClickNearby\(key, keyguard\) && activateNearby\(node\)""").containsMatchIn(body))
+        assertEquals("activateNearby chỉ được gọi ở đúng một chỗ trong activate()", 1, Regex("""activateNearby\(""").findAll(body).count())
+        // Cú chạm dự phòng biết màn hình khóa.
+        assertTrue(Regex("""shouldTapFallback\(insideWeb, clicker\.isWebRoot\(node\), keyguard\)""").containsMatchIn(body))
+        // Mỗi kết quả đều ghi nhật ký chẩn đoán, không có lối ra nào lọt khỏi nhật ký.
+        assertFalse("mọi return phải đi qua loggedActivation", Regex("""return ActivateOutcome\.""").containsMatchIn(body))
+    }
 }

@@ -64,6 +64,7 @@ class ResourceTexts(private val context: Context) : TextProvider {
         S.SP_TYPED -> R.string.sp_typed
         S.SP_DELETED_CHAR -> R.string.sp_deleted_char
         S.SP_DELETED -> R.string.sp_deleted
+        S.SP_DELETED_TEXT -> R.string.sp_deleted_text
         S.SP_SPACE -> R.string.sp_space
         S.SP_WHITESPACE -> R.string.sp_whitespace
         S.SP_NEWLINE -> R.string.sp_newline
@@ -238,8 +239,10 @@ class ResourceTexts(private val context: Context) : TextProvider {
         S.SEC_FEEDBACK_SUM -> R.string.sec_feedback_sum
         S.SEC_GESTURES -> R.string.sec_gestures
         S.SEC_GESTURES_SUM -> R.string.sec_gestures_sum
-        S.SEC_MENUS -> R.string.sec_menus
-        S.SEC_MENUS_SUM -> R.string.sec_menus_sum
+        S.SEC_MENUS_GENERAL -> R.string.sec_menus_general
+        S.SEC_MENUS_GENERAL_SUM -> R.string.sec_menus_general_sum
+        S.SEC_MENUS_QUICK -> R.string.sec_menus_quick
+        S.SEC_MENUS_QUICK_SUM -> R.string.sec_menus_quick_sum
         S.SEC_LABELS -> R.string.sec_labels
         S.SEC_LABELS_SUM -> R.string.sec_labels_sum
         S.SEC_PLUGINS -> R.string.sec_plugins
@@ -544,6 +547,10 @@ class ResourceTexts(private val context: Context) : TextProvider {
         S.VO2_FIRST_LANG_TITLE -> R.string.vo2_first_lang_title
         S.VO2_FIRST_LANG_DESC -> R.string.vo2_first_lang_desc
         S.VO2_FIRST_LANG_AUTO -> R.string.vo2_first_lang_auto
+        S.VO2_SLOT_TITLE -> R.string.vo2_slot_title
+        S.VO2_SLOT_DESC -> R.string.vo2_slot_desc
+        S.VO2_SLOT_FIRST -> R.string.vo2_slot_first
+        S.VO2_SLOT_SECOND -> R.string.vo2_slot_second
         S.RD_LIFT_TITLE -> R.string.rd_lift_title
         S.RD_LIFT_DESC -> R.string.rd_lift_desc
         S.RD_TOUCH_DELAY_TITLE -> R.string.rd_touch_delay_title
